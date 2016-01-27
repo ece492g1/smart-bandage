@@ -991,8 +991,8 @@ Standard 10-pin dual row 0.1" header. Commonly used with AVR-ISP. Use with Spark
 <instances>
 <instance part="H1" gate="G$1" x="101.6" y="55.88" rot="R90"/>
 <instance part="H2" gate="G$1" x="96.52" y="53.34" rot="R90"/>
-<instance part="H3" gate="G$1" x="160.02" y="48.26" rot="R90"/>
-<instance part="H4" gate="G$1" x="147.32" y="40.64" rot="R270"/>
+<instance part="H3" gate="G$1" x="147.32" y="50.8" rot="R90"/>
+<instance part="H4" gate="G$1" x="154.94" y="48.26" rot="R90"/>
 <instance part="H5" gate="G$1" x="106.68" y="40.64" rot="R270"/>
 <instance part="H6" gate="G$1" x="91.44" y="50.8" rot="R90"/>
 <instance part="H7" gate="G$1" x="86.36" y="50.8" rot="R90"/>
@@ -1191,17 +1191,14 @@ Standard 10-pin dual row 0.1" header. Commonly used with AVR-ISP. Use with Spark
 <segment>
 <pinref part="JP1" gate="G$1" pin="8"/>
 <pinref part="H4" gate="G$1" pin="P$1"/>
-<wire x1="124.46" y1="45.72" x2="147.32" y2="45.72" width="0.1524" layer="91"/>
-<wire x1="147.32" y1="45.72" x2="147.32" y2="43.18" width="0.1524" layer="91"/>
+<wire x1="124.46" y1="45.72" x2="154.94" y2="45.72" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$4" class="0">
 <segment>
 <pinref part="JP1" gate="G$1" pin="6"/>
-<wire x1="124.46" y1="48.26" x2="157.48" y2="48.26" width="0.1524" layer="91"/>
-<wire x1="157.48" y1="48.26" x2="157.48" y2="45.72" width="0.1524" layer="91"/>
+<wire x1="124.46" y1="48.26" x2="147.32" y2="48.26" width="0.1524" layer="91"/>
 <pinref part="H3" gate="G$1" pin="P$1"/>
-<wire x1="157.48" y1="45.72" x2="160.02" y2="45.72" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="AGND" class="0">
