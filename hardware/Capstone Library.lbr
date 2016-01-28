@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.05" unitdist="inch" unit="mm" style="lines" multiple="1" display="yes" altdistance="0.025" altunitdist="inch" altunit="inch"/>
+<grid distance="0.01" unitdist="mm" unit="mm" style="lines" multiple="1" display="yes" altdistance="0.025" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="yes"/>
@@ -428,45 +428,96 @@ Source: &lt;a href="http://www.mcrystal.ch/CMSPages/GetFile.aspx?nodeguid=c85958
 <package name="X2SON">
 <description>Package dimensions from: http://www.ti.com/lit/ds/symlink/tlv707p.pdf</description>
 <smd name="PAD" x="0" y="0" dx="0.48" dy="0.48" layer="1" rot="R45"/>
-<polygon width="0.01" layer="1">
+<polygon width="0.1" layer="1">
 <vertex x="0.61" y="0.43"/>
 <vertex x="0.25" y="0.43"/>
 <vertex x="0.25" y="0.4"/>
 <vertex x="0.43" y="0.22"/>
 <vertex x="0.61" y="0.22"/>
 </polygon>
-<polygon width="0.01" layer="1">
+<polygon width="0.1" layer="1">
 <vertex x="-0.61" y="-0.43"/>
 <vertex x="-0.25" y="-0.43"/>
 <vertex x="-0.25" y="-0.4"/>
 <vertex x="-0.43" y="-0.22"/>
 <vertex x="-0.61" y="-0.22"/>
 </polygon>
-<polygon width="0.01" layer="1">
+<polygon width="0.1" layer="1">
 <vertex x="0.61" y="-0.43"/>
 <vertex x="0.25" y="-0.43"/>
 <vertex x="0.25" y="-0.4"/>
 <vertex x="0.43" y="-0.22"/>
 <vertex x="0.61" y="-0.22"/>
 </polygon>
-<polygon width="0.01" layer="1">
+<polygon width="0.1" layer="1">
 <vertex x="-0.61" y="0.43"/>
 <vertex x="-0.25" y="0.43"/>
 <vertex x="-0.25" y="0.4"/>
 <vertex x="-0.43" y="0.22"/>
 <vertex x="-0.61" y="0.22"/>
 </polygon>
-<text x="-1.1" y="0" size="0.1" layer="1">THIS PKG REQUIRES VERIFICATION</text>
 <text x="-0.6" y="0.7" size="0.25" layer="21" font="vector">&gt;NAME</text>
 <wire x1="-0.525" y1="0.525" x2="-0.525" y2="-0.525" width="0.127" layer="21"/>
 <wire x1="-0.525" y1="-0.525" x2="0.525" y2="-0.525" width="0.127" layer="21"/>
 <wire x1="0.525" y1="-0.525" x2="0.525" y2="0.525" width="0.127" layer="21"/>
 <wire x1="0.525" y1="0.525" x2="-0.525" y2="0.525" width="0.127" layer="21"/>
-<smd name="1" x="-0.5" y="0.3" dx="0.15" dy="0.15" layer="1"/>
-<smd name="4" x="0.5" y="0.3" dx="0.15" dy="0.15" layer="1"/>
-<smd name="3" x="0.5" y="-0.3" dx="0.15" dy="0.15" layer="1"/>
-<smd name="2" x="-0.5" y="-0.3" dx="0.15" dy="0.15" layer="1"/>
+<smd name="1" x="-0.5" y="0.3" dx="0.15" dy="0.15" layer="1" stop="no" cream="no"/>
+<smd name="4" x="0.5" y="0.3" dx="0.15" dy="0.15" layer="1" stop="no" cream="no"/>
+<smd name="3" x="0.5" y="-0.3" dx="0.15" dy="0.15" layer="1" stop="no" cream="no"/>
+<smd name="2" x="-0.5" y="-0.3" dx="0.15" dy="0.15" layer="1" stop="no" cream="no"/>
 <rectangle x1="-0.5" y1="0.2" x2="-0.2" y2="0.5" layer="21"/>
+<polygon width="0.01" layer="29">
+<vertex x="-0.71" y="0.52"/>
+<vertex x="0.03" y="0.52"/>
+<vertex x="-0.37" y="0.12"/>
+<vertex x="-0.71" y="0.12"/>
+</polygon>
+<polygon width="0.01" layer="29">
+<vertex x="0.71" y="-0.52"/>
+<vertex x="-0.03" y="-0.52"/>
+<vertex x="0.37" y="-0.12"/>
+<vertex x="0.71" y="-0.12"/>
+</polygon>
+<polygon width="0.01" layer="29">
+<vertex x="-0.71" y="-0.52"/>
+<vertex x="0.03" y="-0.52"/>
+<vertex x="-0.37" y="-0.12"/>
+<vertex x="-0.71" y="-0.12"/>
+</polygon>
+<polygon width="0.01" layer="31">
+<vertex x="-0.61" y="-0.43"/>
+<vertex x="-0.25" y="-0.43"/>
+<vertex x="-0.25" y="-0.4"/>
+<vertex x="-0.43" y="-0.22"/>
+<vertex x="-0.61" y="-0.22"/>
+</polygon>
+<polygon width="0.01" layer="31">
+<vertex x="-0.61" y="0.43"/>
+<vertex x="-0.25" y="0.43"/>
+<vertex x="-0.25" y="0.4"/>
+<vertex x="-0.43" y="0.22"/>
+<vertex x="-0.61" y="0.22"/>
+</polygon>
+<polygon width="0.01" layer="31">
+<vertex x="0.61" y="0.43"/>
+<vertex x="0.25" y="0.43"/>
+<vertex x="0.25" y="0.4"/>
+<vertex x="0.43" y="0.22"/>
+<vertex x="0.61" y="0.22"/>
+</polygon>
+<polygon width="0.01" layer="31">
+<vertex x="0.61" y="-0.43"/>
+<vertex x="0.25" y="-0.43"/>
+<vertex x="0.25" y="-0.4"/>
+<vertex x="0.43" y="-0.22"/>
+<vertex x="0.61" y="-0.22"/>
+</polygon>
+<polygon width="0.01" layer="29">
+<vertex x="0.71" y="0.52"/>
+<vertex x="-0.03" y="0.52"/>
+<vertex x="0.37" y="0.12"/>
+<vertex x="0.71" y="0.12"/>
+</polygon>
 </package>
 <package name="SON-6">
 <smd name="6" x="-1" y="1.35" dx="0.5" dy="0.45" layer="1" rot="R90"/>
