@@ -7573,6 +7573,8 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <part name="R29" library="SparkFun-Passives" deviceset="RESISTOR" device="0402-RES" value="1Meg"/>
 <part name="R30" library="SparkFun-Passives" deviceset="RESISTOR" device="0402-RES" value="1Meg"/>
 <part name="GND52" library="supply1" deviceset="GND" device=""/>
+<part name="C27" library="SparkFun-Passives" deviceset="CAP" device="0402-CAP" value="DNP"/>
+<part name="GND53" library="SparkFun" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -7604,7 +7606,7 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <wire x1="231.14" y1="91.44" x2="231.14" y2="63.5" width="0.1524" layer="97"/>
 <wire x1="231.14" y1="63.5" x2="137.16" y2="63.5" width="0.1524" layer="97"/>
 <text x="139.7" y="86.36" size="1.778" layer="97">1V3 Regulator</text>
-<text x="139.7" y="66.04" size="1.778" layer="97">Place IN close to 3V3 reg.</text>
+<text x="187.96" y="86.36" size="1.778" layer="97">Place IN close to 3V3 reg.</text>
 <wire x1="137.16" y1="93.98" x2="137.16" y2="127" width="0.1524" layer="97"/>
 <wire x1="137.16" y1="127" x2="231.14" y2="127" width="0.1524" layer="97"/>
 <wire x1="231.14" y1="127" x2="231.14" y2="93.98" width="0.1524" layer="97"/>
@@ -7774,6 +7776,8 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <instance part="R29" gate="G$1" x="439.42" y="83.82" rot="R90"/>
 <instance part="R30" gate="G$1" x="439.42" y="73.66" rot="R90"/>
 <instance part="GND52" gate="1" x="439.42" y="66.04"/>
+<instance part="C27" gate="G$1" x="152.4" y="73.66"/>
+<instance part="GND53" gate="1" x="152.4" y="68.58"/>
 </instances>
 <busses>
 </busses>
@@ -7984,6 +7988,10 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <segment>
 <pinref part="R30" gate="G$1" pin="1"/>
 <pinref part="GND52" gate="1" pin="GND"/>
+</segment>
+<segment>
+<pinref part="C27" gate="G$1" pin="2"/>
+<pinref part="GND53" gate="1" pin="GND"/>
 </segment>
 </net>
 <net name="V_PREBUCK" class="0">
@@ -8383,6 +8391,7 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <wire x1="175.26" y1="71.12" x2="172.72" y2="71.12" width="0.1524" layer="91"/>
 <wire x1="172.72" y1="71.12" x2="172.72" y2="78.74" width="0.1524" layer="91"/>
 <junction x="172.72" y="78.74"/>
+<pinref part="C27" gate="G$1" pin="1"/>
 </segment>
 </net>
 <net name="BANDAGE_A_0" class="0">
