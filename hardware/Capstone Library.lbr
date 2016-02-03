@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.1" unitdist="inch" unit="mil" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
+<grid distance="0.1" unitdist="mm" unit="mm" style="lines" multiple="1" display="yes" altdistance="0.025" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="yes"/>
@@ -1145,38 +1145,38 @@ Yageo CFR series &lt;a href="http://www.yageo.com/pdf/yageo/Leaded-R_CFR_2008.pd
 <text x="-7" y="-8.5" size="0.8128" layer="27" font="vector" ratio="15">&gt;VALUE</text>
 </package>
 <package name="RHB0032E">
-<smd name="1" x="-2.39999375" y="1.750009375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="2" x="-2.39999375" y="1.250009375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="3" x="-2.39999375" y="0.7500125" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="4" x="-2.39999375" y="0.2500125" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="5" x="-2.39999375" y="-0.2499875" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="6" x="-2.39999375" y="-0.7500125" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="7" x="-2.39999375" y="-1.249984375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="8" x="-2.39999375" y="-1.750009375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="9" x="-1.750009375" y="-2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
-<smd name="10" x="-1.250009375" y="-2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
-<smd name="11" x="-0.7500125" y="-2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
-<smd name="12" x="-0.2499875" y="-2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
-<smd name="13" x="0.2500125" y="-2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
-<smd name="14" x="0.7500125" y="-2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
-<smd name="15" x="1.250009375" y="-2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
-<smd name="16" x="1.750009375" y="-2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
-<smd name="17" x="2.39999375" y="-1.750009375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="18" x="2.39999375" y="-1.249984375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="19" x="2.39999375" y="-0.7500125" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="20" x="2.39999375" y="-0.2499875" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="21" x="2.39999375" y="0.2500125" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="22" x="2.39999375" y="0.7500125" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="23" x="2.39999375" y="1.250009375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="24" x="2.39999375" y="1.750009375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R180"/>
-<smd name="25" x="1.750009375" y="2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
-<smd name="26" x="1.250009375" y="2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
-<smd name="27" x="0.7500125" y="2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
-<smd name="28" x="0.2500125" y="2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
-<smd name="29" x="-0.2499875" y="2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
-<smd name="30" x="-0.7500125" y="2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
-<smd name="31" x="-1.250009375" y="2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
-<smd name="32" x="-1.750009375" y="2.39999375" dx="0.6096" dy="0.2286" layer="1" roundness="100" rot="R90"/>
+<smd name="1" x="-2.39999375" y="1.750009375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="2" x="-2.39999375" y="1.250009375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="3" x="-2.39999375" y="0.7500125" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="4" x="-2.39999375" y="0.2500125" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="5" x="-2.39999375" y="-0.2499875" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="6" x="-2.39999375" y="-0.7500125" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="7" x="-2.39999375" y="-1.249984375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="8" x="-2.39999375" y="-1.750009375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="9" x="-1.750009375" y="-2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
+<smd name="10" x="-1.250009375" y="-2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
+<smd name="11" x="-0.7500125" y="-2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
+<smd name="12" x="-0.2499875" y="-2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
+<smd name="13" x="0.2500125" y="-2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
+<smd name="14" x="0.7500125" y="-2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
+<smd name="15" x="1.250009375" y="-2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
+<smd name="16" x="1.750009375" y="-2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
+<smd name="17" x="2.39999375" y="-1.750009375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="18" x="2.39999375" y="-1.249984375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="19" x="2.39999375" y="-0.7500125" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="20" x="2.39999375" y="-0.2499875" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="21" x="2.39999375" y="0.2500125" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="22" x="2.39999375" y="0.7500125" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="23" x="2.39999375" y="1.250009375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="24" x="2.39999375" y="1.750009375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R180"/>
+<smd name="25" x="1.750009375" y="2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
+<smd name="26" x="1.250009375" y="2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
+<smd name="27" x="0.7500125" y="2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
+<smd name="28" x="0.2500125" y="2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
+<smd name="29" x="-0.2499875" y="2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
+<smd name="30" x="-0.7500125" y="2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
+<smd name="31" x="-1.250009375" y="2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
+<smd name="32" x="-1.750009375" y="2.39999375" dx="0.65" dy="0.28" layer="1" roundness="100" rot="R90"/>
 <smd name="33" x="0" y="0" dx="3.4544" dy="3.4544" layer="1"/>
 <wire x1="-2.7178" y1="-2.7178" x2="-2.5146" y2="-2.7178" width="0.2032" layer="51"/>
 <wire x1="-2.7178" y1="-2.7178" x2="-2.7178" y2="-2.5146" width="0.2032" layer="51"/>
