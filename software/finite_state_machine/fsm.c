@@ -19,38 +19,9 @@ events:
  
  
  #include "stdio.h"
- 
- #define EVENTS 5
- #define STATES 6 //?
- 
- //main states for the state machine for the mcu
- enum states { S_SLEEP, S_CHECK, S_TRANSMIT, S_ERROR_TEMP, S_ERROR_PERM, S_INIT } currentState;
- 
- //main event definitins, things that will trigger a transition
- //data change is equivalent to an alert
- enum events { E_CHECK_TIMER_EXPIRES, E_BLE_TIMER_EXPIRES, E_DATA_CHANGE, E_NO_BANDAGE_DETECTED, E_ERROR } newEvent; 
+ #include "stdlib.h"
+ #include "fsm.h"
 
-
-//function prototypes for each action (maybe put into .h file later)
-void checkTimerExpired(void);
-void bleTimerExpired(void);
-void noBandageDetected(void);
-void errorEvent(void); //a more permanent error caught
-void dataChanged(void);
-void returnToSleep(void);
-enum events getNewEvent(void);
-
-
-//LUT TABLE
-//implemented a "do nothing" function for the events that are not relevent to a particular 
-void(*state_table [STATES][EVENTS]) (void) = {
-    {checkTimerExpired, bleTimerExpired, returnToSleep, noBandageDetected, errorEvent }, //procedures for state sleep
-    {checkTimerExpired, bleTimerExpired, dataChanged, noBandageDetected, errorEvent },//procedures for state check
-    {returnToSleep, bleTimerExpired, returnToSleep, noBandageDetected, errorEvent}, //procedure for transmit
-    {checkTimerExpired, bleTimerExpired, dataChanged, noBandageDetected, errorEvent}, //procedures for state error temp
-    {returnToSleep, bleTimerExpired, returnToSleep, returnToSleep, errorEvent}, //procedures for state error perm
-    {returnToSleep, bleTimerExpired, dataChanged, noBandageDetected, errorEvent} //procedures for initialize state
-};
 
 /*
 COMMENTED OUT FOR TESTING PURPOSES
@@ -71,10 +42,40 @@ void main(void) {
 }
 */
 
+//switch the states
+int switchState(int newState) {
+	printf("\nnew State: %d", newState);
+
+	if(newState == S_INIT) {
+		currentState = S_INIT;
+	}
+
+	if(newState == S_SLEEP) {
+		currentState = S_SLEEP;
+	}
+
+	if(newState == S_CHECK) {
+		currentState = S_CHECK;
+	}
+	
+	if(newState == S_TRANSMIT) {
+		currentState = S_TRANSMIT;
+	}
+
+	if(newState == S_ERROR_TEMP) {
+		currentState = S_ERROR_TEMP;
+	}
+	
+	//otherwise it will go into the error state either way?
+	if(newState == S_ERROR_PERM) {
+		currentState = S_ERROR_PERM;
+	}
+}
+
 //action procedures here for now, also might want to put into another file later
 void checkTimerExpired(void){
     //the timer expired, 
-    currentState = S_CHECK;
+    switchState(S_CHECK);
     //check data from periperal sensors and store it into a register
     
     //reset the timer
@@ -85,7 +86,7 @@ void checkTimerExpired(void){
 }
 void bleTimerExpired(void){
     //the transmit data timer expired
-    currentState = S_TRANSMIT;
+    switchState(S_TRANSMIT);
     //send the data via the bluetooth to the smartphone android application
     //check if successful - remove previous data(?) and return to sleep
     //if not, reset timer, and save previous data
@@ -94,24 +95,24 @@ void bleTimerExpired(void){
 void noBandageDetected(void){
     //no connection between the communications module and the bandage module detected
     //set the current state to temp error and wait for check timer to expire to see if initialized (?)
-    currentState = S_ERROR_TEMP;
+    switchState(S_ERROR_TEMP);
 
 
 }
 void errorEvent(void){
     //a more permanent error has occurred, do nothing or else relay problem via bluetooth
-    currentState = S_ERROR_PERM;
+    switchState(S_ERROR_PERM);
 
 }
 void dataChanged(void){
     //data changed prior to the ble_timer expiring
-    currentState = S_TRANSMIT;
+    switchState(S_TRANSMIT);
 
 }
 
 //not actually an event, just something that happens when there isn't anything else to do
 void returnToSleep(void){
-    currentState = S_SLEEP;
+    switchState(S_SLEEP);
 }
 
 

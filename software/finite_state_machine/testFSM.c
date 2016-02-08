@@ -5,14 +5,6 @@
 #include "fsm.c"
 
 
-
-//define the interrupts and errors as booleans for testing purposes
-bool checkTimerInterrupt;
-bool bleTimerInterrupt;
-bool dataChangeInterrupt;
-bool noBandageError;
-bool otherError;
-
 //where things will actually be happening
 void main(void) {
 //start out in the initialize state
