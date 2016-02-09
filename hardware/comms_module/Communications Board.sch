@@ -9126,6 +9126,7 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <approved hash="104,1,309.88,193.04,U1,VDDR_RF,VDDR,,,"/>
 <approved hash="104,1,360.68,134.62,U1,VSS,GND,,,"/>
 <approved hash="104,2,132.08,60.96,U3,VCC,+3V3,,,"/>
+<approved hash="104,1,284.48,30.48,U4,VCC,BAT+,,,"/>
 <approved hash="106,1,416.56,157.48,ANTENNA,,,,,"/>
 <approved hash="113,1,109.897,7.42527,B_EN,,,,,"/>
 <approved hash="113,1,122.597,17.5853,B_CONN,,,,,"/>
