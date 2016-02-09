@@ -28,17 +28,7 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>Application</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
 			<name>Board</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
-			<name>Drivers</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
@@ -58,52 +48,12 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>PROFILES</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
-			<name>Startup</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
-			<name>TOOLS</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
-			<name>Application/util.c</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/common/cc26xx/util.c</locationURI>
-		</link>
-		<link>
-			<name>Application/util.h</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/common/cc26xx/util.h</locationURI>
-		</link>
-		<link>
 			<name>Board/Devices</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
 			<name>Board/Interfaces</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
-			<name>Drivers/PIN</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
-			<name>Drivers/SPI</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
-			<name>Drivers/UART</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
@@ -188,126 +138,6 @@
 			<locationURI>PARENT-7-ORG_PROJ_DIR/Components/osal/include/osal_snv.h</locationURI>
 		</link>
 		<link>
-			<name>PROFILES/devinfoservice.c</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/Profiles/DevInfo/CC26xx/devinfoservice.c</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/devinfoservice.h</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/Profiles/DevInfo/devinfoservice.h</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/ext_flash_layout.h</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/Profiles/OAD/CC26xx/ext_flash_layout.h</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/gatt_profile_uuid.h</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/Include/gatt_profile_uuid.h</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/gatt_uuid.c</name>
-			<type>1</type>
-			<locationURI>PARENT-7-ORG_PROJ_DIR/Components/ble/host/gatt_uuid.c</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/gatt_uuid.h</name>
-			<type>1</type>
-			<locationURI>PARENT-7-ORG_PROJ_DIR/Components/ble/include/gatt_uuid.h</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/gattservapp_util.c</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/Profiles/GATT/gattservapp_util.c</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/oad.c</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/Profiles/OAD/CC26xx/oad.c</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/oad.h</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/Profiles/OAD/CC26xx/oad.h</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/oad_target.h</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/Profiles/OAD/CC26xx/oad_target.h</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/oad_target_externalFlash.c</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/Profiles/OAD/CC26xx/oad_target_externalFlash.c</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/peripheral.c</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/Profiles/Roles/CC26xx/peripheral.c</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/peripheral.h</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/Profiles/Roles/CC26xx/peripheral.h</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/simpleGATTprofile.c</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/Profiles/SimpleProfile/CC26xx/simpleGATTprofile.c</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/simpleGATTprofile.h</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/Profiles/SimpleProfile/simpleGATTprofile.h</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/simplekeys.c</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/Profiles/Keys/CC26xx/simplekeys.c</locationURI>
-		</link>
-		<link>
-			<name>PROFILES/simplekeys.h</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/Profiles/Keys/simplekeys.h</locationURI>
-		</link>
-		<link>
-			<name>Startup/ccfg_appBLE.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-ORG_PROJ_DIR/Config/ccfg_appBLE.c</locationURI>
-		</link>
-		<link>
-			<name>Startup/main.c</name>
-			<type>1</type>
-			<locationURI>PARENT-3-ORG_PROJ_DIR/Source/Application/main.c</locationURI>
-		</link>
-		<link>
-			<name>TOOLS/appBLE.cfg</name>
-			<type>1</type>
-			<locationURI>PARENT-3-ORG_PROJ_DIR/CCS/Config/appBLE.cfg</locationURI>
-		</link>
-		<link>
-			<name>TOOLS/cc26xx_ble_app.cmd</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/common/cc26xx/CCS/cc26xx_ble_app.cmd</locationURI>
-		</link>
-		<link>
-			<name>TOOLS/cc26xx_ble_app_oad.cmd</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/common/cc26xx/CCS/cc26xx_ble_app_oad.cmd</locationURI>
-		</link>
-		<link>
-			<name>TOOLS/ccsCompilerDefines.bcfg</name>
-			<type>1</type>
-			<locationURI>PARENT-3-ORG_PROJ_DIR/CCS/Config/ccsCompilerDefines.bcfg</locationURI>
-		</link>
-		<link>
-			<name>TOOLS/ccsLinkerDefines.cmd</name>
-			<type>1</type>
-			<locationURI>PARENT-3-ORG_PROJ_DIR/CCS/Config/ccsLinkerDefines.cmd</locationURI>
-		</link>
-		<link>
 			<name>Board/Devices/ext_flash.c</name>
 			<type>1</type>
 			<locationURI>TI_RTOS_BOARD_BASE/Devices/ext_flash.c</locationURI>
@@ -326,61 +156,6 @@
 			<name>Board/Interfaces/bsp_spi.h</name>
 			<type>1</type>
 			<locationURI>TI_RTOS_BOARD_BASE/Interfaces/bsp_spi.h</locationURI>
-		</link>
-		<link>
-			<name>Drivers/PIN/PIN.h</name>
-			<type>1</type>
-			<locationURI>TI_RTOS_DRIVERS_BASE/ti/drivers/PIN.h</locationURI>
-		</link>
-		<link>
-			<name>Drivers/PIN/PINCC26XX.c</name>
-			<type>1</type>
-			<locationURI>TI_RTOS_DRIVERS_BASE/ti/drivers/pin/PINCC26XX.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/PIN/PINCC26XX.h</name>
-			<type>1</type>
-			<locationURI>TI_RTOS_DRIVERS_BASE/ti/drivers/pin/PINCC26XX.h</locationURI>
-		</link>
-		<link>
-			<name>Drivers/SPI/SPI.c</name>
-			<type>1</type>
-			<locationURI>TI_RTOS_DRIVERS_BASE/ti/drivers/SPI.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/SPI/SPI.h</name>
-			<type>1</type>
-			<locationURI>TI_RTOS_DRIVERS_BASE/ti/drivers/SPI.h</locationURI>
-		</link>
-		<link>
-			<name>Drivers/SPI/SPICC26XXDMA.c</name>
-			<type>1</type>
-			<locationURI>TI_RTOS_DRIVERS_BASE/ti/drivers/spi/SPICC26XXDMA.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/SPI/SPICC26XXDMA.h</name>
-			<type>1</type>
-			<locationURI>TI_RTOS_DRIVERS_BASE/ti/drivers/spi/SPICC26XXDMA.h</locationURI>
-		</link>
-		<link>
-			<name>Drivers/UART/UART.c</name>
-			<type>1</type>
-			<locationURI>TI_RTOS_DRIVERS_BASE/ti/drivers/UART.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/UART/UART.h</name>
-			<type>1</type>
-			<locationURI>TI_RTOS_DRIVERS_BASE/ti/drivers/UART.h</locationURI>
-		</link>
-		<link>
-			<name>Drivers/UART/UARTCC26XX.c</name>
-			<type>1</type>
-			<locationURI>TI_RTOS_DRIVERS_BASE/ti/drivers/uart/UARTCC26XX.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/UART/UARTCC26XX.h</name>
-			<type>1</type>
-			<locationURI>TI_RTOS_DRIVERS_BASE/ti/drivers/uart/UARTCC26XX.h</locationURI>
 		</link>
 	</linkedResources>
 	<variableList>
