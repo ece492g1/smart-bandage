@@ -237,7 +237,7 @@ local.properties
 *.pydevproject
 
 # CDT-specific (C/C++ Development Tooling)
-.cproject
+#.cproject
 
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
