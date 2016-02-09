@@ -3753,6 +3753,97 @@ MSOP&lt;br&gt;
 <text x="-2.8702" y="-0.635" size="1.27" layer="25" ratio="6" rot="SR0">&gt;NAME</text>
 <text x="-3.4544" y="-0.635" size="1.27" layer="27" ratio="6" rot="SR0">&gt;VALUE</text>
 </package>
+<package name="DSF6">
+<smd name="1" x="-0.335" y="0.3500125" dx="0.508" dy="0.19811875" layer="1"/>
+<smd name="2" x="-0.335" y="0" dx="0.508" dy="0.19811875" layer="1"/>
+<smd name="3" x="-0.335" y="-0.3500125" dx="0.508" dy="0.19811875" layer="1"/>
+<smd name="4" x="0.335" y="-0.3500125" dx="0.508" dy="0.19811875" layer="1" rot="R180"/>
+<smd name="5" x="0.335" y="0" dx="0.508" dy="0.19811875" layer="1" rot="R180"/>
+<smd name="6" x="0.335" y="0.3500125" dx="0.508" dy="0.19811875" layer="1" rot="R180"/>
+<polygon width="0" layer="31">
+<vertex x="-0.5842" y="0.4318"/>
+<vertex x="-0.5842" y="0.2794"/>
+<vertex x="-0.1016" y="0.2794"/>
+<vertex x="-0.1016" y="0.4318"/>
+</polygon>
+<polygon width="0" layer="31">
+<vertex x="-0.5842" y="0.0762"/>
+<vertex x="-0.5842" y="-0.0762"/>
+<vertex x="-0.1016" y="-0.0762"/>
+<vertex x="-0.1016" y="0.0762"/>
+</polygon>
+<polygon width="0" layer="31">
+<vertex x="-0.5842" y="-0.2794"/>
+<vertex x="-0.5842" y="-0.4318"/>
+<vertex x="-0.1016" y="-0.4318"/>
+<vertex x="-0.1016" y="-0.2794"/>
+</polygon>
+<polygon width="0" layer="31">
+<vertex x="0.1016" y="-0.2794"/>
+<vertex x="0.1016" y="-0.4318"/>
+<vertex x="0.5842" y="-0.4318"/>
+<vertex x="0.5842" y="-0.2794"/>
+</polygon>
+<polygon width="0" layer="31">
+<vertex x="0.1016" y="0.0762"/>
+<vertex x="0.1016" y="-0.0762"/>
+<vertex x="0.5842" y="-0.0762"/>
+<vertex x="0.5842" y="0.0762"/>
+</polygon>
+<polygon width="0" layer="31">
+<vertex x="0.1016" y="0.4318"/>
+<vertex x="0.1016" y="0.2794"/>
+<vertex x="0.5842" y="0.2794"/>
+<vertex x="0.5842" y="0.4318"/>
+</polygon>
+<polygon width="0" layer="29">
+<vertex x="-0.6604" y="0.508"/>
+<vertex x="-0.6604" y="0.1778"/>
+<vertex x="0" y="0.1778"/>
+<vertex x="0" y="0.508"/>
+</polygon>
+<polygon width="0" layer="29">
+<vertex x="-0.6604" y="0.1778"/>
+<vertex x="-0.6604" y="-0.1778"/>
+<vertex x="0" y="-0.1778"/>
+<vertex x="0" y="0.1778"/>
+</polygon>
+<polygon width="0" layer="29">
+<vertex x="-0.6604" y="-0.1778"/>
+<vertex x="-0.6604" y="-0.508"/>
+<vertex x="0" y="-0.508"/>
+<vertex x="0" y="-0.1778"/>
+</polygon>
+<polygon width="0" layer="29">
+<vertex x="0" y="-0.1778"/>
+<vertex x="0" y="-0.508"/>
+<vertex x="0.6604" y="-0.508"/>
+<vertex x="0.6604" y="-0.1778"/>
+</polygon>
+<polygon width="0" layer="29">
+<vertex x="0" y="0.1778"/>
+<vertex x="0" y="-0.1778"/>
+<vertex x="0.6604" y="-0.1778"/>
+<vertex x="0.6604" y="0.1778"/>
+</polygon>
+<polygon width="0" layer="29">
+<vertex x="0" y="0.508"/>
+<vertex x="0" y="0.1778"/>
+<vertex x="0.6604" y="0.1778"/>
+<vertex x="0.6604" y="0.508"/>
+</polygon>
+<wire x1="-0.5334" y1="-0.5334" x2="0.5334" y2="-0.5334" width="0.1524" layer="21"/>
+<wire x1="0.5334" y1="-0.5334" x2="0.5334" y2="0.5334" width="0.1524" layer="21"/>
+<wire x1="0.5334" y1="0.5334" x2="0.3048" y2="0.5334" width="0.1524" layer="21"/>
+<wire x1="0.3048" y1="0.5334" x2="-0.3048" y2="0.5334" width="0.1524" layer="21"/>
+<wire x1="-0.3048" y1="0.5334" x2="-0.5334" y2="0.5334" width="0.1524" layer="21"/>
+<wire x1="-0.5334" y1="0.5334" x2="-0.5334" y2="-0.5334" width="0.1524" layer="21"/>
+<wire x1="-0.8128" y1="0.3556" x2="-0.9652" y2="0.3556" width="0.1524" layer="21" curve="-180"/>
+<wire x1="-0.9652" y1="0.3556" x2="-0.8128" y2="0.3556" width="0.1524" layer="21" curve="-180"/>
+<wire x1="0.3048" y1="0.5334" x2="-0.3048" y2="0.5334" width="0" layer="21" curve="-180"/>
+<text x="-2.8702" y="0.635" size="1.27" layer="25" ratio="6" rot="SR0">&gt;NAME</text>
+<text x="-3.4544" y="-1.905" size="1.27" layer="27" ratio="6" rot="SR0">&gt;VALUE</text>
+</package>
 </packages>
 <symbols>
 <symbol name="74LV4051">
@@ -4074,6 +4165,33 @@ MSOP&lt;br&gt;
 <wire x1="48.26" y1="5.08" x2="7.62" y2="5.08" width="0.1524" layer="94"/>
 <text x="23.2156" y="9.1186" size="2.0828" layer="95" ratio="6" rot="SR0">&gt;NAME</text>
 <text x="22.2758" y="6.5786" size="2.0828" layer="96" ratio="6" rot="SR0">&gt;VALUE</text>
+</symbol>
+<symbol name="SN74AUP1G02_DSF_6">
+<pin name="A" x="0" y="0" direction="in"/>
+<pin name="B" x="0" y="-2.54" direction="in"/>
+<pin name="GND" x="25.4" y="-17.78" direction="pwr" rot="R90"/>
+<pin name="Y" x="55.88" y="0" direction="out" rot="R180"/>
+<pin name="VCC" x="30.48" y="-17.78" direction="pwr" rot="R90"/>
+<wire x1="7.62" y1="5.08" x2="7.62" y2="0" width="0.1524" layer="94"/>
+<wire x1="7.62" y1="0" x2="7.62" y2="-2.54" width="0.1524" layer="94"/>
+<wire x1="7.62" y1="-2.54" x2="7.62" y2="-10.16" width="0.1524" layer="94"/>
+<wire x1="7.62" y1="-10.16" x2="48.26" y2="-10.16" width="0.1524" layer="94"/>
+<wire x1="48.26" y1="-10.16" x2="48.26" y2="0" width="0.1524" layer="94"/>
+<wire x1="48.26" y1="0" x2="48.26" y2="5.08" width="0.1524" layer="94"/>
+<wire x1="48.26" y1="5.08" x2="7.62" y2="5.08" width="0.1524" layer="94"/>
+<text x="23.2156" y="6.5786" size="2.0828" layer="95" ratio="6" rot="SR0">&gt;NAME</text>
+<wire x1="16.51" y1="1.27" x2="16.51" y2="0" width="0.254" layer="94"/>
+<wire x1="16.51" y1="0" x2="16.51" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="16.51" y1="-2.54" x2="16.51" y2="-3.81" width="0.254" layer="94"/>
+<wire x1="16.51" y1="-3.81" x2="22.86" y2="-1.27" width="0.254" layer="94"/>
+<wire x1="22.86" y1="-1.27" x2="16.51" y2="1.27" width="0.254" layer="94"/>
+<wire x1="16.51" y1="0" x2="7.62" y2="0" width="0.254" layer="94"/>
+<wire x1="7.62" y1="-2.54" x2="16.51" y2="-2.54" width="0.254" layer="94"/>
+<circle x="22.86" y="-1.27" radius="0.254" width="0.254" layer="94"/>
+<wire x1="22.86" y1="-1.27" x2="31.75" y2="-1.27" width="0.254" layer="94"/>
+<wire x1="31.75" y1="-1.27" x2="31.75" y2="0" width="0.254" layer="94"/>
+<wire x1="31.75" y1="0" x2="48.26" y2="0" width="0.254" layer="94"/>
+<text x="17.78" y="1.27" size="2.0828" layer="94" ratio="6">NOR</text>
 </symbol>
 </symbols>
 <devicesets>
@@ -4402,6 +4520,36 @@ Symbol from Sparkfun Libs</description>
 <attribute name="MANUFACTURER_PART_NUMBER" value="tca9554a_pw_16" constant="no"/>
 <attribute name="PACKAGE_DESIGNATOR" value="PW" constant="no"/>
 <attribute name="PIN_COUNT" value="16" constant="no"/>
+<attribute name="VENDOR" value="Texas Instruments" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="SN74AUP1G02_DSF_6" prefix="U">
+<gates>
+<gate name="A" symbol="SN74AUP1G02_DSF_6" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="DSF6">
+<connects>
+<connect gate="A" pin="A" pad="1"/>
+<connect gate="A" pin="B" pad="2"/>
+<connect gate="A" pin="GND" pad="3"/>
+<connect gate="A" pin="VCC" pad="6"/>
+<connect gate="A" pin="Y" pad="4"/>
+</connects>
+<technologies>
+<technology name="">
+<attribute name="DATASHEETURL" value="http://www.ti.com/lit/gpn/SN74AUP1G02" constant="no"/>
+<attribute name="DESCRIPTION" value="Low-Power Single 2-Input Positive-NOR Gate" constant="no"/>
+<attribute name="FAMILY_NAME" value="LL NOR GATE" constant="no"/>
+<attribute name="GENERIC_PART_NUMBER" value="SN74AUP1G02" constant="no"/>
+<attribute name="INDUSTRY_STD_PKG_TYPE" value="SON" constant="no"/>
+<attribute name="MANUFACTURER" value="Texas Instruments" constant="no"/>
+<attribute name="MANUFACTURER_PART_NUMBER" value="sn74aup1g02_dsf_6" constant="no"/>
+<attribute name="PACKAGE_DESIGNATOR" value="DSF" constant="no"/>
+<attribute name="PIN_COUNT" value="6" constant="no"/>
 <attribute name="VENDOR" value="Texas Instruments" constant="no"/>
 </technology>
 </technologies>
@@ -7701,6 +7849,8 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <part name="SJ1" library="jumper" deviceset="SJ2W" device=""/>
 <part name="+3V5" library="supply1" deviceset="+3V3" device=""/>
 <part name="R10" library="SparkFun-Passives" deviceset="RESISTOR" device="0603-RES" value="500"/>
+<part name="U4" library="Capstone Library" deviceset="SN74AUP1G02_DSF_6" device=""/>
+<part name="GND54" library="SparkFun" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -7825,7 +7975,7 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <instance part="C9" gate="G$1" x="248.92" y="25.4"/>
 <instance part="GND18" gate="1" x="259.08" y="5.08"/>
 <instance part="R6" gate="G$1" x="314.96" y="63.5" rot="R90"/>
-<instance part="+3V4" gate="G$1" x="236.22" y="63.5" rot="R90"/>
+<instance part="+3V4" gate="G$1" x="241.3" y="48.26" rot="R90"/>
 <instance part="C10" gate="G$1" x="220.98" y="25.4"/>
 <instance part="GND21" gate="1" x="220.98" y="20.32"/>
 <instance part="U$8" gate="G$2" x="180.34" y="104.14"/>
@@ -7896,6 +8046,8 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <instance part="SJ1" gate="G$1" x="91.44" y="48.26" rot="R90"/>
 <instance part="+3V5" gate="G$1" x="83.82" y="55.88"/>
 <instance part="R10" gate="G$1" x="281.94" y="93.98"/>
+<instance part="U4" gate="A" x="254" y="48.26"/>
+<instance part="GND54" gate="1" x="279.4" y="27.94"/>
 </instances>
 <busses>
 </busses>
@@ -8104,6 +8256,10 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <pinref part="GND38" gate="1" pin="GND"/>
 <pinref part="R10" gate="G$1" pin="2"/>
 </segment>
+<segment>
+<pinref part="U4" gate="A" pin="GND"/>
+<pinref part="GND54" gate="1" pin="GND"/>
+</segment>
 </net>
 <net name="V_PREBUCK" class="0">
 <segment>
@@ -8173,6 +8329,11 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <pinref part="B_EN" gate="G$1" pin="2"/>
 <wire x1="106.68" y1="7.62" x2="96.52" y2="7.62" width="0.1524" layer="91"/>
 <label x="96.52" y="7.62" size="1.778" layer="95"/>
+</segment>
+<segment>
+<pinref part="U4" gate="A" pin="VCC"/>
+<wire x1="284.48" y1="30.48" x2="284.48" y2="17.78" width="0.1524" layer="91"/>
+<label x="284.48" y="17.78" size="1.778" layer="95" rot="R90"/>
 </segment>
 </net>
 <net name="N$23" class="0">
@@ -8373,8 +8534,9 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <junction x="220.98" y="30.48"/>
 </segment>
 <segment>
-<wire x1="256.54" y1="63.5" x2="238.76" y2="63.5" width="0.1524" layer="91"/>
+<wire x1="254" y1="48.26" x2="243.84" y2="48.26" width="0.1524" layer="91"/>
 <pinref part="+3V4" gate="G$1" pin="+3V3"/>
+<pinref part="U4" gate="A" pin="A"/>
 </segment>
 <segment>
 <wire x1="144.78" y1="182.88" x2="144.78" y2="172.72" width="0.1524" layer="91"/>
@@ -8627,9 +8789,11 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 </net>
 <net name="SYSOFF" class="0">
 <segment>
-<wire x1="292.1" y1="58.42" x2="314.96" y2="58.42" width="0.1524" layer="91"/>
-<label x="299.72" y="58.42" size="1.778" layer="95"/>
+<wire x1="314.96" y1="48.26" x2="314.96" y2="58.42" width="0.1524" layer="91"/>
+<label x="317.5" y="48.26" size="1.778" layer="95" rot="R90"/>
 <pinref part="R6" gate="G$1" pin="1"/>
+<pinref part="U4" gate="A" pin="Y"/>
+<wire x1="314.96" y1="48.26" x2="309.88" y2="48.26" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="U$2" gate="G$1" pin="SYSOFF"/>
@@ -8832,9 +8996,13 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <pinref part="R15" gate="G$1" pin="2"/>
 <pinref part="R14" gate="G$1" pin="1"/>
 <wire x1="259.08" y1="35.56" x2="259.08" y2="30.48" width="0.1524" layer="91"/>
-<wire x1="271.78" y1="35.56" x2="259.08" y2="35.56" width="0.1524" layer="91"/>
-<junction x="259.08" y="35.56"/>
 <label x="259.08" y="35.56" size="1.778" layer="95"/>
+<wire x1="259.08" y1="35.56" x2="259.08" y2="40.64" width="0.1524" layer="91"/>
+<wire x1="259.08" y1="40.64" x2="248.92" y2="40.64" width="0.1524" layer="91"/>
+<wire x1="248.92" y1="40.64" x2="248.92" y2="45.72" width="0.1524" layer="91"/>
+<pinref part="U4" gate="A" pin="B"/>
+<wire x1="248.92" y1="45.72" x2="254" y2="45.72" width="0.1524" layer="91"/>
+<junction x="259.08" y="35.56"/>
 </segment>
 </net>
 <net name="PROG_VCC" class="0">

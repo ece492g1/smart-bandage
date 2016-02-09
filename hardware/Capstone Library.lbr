@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.5" unitdist="mm" unit="mm" style="lines" multiple="1" display="yes" altdistance="0.025" altunitdist="inch" altunit="inch"/>
+<grid distance="0.05" unitdist="inch" unit="inch" style="lines" multiple="1" display="yes" altdistance="0.025" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="yes"/>
@@ -38,7 +38,7 @@
 <layer number="28" name="bValues" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="29" name="tStop" color="7" fill="3" visible="yes" active="yes"/>
 <layer number="30" name="bStop" color="7" fill="6" visible="no" active="yes"/>
-<layer number="31" name="tCream" color="7" fill="4" visible="no" active="yes"/>
+<layer number="31" name="tCream" color="7" fill="4" visible="yes" active="yes"/>
 <layer number="32" name="bCream" color="7" fill="5" visible="no" active="yes"/>
 <layer number="33" name="tFinish" color="6" fill="3" visible="no" active="yes"/>
 <layer number="34" name="bFinish" color="6" fill="6" visible="no" active="yes"/>
@@ -1665,6 +1665,97 @@ Yageo CFR series &lt;a href="http://www.yageo.com/pdf/yageo/Leaded-R_CFR_2008.pd
 <text x="-2.8702" y="-0.635" size="1.27" layer="25" ratio="6" rot="SR0">&gt;NAME</text>
 <text x="-3.4544" y="-0.635" size="1.27" layer="27" ratio="6" rot="SR0">&gt;VALUE</text>
 </package>
+<package name="DSF6">
+<smd name="1" x="-0.335" y="0.3500125" dx="0.508" dy="0.19811875" layer="1"/>
+<smd name="2" x="-0.335" y="0" dx="0.508" dy="0.19811875" layer="1"/>
+<smd name="3" x="-0.335" y="-0.3500125" dx="0.508" dy="0.19811875" layer="1"/>
+<smd name="4" x="0.335" y="-0.3500125" dx="0.508" dy="0.19811875" layer="1" rot="R180"/>
+<smd name="5" x="0.335" y="0" dx="0.508" dy="0.19811875" layer="1" rot="R180"/>
+<smd name="6" x="0.335" y="0.3500125" dx="0.508" dy="0.19811875" layer="1" rot="R180"/>
+<polygon width="0" layer="31">
+<vertex x="-0.5842" y="0.4318"/>
+<vertex x="-0.5842" y="0.2794"/>
+<vertex x="-0.1016" y="0.2794"/>
+<vertex x="-0.1016" y="0.4318"/>
+</polygon>
+<polygon width="0" layer="31">
+<vertex x="-0.5842" y="0.0762"/>
+<vertex x="-0.5842" y="-0.0762"/>
+<vertex x="-0.1016" y="-0.0762"/>
+<vertex x="-0.1016" y="0.0762"/>
+</polygon>
+<polygon width="0" layer="31">
+<vertex x="-0.5842" y="-0.2794"/>
+<vertex x="-0.5842" y="-0.4318"/>
+<vertex x="-0.1016" y="-0.4318"/>
+<vertex x="-0.1016" y="-0.2794"/>
+</polygon>
+<polygon width="0" layer="31">
+<vertex x="0.1016" y="-0.2794"/>
+<vertex x="0.1016" y="-0.4318"/>
+<vertex x="0.5842" y="-0.4318"/>
+<vertex x="0.5842" y="-0.2794"/>
+</polygon>
+<polygon width="0" layer="31">
+<vertex x="0.1016" y="0.0762"/>
+<vertex x="0.1016" y="-0.0762"/>
+<vertex x="0.5842" y="-0.0762"/>
+<vertex x="0.5842" y="0.0762"/>
+</polygon>
+<polygon width="0" layer="31">
+<vertex x="0.1016" y="0.4318"/>
+<vertex x="0.1016" y="0.2794"/>
+<vertex x="0.5842" y="0.2794"/>
+<vertex x="0.5842" y="0.4318"/>
+</polygon>
+<polygon width="0" layer="29">
+<vertex x="-0.6604" y="0.508"/>
+<vertex x="-0.6604" y="0.1778"/>
+<vertex x="0" y="0.1778"/>
+<vertex x="0" y="0.508"/>
+</polygon>
+<polygon width="0" layer="29">
+<vertex x="-0.6604" y="0.1778"/>
+<vertex x="-0.6604" y="-0.1778"/>
+<vertex x="0" y="-0.1778"/>
+<vertex x="0" y="0.1778"/>
+</polygon>
+<polygon width="0" layer="29">
+<vertex x="-0.6604" y="-0.1778"/>
+<vertex x="-0.6604" y="-0.508"/>
+<vertex x="0" y="-0.508"/>
+<vertex x="0" y="-0.1778"/>
+</polygon>
+<polygon width="0" layer="29">
+<vertex x="0" y="-0.1778"/>
+<vertex x="0" y="-0.508"/>
+<vertex x="0.6604" y="-0.508"/>
+<vertex x="0.6604" y="-0.1778"/>
+</polygon>
+<polygon width="0" layer="29">
+<vertex x="0" y="0.1778"/>
+<vertex x="0" y="-0.1778"/>
+<vertex x="0.6604" y="-0.1778"/>
+<vertex x="0.6604" y="0.1778"/>
+</polygon>
+<polygon width="0" layer="29">
+<vertex x="0" y="0.508"/>
+<vertex x="0" y="0.1778"/>
+<vertex x="0.6604" y="0.1778"/>
+<vertex x="0.6604" y="0.508"/>
+</polygon>
+<wire x1="-0.5334" y1="-0.5334" x2="0.5334" y2="-0.5334" width="0.1524" layer="21"/>
+<wire x1="0.5334" y1="-0.5334" x2="0.5334" y2="0.5334" width="0.1524" layer="21"/>
+<wire x1="0.5334" y1="0.5334" x2="0.3048" y2="0.5334" width="0.1524" layer="21"/>
+<wire x1="0.3048" y1="0.5334" x2="-0.3048" y2="0.5334" width="0.1524" layer="21"/>
+<wire x1="-0.3048" y1="0.5334" x2="-0.5334" y2="0.5334" width="0.1524" layer="21"/>
+<wire x1="-0.5334" y1="0.5334" x2="-0.5334" y2="-0.5334" width="0.1524" layer="21"/>
+<wire x1="-0.8128" y1="0.3556" x2="-0.9652" y2="0.3556" width="0.1524" layer="21" curve="-180"/>
+<wire x1="-0.9652" y1="0.3556" x2="-0.8128" y2="0.3556" width="0.1524" layer="21" curve="-180"/>
+<wire x1="0.3048" y1="0.5334" x2="-0.3048" y2="0.5334" width="0" layer="21" curve="-180"/>
+<text x="-2.8702" y="0.635" size="1.27" layer="25" ratio="6" rot="SR0">&gt;NAME</text>
+<text x="-3.4544" y="-1.905" size="1.27" layer="27" ratio="6" rot="SR0">&gt;VALUE</text>
+</package>
 </packages>
 <symbols>
 <symbol name="SABLE-X-BLE-MODULE">
@@ -2061,6 +2152,33 @@ Yageo CFR series &lt;a href="http://www.yageo.com/pdf/yageo/Leaded-R_CFR_2008.pd
 <wire x1="48.26" y1="5.08" x2="7.62" y2="5.08" width="0.1524" layer="94"/>
 <text x="23.2156" y="9.1186" size="2.0828" layer="95" ratio="6" rot="SR0">&gt;NAME</text>
 <text x="22.2758" y="6.5786" size="2.0828" layer="96" ratio="6" rot="SR0">&gt;VALUE</text>
+</symbol>
+<symbol name="SN74AUP1G02_DSF_6">
+<pin name="A" x="0" y="0" direction="in"/>
+<pin name="B" x="0" y="-2.54" direction="in"/>
+<pin name="GND" x="25.4" y="-17.78" direction="pwr" rot="R90"/>
+<pin name="Y" x="55.88" y="0" direction="out" rot="R180"/>
+<pin name="VCC" x="30.48" y="-17.78" direction="pwr" rot="R90"/>
+<wire x1="7.62" y1="5.08" x2="7.62" y2="0" width="0.1524" layer="94"/>
+<wire x1="7.62" y1="0" x2="7.62" y2="-2.54" width="0.1524" layer="94"/>
+<wire x1="7.62" y1="-2.54" x2="7.62" y2="-10.16" width="0.1524" layer="94"/>
+<wire x1="7.62" y1="-10.16" x2="48.26" y2="-10.16" width="0.1524" layer="94"/>
+<wire x1="48.26" y1="-10.16" x2="48.26" y2="0" width="0.1524" layer="94"/>
+<wire x1="48.26" y1="0" x2="48.26" y2="5.08" width="0.1524" layer="94"/>
+<wire x1="48.26" y1="5.08" x2="7.62" y2="5.08" width="0.1524" layer="94"/>
+<text x="23.2156" y="6.5786" size="2.0828" layer="95" ratio="6" rot="SR0">&gt;NAME</text>
+<wire x1="16.51" y1="1.27" x2="16.51" y2="0" width="0.254" layer="94"/>
+<wire x1="16.51" y1="0" x2="16.51" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="16.51" y1="-2.54" x2="16.51" y2="-3.81" width="0.254" layer="94"/>
+<wire x1="16.51" y1="-3.81" x2="22.86" y2="-1.27" width="0.254" layer="94"/>
+<wire x1="22.86" y1="-1.27" x2="16.51" y2="1.27" width="0.254" layer="94"/>
+<wire x1="16.51" y1="0" x2="7.62" y2="0" width="0.254" layer="94"/>
+<wire x1="7.62" y1="-2.54" x2="16.51" y2="-2.54" width="0.254" layer="94"/>
+<circle x="22.86" y="-1.27" radius="0.254" width="0.254" layer="94"/>
+<wire x1="22.86" y1="-1.27" x2="31.75" y2="-1.27" width="0.254" layer="94"/>
+<wire x1="31.75" y1="-1.27" x2="31.75" y2="0" width="0.254" layer="94"/>
+<wire x1="31.75" y1="0" x2="48.26" y2="0" width="0.254" layer="94"/>
+<text x="17.78" y="1.27" size="2.0828" layer="94" ratio="6">NOR</text>
 </symbol>
 </symbols>
 <devicesets>
@@ -2511,6 +2629,36 @@ INDUCTOR POWER 3.3UH 4.0A SMD&lt;br&gt;
 <attribute name="MANUFACTURER_PART_NUMBER" value="tca9554a_pw_16" constant="no"/>
 <attribute name="PACKAGE_DESIGNATOR" value="PW" constant="no"/>
 <attribute name="PIN_COUNT" value="16" constant="no"/>
+<attribute name="VENDOR" value="Texas Instruments" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="SN74AUP1G02_DSF_6" prefix="U">
+<gates>
+<gate name="A" symbol="SN74AUP1G02_DSF_6" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="DSF6">
+<connects>
+<connect gate="A" pin="A" pad="1"/>
+<connect gate="A" pin="B" pad="2"/>
+<connect gate="A" pin="GND" pad="3"/>
+<connect gate="A" pin="VCC" pad="6"/>
+<connect gate="A" pin="Y" pad="4"/>
+</connects>
+<technologies>
+<technology name="">
+<attribute name="DATASHEETURL" value="http://www.ti.com/lit/gpn/SN74AUP1G02" constant="no"/>
+<attribute name="DESCRIPTION" value="Low-Power Single 2-Input Positive-NOR Gate" constant="no"/>
+<attribute name="FAMILY_NAME" value="LL NOR GATE" constant="no"/>
+<attribute name="GENERIC_PART_NUMBER" value="SN74AUP1G02" constant="no"/>
+<attribute name="INDUSTRY_STD_PKG_TYPE" value="SON" constant="no"/>
+<attribute name="MANUFACTURER" value="Texas Instruments" constant="no"/>
+<attribute name="MANUFACTURER_PART_NUMBER" value="sn74aup1g02_dsf_6" constant="no"/>
+<attribute name="PACKAGE_DESIGNATOR" value="DSF" constant="no"/>
+<attribute name="PIN_COUNT" value="6" constant="no"/>
 <attribute name="VENDOR" value="Texas Instruments" constant="no"/>
 </technology>
 </technologies>
