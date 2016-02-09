@@ -1,5 +1,12 @@
+# Custom Entries
 
-# Created by https://www.gitignore.io/api/c++,c,atmelstudio,eagle,windows,linux,osx,composer,assembler
+## Cruft added by code composer
+software/comms_module/.metadata
+software/comms_module/RemoteSystemsTempFiles
+software/comms_module/*/*.Build/
+software/comms_module/SmartBandage/Tools/src
+software/comms_module/SmartBandage/.config
+# Created by https://www.gitignore.io/api/c++,c,atmelstudio,eagle,windows,linux,osx,composer,assembler,eclipse
 
 ### C++ ###
 # Compiled Object files
@@ -205,3 +212,48 @@ composer.phar
 *.[sS]
 *.bc
 
+### Eclipse ###
+
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+
+# Eclipse Core
+#.project
+
+# External tool builders
+.externalToolBuilders/
+
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# PyDev specific (Python IDE for Eclipse)
+*.pydevproject
+
+# CDT-specific (C/C++ Development Tooling)
+#.cproject
+
+# JDT-specific (Eclipse Java Development Tools)
+.classpath
+
+# Java annotation processor (APT)
+.factorypath
+
+# PDT-specific (PHP Development Tools)
+.buildpath
+
+# sbteclipse plugin
+.target
+
+# TeXlipse plugin
+.texlipse
+
+# STS (Spring Tool Suite)
+.springBeans
