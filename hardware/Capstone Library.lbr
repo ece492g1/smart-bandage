@@ -1195,25 +1195,25 @@ Yageo CFR series &lt;a href="http://www.yageo.com/pdf/yageo/Leaded-R_CFR_2008.pd
 <wire x1="-2.5654" y1="-2.5654" x2="2.5654" y2="-2.5654" width="0.1524" layer="21"/>
 <wire x1="-1.4986" y1="1.7272" x2="-2.1082" y2="1.7272" width="0.1524" layer="21" curve="-180"/>
 <wire x1="-2.1082" y1="1.7272" x2="-1.4986" y2="1.7272" width="0.1524" layer="21" curve="-180"/>
-<polygon width="0" layer="31">
+<polygon width="0.0254" layer="31">
 <vertex x="0.1016" y="-1.5748"/>
 <vertex x="1.5748" y="-1.5748"/>
 <vertex x="1.5748" y="-0.1016"/>
 <vertex x="0.1016" y="-0.1016"/>
 </polygon>
-<polygon width="0" layer="31">
+<polygon width="0.0254" layer="31">
 <vertex x="-0.1016" y="-0.1016"/>
 <vertex x="-1.5748" y="-0.1016"/>
 <vertex x="-1.5748" y="-1.5748"/>
 <vertex x="-0.1016" y="-1.5748"/>
 </polygon>
-<polygon width="0" layer="31">
+<polygon width="0.0254" layer="31">
 <vertex x="-0.1016" y="1.5748"/>
 <vertex x="-1.5748" y="1.5748"/>
 <vertex x="-1.5748" y="0.1016"/>
 <vertex x="-0.1016" y="0.1016"/>
 </polygon>
-<polygon width="0" layer="31">
+<polygon width="0.0254" layer="31">
 <vertex x="0.1016" y="0.1016"/>
 <vertex x="1.5748" y="0.1016"/>
 <vertex x="1.5748" y="1.5748"/>
@@ -1711,37 +1711,37 @@ Yageo CFR series &lt;a href="http://www.yageo.com/pdf/yageo/Leaded-R_CFR_2008.pd
 <vertex x="0.5842" y="0.2794"/>
 <vertex x="0.5842" y="0.4318"/>
 </polygon>
-<polygon width="0" layer="29">
+<polygon width="0.0254" layer="29">
 <vertex x="-0.6604" y="0.508"/>
 <vertex x="-0.6604" y="0.1778"/>
 <vertex x="0" y="0.1778"/>
 <vertex x="0" y="0.508"/>
 </polygon>
-<polygon width="0" layer="29">
+<polygon width="0.0254" layer="29">
 <vertex x="-0.6604" y="0.1778"/>
 <vertex x="-0.6604" y="-0.1778"/>
 <vertex x="0" y="-0.1778"/>
 <vertex x="0" y="0.1778"/>
 </polygon>
-<polygon width="0" layer="29">
+<polygon width="0.0254" layer="29">
 <vertex x="-0.6604" y="-0.1778"/>
 <vertex x="-0.6604" y="-0.508"/>
 <vertex x="0" y="-0.508"/>
 <vertex x="0" y="-0.1778"/>
 </polygon>
-<polygon width="0" layer="29">
+<polygon width="0.0254" layer="29">
 <vertex x="0" y="-0.1778"/>
 <vertex x="0" y="-0.508"/>
 <vertex x="0.6604" y="-0.508"/>
 <vertex x="0.6604" y="-0.1778"/>
 </polygon>
-<polygon width="0" layer="29">
+<polygon width="0.0254" layer="29">
 <vertex x="0" y="0.1778"/>
 <vertex x="0" y="-0.1778"/>
 <vertex x="0.6604" y="-0.1778"/>
 <vertex x="0.6604" y="0.1778"/>
 </polygon>
-<polygon width="0" layer="29">
+<polygon width="0.0254" layer="29">
 <vertex x="0" y="0.508"/>
 <vertex x="0" y="0.1778"/>
 <vertex x="0.6604" y="0.1778"/>
