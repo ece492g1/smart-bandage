@@ -141,16 +141,6 @@
 			<locationURI>PARENT-7-ORG_PROJ_DIR/Components/ble/include/sm.h</locationURI>
 		</link>
 		<link>
-			<name>LIB/CC2640Stack.a</name>
-			<type>1</type>
-			<locationURI>PARENT-2-ORG_PROJ_DIR/Lib/CC2640Stack.a</locationURI>
-		</link>
-		<link>
-			<name>LIB/CC2640Stack_HCI_TL.a</name>
-			<type>1</type>
-			<locationURI>PARENT-2-ORG_PROJ_DIR/Lib/CC2640Stack_HCI_TL.a</locationURI>
-		</link>
-		<link>
 			<name>NPI/npi.c</name>
 			<type>1</type>
 			<locationURI>PARENT-5-ORG_PROJ_DIR/common/npi/npi_np/CC26xx/Stack/npi.c</locationURI>
@@ -444,7 +434,7 @@
 	<variableList>
 		<variable>
 			<name>CC26XXWARE</name>
-			<value>file:/F:/ti/tirtos_simplelink_2_13_00_06/products/cc26xxware_2_21_01_15600</value>
+			<value>$%7BTI_DIR%7D/tirtos_simplelink_2_13_00_06/products/cc26xxware_2_21_01_15600</value>
 		</variable>
 		<variable>
 			<name>ORG_PROJ_DIR</name>
@@ -452,7 +442,7 @@
 		</variable>
 		<variable>
 			<name>ORIGINAL_PROJECT_ROOT</name>
-			<value>file:/F:/ti/simplelink/ble_cc26xx_2_01_00_44423/Projects/ble/SimpleBLEPeripheral/CC26xx/CCS/SimpleBLEPeripheralStack</value>
+			<value>$%7BTI_DIR%7D/simplelink/ble_cc26xx_2_01_00_44423/Projects/ble/SimpleBLEPeripheral/CC26xx/CCS/SimpleBLEPeripheralStack</value>
 		</variable>
 	</variableList>
 </projectDescription>
