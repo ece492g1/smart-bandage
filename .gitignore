@@ -4,7 +4,8 @@
 software/comms_module/.metadata
 software/comms_module/RemoteSystemsTempFiles
 software/comms_module/*/*.Build/
-
+software/comms_module/SmartBandage/Tools/src
+software/comms_module/SmartBandage/.config
 # Created by https://www.gitignore.io/api/c++,c,atmelstudio,eagle,windows,linux,osx,composer,assembler,eclipse
 
 ### C++ ###
