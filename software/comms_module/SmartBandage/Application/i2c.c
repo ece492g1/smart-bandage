@@ -22,7 +22,7 @@ void SB_i2cInit(I2C_BitRate bitRate) {
 	I2C_Params_init(&params);
 
 	// Open I2C
-	handle = I2C_open(I2C_PERIPHERAL, &params);
+	handle = I2C_open(Board_I2C, &params);
 }
 
 void SB_i2cSleep() {
