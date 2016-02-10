@@ -2,7 +2,13 @@
   @file  main.c
   @brief Entry point of the application
 */
+#include <xdc/std.h>
+#include <xdc/cfg/global.h>
+#include <xdc/runtime/System.h>
 
+/* BIOS Header files */
+#include <ti/sysbios/BIOS.h>
+#include <ti/sysbios/knl/Task.h>
 #include <xdc/runtime/Error.h>
 
 #include <ti/sysbios/family/arm/cc26xx/Power.h>
@@ -11,6 +17,8 @@
 #include "ICall.h"
 #include "bcomdef.h"
 #include "peripheral.h"
+#include "i2c.h"
+#include "config.h"
 
 /* Header files required to enable instruction fetch cache */
 #include <inc/hw_memmap.h>
@@ -18,7 +26,7 @@
 
 #ifndef USE_DEFAULT_USER_CFG
 
-#include "bleUserConfig.h"
+#include "../ICall/bleUserConfig.h"
 
 // BLE user defined configuration
 bleUserCfg_t user0Cfg = BLE_USER_CFG;
@@ -50,5 +58,8 @@ int main()
     /* enable interrupts and start SYS/BIOS */
     BIOS_start();
     
+    /* enable I2C */
+    SB_i2cInit((I2C_BitRate) I2C_BITRATE);
+
     return 0;
 }
