@@ -24,13 +24,15 @@
 #endif
 
 /* I2C */
-#define Board_I2C0_SDA0             IOID_5
-#define Board_I2C0_SCL0             IOID_6
-#define Board_I2C0_SDA1             IOID_8
-#define Board_I2C0_SCL1             IOID_9
+#define Board_I2C0_SDA0             IOID_8
+#define Board_I2C0_SCL0             IOID_7
 
 /* Generic I2C instance identifiers */
 #define Board_I2C                   CC2650_I2C0
+/* Generic Crypto instance identifiers */
+#define Board_CRYPTO                CC2650_CRYPTO0
+/* Generic Watchdog instance identifiers */
+#define Board_WATCHDOG              CC2650_WATCHDOG0
 
 /*!
  *  @def    CC2650_I2CName
