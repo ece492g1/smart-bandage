@@ -11,8 +11,17 @@
 
 #include <ti/drivers/I2C.h>
 #include <ti/drivers/i2c/I2CCC26XX.h>
+#include <ti/sysbios/knl/Semaphore.h>
+#include "config.h"
 
-void SB_i2cInit(I2C_BitRate bitRate);
+typedef struct {
+	I2C_Transaction* baseTransaction;
+	Semaphore_Handle* completionSemaphore;
+	SB_Error completionResult;
+} SB_i2cTransaction;
+
+SB_Error SB_i2cQueueTransaction(SB_i2cTransaction* transaction, uint32_t timeout);
+SB_Error SB_i2cInit(I2C_BitRate bitRate);
 void SB_i2cSleep();
 
 #endif /* APPLICATION_I2C_H_ */

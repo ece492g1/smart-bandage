@@ -283,11 +283,11 @@ uint8_t Util_enqueueMsg(Queue_Handle msgQueue, Semaphore_Handle sem,
   queueRec_t *pRec;
   
   // Allocated space for queue node.
-#ifdef USE_ICALL
-  if (pRec = ICall_malloc(sizeof(queueRec_t)))
-#else
+//#ifdef USE_ICALL
+//  if (pRec = ICall_malloc(sizeof(queueRec_t)))
+//#else
   if (pRec = (queueRec_t *)malloc(sizeof(queueRec_t)))
-#endif
+//#endif
   {
     pRec->pData = pMsg;
   
@@ -303,11 +303,11 @@ uint8_t Util_enqueueMsg(Queue_Handle msgQueue, Semaphore_Handle sem,
   }
   
   // Free the message.
-#ifdef USE_ICALL
-  ICall_free(pMsg);
-#else
+//#ifdef USE_ICALL
+//  ICall_free(pMsg);
+//#else
   free(pMsg);
-#endif
+//#endif
   
   return FALSE;
 }
@@ -330,11 +330,11 @@ uint8_t *Util_dequeueMsg(Queue_Handle msgQueue)
     
     // Free the queue node
     // Note:  this does not free space allocated by data within the node.
-#ifdef USE_ICALL
-    ICall_free(pRec);
-#else
+//#ifdef USE_ICALL
+//    ICall_free(pRec);
+//#else
     free(pRec);
-#endif
+//#endif
     
     return pData;
   }

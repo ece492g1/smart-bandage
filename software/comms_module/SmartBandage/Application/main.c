@@ -13,11 +13,13 @@
 
 #include <ti/sysbios/family/arm/cc26xx/Power.h>
 #include <ti/sysbios/BIOS.h>
+#include <ti/drivers/PIN.h>
 
 #include "ICall.h"
 #include "bcomdef.h"
 #include "peripheral.h"
 #include "i2c.h"
+#include "peripheralManager.h"
 #include "config.h"
 
 /* Header files required to enable instruction fetch cache */
@@ -38,7 +40,9 @@ bleUserCfg_t user0Cfg = BLE_USER_CFG;
  */
 int main()
 {
-//	PIN_init(BoardGpioInitTable);
+	SB_Error error;
+
+	PIN_init(BoardGpioInitTable);
 
 #ifndef POWER_SAVING
     /* Set constraints for Standby, powerdown and idle mode */
@@ -46,20 +50,50 @@ int main()
     Power_setConstraint(Power_IDLE_PD_DISALLOW);
 #endif // POWER_SAVING
     
-    /* Initialize ICall module */
-    ICall_init();
-
-    /* Start tasks of external images - Priority 5 */
-    ICall_createRemoteTasks();
-    
-    /* Kick off profile - Priority 3 */
-    GAPRole_createTask();
-    
-    /* enable interrupts and start SYS/BIOS */
-    BIOS_start();
+//    /* Initialize ICall module */
+//    ICall_init();
+//
+//    /* Start tasks of external images - Priority 5 */
+//    ICall_createRemoteTasks();
+//
+//    /* Kick off profile - Priority 3 */
+//    GAPRole_createTask();
     
     /* enable I2C */
-    SB_i2cInit((I2C_BitRate) I2C_BITRATE);
+	if (NoError != (error = SB_i2cInit((I2C_BitRate) I2C_BITRATE))) {
+#ifdef SB_DEBUG
+		System_printf("Error No: %d\n", error);
+		System_printf("SB application initialization failed while initializing I2C. This is a code error.\n");
+		System_flush();
+#endif
+
+		while(1);
+	}
+
+#ifdef SB_DEBUG
+	System_printf("I2C Initialized.\n");
+	System_flush();
+#endif
+
+	/* enable peripheral manager after I2C */
+	if (NoError != (error = SB_peripheralInit())) {
+#ifdef SB_DEBUG
+		System_printf("Error No: %d\n", error);
+		System_printf("SB application initialization failed while initializing peripherals. This is a code error.\n");
+		System_flush();
+#endif
+
+		while(1);
+	}
+
+#ifdef SB_DEBUG
+	System_printf("Peripherals Initialized.\n");
+	System_printf("Smart Bandage Initialized.\n");
+	System_flush();
+#endif
+
+    /* enable interrupts and start SYS/BIOS */
+    BIOS_start();
 
     return 0;
 }
