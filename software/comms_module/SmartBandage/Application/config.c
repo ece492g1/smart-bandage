@@ -8,9 +8,26 @@
 #include <ti/sysbios/family/arm/cc26xx/Power.h>
 #include <ti/sysbios/family/arm/cc26xx/PowerCC2650.h>
 
-#include <ti/drivers/PIN.h>
 #include <driverlib/ioc.h>
 #include "config.h"
+
+/*
+ *  ============================= PIN configs===================================
+*/
+PIN_Config BoardGpioInitTable[] = {
+	Board_SDA | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
+	Board_SCL | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
+	PIN_TERMINATE
+};
+
+/*
+ *  ============================= MCP9808 configs===============================
+*/
+uint8_t Mcp9808Addresses[] = {
+	I2C_SENSOR_TEMP0_ADDR,
+	I2C_SENSOR_TEMP1_ADDR,
+	I2C_SENSOR_TEMP2_ADDR
+};
 
 /*
  *  ============================= I2C Begin=====================================

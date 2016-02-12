@@ -9,6 +9,28 @@
 #ifndef APPLICATION_CONFIG_H_
 #define APPLICATION_CONFIG_H_
 
+#include <ti/drivers/PIN.h>
+
+/*****************************************************************
+ * Config Adjust Variables
+ ****************************************************************/
+#define LAUNCHPAD // Only define if using Launchpad for testing. Can be defined as compiler argument instead.
+#define SB_DEBUG
+
+/*****************************************************************
+ * Tasks Configuration
+ ****************************************************************/
+#define DEFAULT_TASK_STACK_SIZE 700
+
+#define I2C_TASK_STACK_SIZE DEFAULT_TASK_STACK_SIZE
+#define PMGR_TASK_STACK_SIZE DEFAULT_TASK_STACK_SIZE
+
+typedef enum {
+	IDLE_TASK_PRIORITY,
+	PMGR_TASK_PRIORITY,
+	I2C_TASK_PRIORITY,
+} TASK_PRIORITIES;
+
 /*****************************************************************
  * IO Configuration
  ****************************************************************/
@@ -25,6 +47,21 @@
 #define Board_VSENSE_1			IOID_12
 #define Board_1V3				IOID_13
 #define Board_VSENSE_0			IOID_14
+
+#define SB_NUM_MCP9808_SENSORS 3
+extern uint8_t Mcp9808Addresses[];
+
+#ifdef LAUNCHPAD
+#undef Board_SCL
+#undef Board_SDA
+#define Board_SDA		 		IOID_5
+#define Board_T_LED_RED			IOID_6
+#define Board_T_LED_GREEN		IOID_7
+#define Board_SCL		 		IOID_8
+
+#undef SB_NUM_MCP9808_SENSORS
+#define SB_NUM_MCP9808_SENSORS 1
+#endif
 
 /*****************************************************************
  * External MUX configurations
@@ -61,7 +98,7 @@
 #define I2C_DBGIOEXP_ADDR		 0b0111111
 
 /* Interface definitions */
-#define I2C_BITRATE    				1 			// 0 = 100kHz, 1 = 400kHz
+#define I2C_BITRATE    				0 			// 0 = 100kHz, 1 = 400kHz
 #define Board_I2C0_SDA0             Board_SDA
 #define Board_I2C0_SCL0             Board_SCL
 
@@ -88,5 +125,24 @@ typedef enum CC2650_I2CName {
     CC2650_I2C0 = 0,
     CC2650_I2CCOUNT
 } CC2650_I2CName;
+
+/*****************************************************************
+ * GPIO Configuration
+ ****************************************************************/
+extern PIN_Config BoardGpioInitTable[];
+
+/*****************************************************************
+ * Application Errors
+ ****************************************************************/
+typedef enum {
+	UnknownError,
+	NoError,
+	I2CInitializationFailedError,
+	OSResourceInitializationError,
+	ResourceNotInitialized,
+	InvalidParameter,
+	OperationTimeout,
+	OutOfMemory,
+} SB_Error;
 
 #endif /* APPLICATION_CONFIG_H_ */
