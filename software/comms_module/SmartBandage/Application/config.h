@@ -10,6 +10,7 @@
 #define APPLICATION_CONFIG_H_
 
 #include <ti/drivers/PIN.h>
+#include <ti/drivers/pin/PINCC26XX.h>
 
 /*****************************************************************
  * Config Adjust Variables
@@ -98,7 +99,7 @@ extern uint8_t Mcp9808Addresses[];
 #define I2C_DBGIOEXP_ADDR		 0b0111111
 
 /* Interface definitions */
-#define I2C_BITRATE    				0 			// 0 = 100kHz, 1 = 400kHz
+#define I2C_BITRATE    				1 			// 0 = 100kHz, 1 = 400kHz
 #define Board_I2C0_SDA0             Board_SDA
 #define Board_I2C0_SCL0             Board_SCL
 
