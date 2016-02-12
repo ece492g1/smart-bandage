@@ -8,7 +8,7 @@
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Task.h>
 #include <xdc/runtime/System.h>
-
+#include <ti/drivers/PIN.h>
 
 #include "i2c.h"
 #include "config.h"
@@ -98,6 +98,12 @@ SB_Error initPeripherals() {
 static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	SB_Error result;
 
+	PIN_Config pinConfigTable[] =
+	{
+		Board_T_LED_GREEN | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
+		PIN_TERMINATE,
+	};
+
 #ifdef SB_DEBUG
 		System_printf("Peripheral manager task started...\n");
 		System_flush();
@@ -115,6 +121,8 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		System_printf("PMGR: Peripherals initialized.\n", result);
 		System_flush();
 #endif
+	PIN_State sbpPins;
+	PIN_Handle statusPin = PIN_open(&sbpPins, pinConfigTable);
 
 	SB_i2cTransaction taTransaction;
 	I2C_Transaction taBaseTransaction;
@@ -134,11 +142,13 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	taTransaction.completionSemaphore = &PMGR.mcp9808DeviceSemaphores[0];
 
 	while (1) {
+		PIN_setOutputValue(statusPin, Board_T_LED_GREEN, 1);
 		// Queue the configuration and resolution transactions
 		SB_i2cQueueTransaction(&taTransaction, BIOS_WAIT_FOREVER);
 
 		// Wait for completion (twice)
 		Semaphore_pend(PMGR.mcp9808DeviceSemaphores[0], BIOS_WAIT_FOREVER);
+		PIN_setOutputValue(statusPin, Board_T_LED_GREEN, 0);
 
 		if (taTransaction.completionResult == NoError) {
 			System_printf("PMGR: Temperature read: %d\n", (0x0FFF & ((rxBuf[0] << 8) | (rxBuf[1] & 0x0FF)))>>4);
@@ -147,6 +157,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		}
 
 		System_flush();
+
 		Task_sleep(100000);
 	}
 }
