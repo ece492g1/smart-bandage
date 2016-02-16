@@ -67,7 +67,7 @@
 #include "osal_snv.h"
 #include "ICallBleAPIMSG.h"
 
-#include "../Application/config.h"
+#include "../Application/Board.h"
 
 /*********************************************************************
  * MACROS

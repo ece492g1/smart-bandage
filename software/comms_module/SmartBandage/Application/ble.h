@@ -8,7 +8,7 @@
 #ifndef APPLICATION_BLE_H_
 #define APPLICATION_BLE_H_
 
-#include "config.h"
+#include "Board.h"
 
 void SB_bleInit();
 

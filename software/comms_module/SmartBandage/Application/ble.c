@@ -419,7 +419,7 @@ static void SimpleBLEPeripheral_init(void)
   // Setup the SimpleProfile Characteristic Values
   {
     uint8_t charValue1 = 1;
-    uint8_t charValue2 = 2;
+    uint8_t charValue2 = 125;
     uint8_t charValue3 = 3;
     uint8_t charValue4 = 4;
     uint8_t charValue5[SIMPLEPROFILE_CHAR5_LEN] = { 1, 2, 3, 4, 5 };

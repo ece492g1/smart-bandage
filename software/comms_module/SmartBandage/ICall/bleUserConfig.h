@@ -138,9 +138,6 @@ extern "C"
  * CONSTANTS
  */
 
-// Defines only required by Application.
-#if !(defined( CTRL_CONFIG ) || defined( HOST_CONFIG ))
-
 //#include "board.h"
 
 // RF Front End Settings
@@ -287,8 +284,6 @@ extern "C"
     #warning Not enough heap for configured MAX_NUM_PDU and MAX_PDU_SIZE! Adjust HEAPMGR_SIZE.
   #endif
 #endif
-
-#endif // !(CTRL_CONFIG | HOST_CONFIG)
 
 /*******************************************************************************
  * TYPEDEFS

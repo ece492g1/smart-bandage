@@ -20,7 +20,7 @@
 #include "peripheral.h"
 #include "i2c.h"
 #include "peripheralManager.h"
-#include "config.h"
+#include "Board.h"
 #include "ble.h"
 
 /* Header files required to enable instruction fetch cache */

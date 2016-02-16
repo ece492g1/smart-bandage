@@ -11,7 +11,7 @@
 #include <ti/drivers/PIN.h>
 
 #include "i2c.h"
-#include "config.h"
+#include "Board.h"
 #include "Devices/mcp9808.h"
 #include "peripheralManager.h"
 

@@ -293,7 +293,7 @@
 		<link>
 			<name>Startup/bleUserConfig.c</name>
 			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/ICall/Stack/bleUserConfig.c</locationURI>
+			<locationURI>TI_DIR/simplelink/ble_cc26xx_2_01_00_44423/Projects/ble/ICall/Stack/bleUserConfig.c</locationURI>
 		</link>
 		<link>
 			<name>TOOLS/OnBoard.c</name>
