@@ -67,6 +67,8 @@
 #include "osal_snv.h"
 #include "ICallBleAPIMSG.h"
 
+#include "../Application/config.h"
+
 /*********************************************************************
  * MACROS
  */
@@ -100,7 +102,7 @@
 #define MAX_TIMEOUT_VALUE             0xFFFF
 
 // Task configuration
-#define GAPROLE_TASK_PRIORITY         3
+//#define GAPROLE_TASK_PRIORITY         3
 
 #ifndef GAPROLE_TASK_STACK_SIZE
 #define GAPROLE_TASK_STACK_SIZE       440
