@@ -33,16 +33,6 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>ICall</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
-			<name>ICallBLE</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
 			<name>Include</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -73,6 +63,11 @@
 			<locationURI>PARENT-7-ORG_PROJ_DIR/Components/hal/target/CC2650TIRTOS/ICallAddrs.h</locationURI>
 		</link>
 		<link>
+			<name>ICall/ICallBleAPI.c</name>
+			<type>1</type>
+			<locationURI>PARENT-4-CG_TOOL_ROOT/simplelink/ble_cc26xx_2_01_00_44423/Projects/ble/ICall/Application/ICallBleAPI.c</locationURI>
+		</link>
+		<link>
 			<name>ICall/ICallCC2650.c</name>
 			<type>1</type>
 			<locationURI>PARENT-7-ORG_PROJ_DIR/Components/icall/ports/tirtos/ICallCC2650.c</locationURI>
@@ -86,26 +81,6 @@
 			<name>ICall/heapmgr.h</name>
 			<type>1</type>
 			<locationURI>PARENT-7-ORG_PROJ_DIR/Components/applib/heap/heapmgr.h</locationURI>
-		</link>
-		<link>
-			<name>ICallBLE/ICallBleAPI.c</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/ICall/Application/ICallBleAPI.c</locationURI>
-		</link>
-		<link>
-			<name>ICallBLE/ICallBleAPIMSG.h</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/ICall/Include/ICallBleAPIMSG.h</locationURI>
-		</link>
-		<link>
-			<name>ICallBLE/bleUserConfig.c</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/ICall/Application/bleUserConfig.c</locationURI>
-		</link>
-		<link>
-			<name>ICallBLE/bleUserConfig.h</name>
-			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/ICall/Include/bleUserConfig.h</locationURI>
 		</link>
 		<link>
 			<name>Include/gap.h</name>
