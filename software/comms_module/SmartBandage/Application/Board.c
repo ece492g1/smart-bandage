@@ -9,7 +9,7 @@
 #include <ti/sysbios/family/arm/cc26xx/PowerCC2650.h>
 
 #include <driverlib/ioc.h>
-#include "config.h"
+#include "Board.h"
 
 /*
  *  ============================= PIN configs===================================

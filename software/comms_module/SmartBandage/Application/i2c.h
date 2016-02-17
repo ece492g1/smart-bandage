@@ -12,7 +12,7 @@
 #include <ti/drivers/I2C.h>
 #include <ti/drivers/i2c/I2CCC26XX.h>
 #include <ti/sysbios/knl/Semaphore.h>
-#include "config.h"
+#include "Board.h"
 
 typedef struct {
 	I2C_Transaction* baseTransaction;

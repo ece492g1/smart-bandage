@@ -20,7 +20,8 @@
 #include "peripheral.h"
 #include "i2c.h"
 #include "peripheralManager.h"
-#include "config.h"
+#include "Board.h"
+#include "ble.h"
 
 /* Header files required to enable instruction fetch cache */
 #include <inc/hw_memmap.h>
@@ -50,16 +51,28 @@ int main()
     Power_setConstraint(Power_IDLE_PD_DISALLOW);
 #endif // POWER_SAVING
     
-//    /* Initialize ICall module */
-//    ICall_init();
-//
-//    /* Start tasks of external images - Priority 5 */
-//    ICall_createRemoteTasks();
-//
-//    /* Kick off profile - Priority 3 */
-//    GAPRole_createTask();
-    
-    /* enable I2C */
+    /* Initialize ICall module */
+    ICall_init();
+#ifdef SB_DEBUG
+    System_printf("ICall Initialized.\n");
+	System_flush();
+#endif
+
+    /* Start tasks of external images - Priority 5 */
+    ICall_createRemoteTasks();
+#ifdef SB_DEBUG
+	System_printf("ICall Remote Tasks Initialized.\n");
+	System_flush();
+#endif
+
+    /* Kick off profile - Priority 3 */
+    GAPRole_createTask();
+#ifdef SB_DEBUG
+	System_printf("GAP Role Initialized.\n");
+	System_flush();
+#endif
+
+/* enable I2C */
 	if (NoError != (error = SB_i2cInit((I2C_BitRate) I2C_BITRATE))) {
 #ifdef SB_DEBUG
 		System_printf("Error No: %d\n", error);
@@ -88,11 +101,22 @@ int main()
 
 #ifdef SB_DEBUG
 	System_printf("Peripherals Initialized.\n");
-	System_printf("Smart Bandage Initialized.\n");
 	System_flush();
 #endif
 
-    /* enable interrupts and start SYS/BIOS */
+	/* Configure BLE */
+	SB_bleInit();
+#ifdef SB_DEBUG
+	System_printf("SB BLE Initialized.\n");
+	System_flush();
+#endif
+
+	/* enable interrupts and start SYS/BIOS */
+#ifdef SB_DEBUG
+    System_printf("Smart Bandage Initialized.\n");
+	System_flush();
+#endif
+
     BIOS_start();
 
     return 0;

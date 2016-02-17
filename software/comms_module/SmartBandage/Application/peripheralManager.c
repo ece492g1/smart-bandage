@@ -11,9 +11,10 @@
 #include <ti/drivers/PIN.h>
 
 #include "i2c.h"
-#include "config.h"
+#include "Board.h"
 #include "Devices/mcp9808.h"
 #include "peripheralManager.h"
+#include "../PROFILES/smartBandageProfile.h"
 
 struct {
 	MCP9808_DEVICE mcp9808Devices[SB_NUM_MCP9808_SENSORS];
@@ -141,6 +142,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	taTransaction.baseTransaction = &taBaseTransaction;
 	taTransaction.completionSemaphore = &PMGR.mcp9808DeviceSemaphores[0];
 
+	uint16_t temperature;
 	while (1) {
 		PIN_setOutputValue(statusPin, Board_T_LED_GREEN, 1);
 		// Queue the configuration and resolution transactions
@@ -151,7 +153,13 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		PIN_setOutputValue(statusPin, Board_T_LED_GREEN, 0);
 
 		if (taTransaction.completionResult == NoError) {
-			System_printf("PMGR: Temperature read: %d\n", (0x0FFF & ((rxBuf[0] << 8) | (rxBuf[1] & 0x0FF)))>>4);
+			// The temperature sensor is big endian and this device is little endian
+			// Also need to apply the mask for the data from the sensor: 0x0FFF
+			temperature = 0x0FFF & ((rxBuf[0] << 8) | (rxBuf[1]));
+			System_printf("PMGR: Temperature read: %d\n", temperature>>4);
+
+			// TODO: Calls like this should likely be protected with a semaphore
+			SB_Profile_Set16bParameter( SB_CHARACTERISTIC_TEMPERATURE, temperature, 1 );
 		} else {
 			System_printf("PMGR: Temperature read failed.\n");
 		}
