@@ -53,33 +53,51 @@ extern "C"
  * CONSTANTS
  */
 
-// Profile Parameters
-#define SIMPLEPROFILE_CHAR1                   0  // RW uint8 - Profile Characteristic 1 value 
-#define SIMPLEPROFILE_CHAR2                   1  // RW uint8 - Profile Characteristic 2 value
-#define SIMPLEPROFILE_CHAR3                   2  // RW uint8 - Profile Characteristic 3 value
-#define SIMPLEPROFILE_CHAR4                   3  // RW uint8 - Profile Characteristic 4 value
-#define SIMPLEPROFILE_CHAR5                   4  // RW uint8 - Profile Characteristic 4 value
-  
-// Simple Profile Service UUID
-#define SIMPLEPROFILE_SERV_UUID               0xFFF0
+// Service UUID
+#define SB_BLE_SERV_UUID               		0xF0F0
     
-// Key Pressed UUID
-#define SIMPLEPROFILE_CHAR1_UUID            0xFFF1
-#define SIMPLEPROFILE_CHAR2_UUID            0xFFF2
-#define SIMPLEPROFILE_CHAR3_UUID            0xFFF3
-#define SIMPLEPROFILE_CHAR4_UUID            0xFFF4
-#define SIMPLEPROFILE_CHAR5_UUID            0xFFF5
-  
-// Simple Keys Profile Services bit fields
-#define SIMPLEPROFILE_SERVICE               0x00000001
+// Characteristic UUIDs
+#define SB_BLE_TEMPERATURE_UUID            	(SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_TEMPERATURE)
+#define SB_BLE_HUMIDITY_UUID            	(SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_HUMIDITY)
+#define SB_BLE_BANDAGEID_UUID           	(SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_BANDAGEID)
+#define SB_BLE_BANDAGESTATE_UUID            (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_BANDAGESTATE)
+#define SB_BLE_BATTCHARGE_UUID      	    (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_BATTCHARGE)
+#define SB_BLE_EXTPOWER_UUID    	        (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_EXTPOWER)
+#define SB_BLE_MOISTUREMAP_UUID	            (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_MOISTUREMAP)
+#define SB_BLE_SYSTEMTIME_UUID	            (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_SYSTEMTIME)
 
-// Length of Characteristic 5 in bytes
-#define SIMPLEPROFILE_CHAR5_LEN           5  
+// For each characteristic the server has three entries, plus on for the service
+#define SERVAPP_NUM_PROP_PER_CHARACTERISTIC 3
+#define SERVAPP_NUM_ATTR_SUPPORTED         (SB_NUM_CHARACTERISTICS*SERVAPP_NUM_PROP_PER_CHARACTERISTIC + 1)
+
+// Simple Keys Profile Services bit fields
+#define SB_BLE_SERVICE               0x00000001
+
+// Length of Characteristics in bytes
+#define SB_BLE_TEMPERATURE_LEN           10
+#define SB_BLE_HUMIDITY_LEN   	         2
+#define SB_BLE_BANDAGEID_LEN   	         2
+#define SB_BLE_BANDAGESTATE_LEN	         2
+#define SB_BLE_BATTCHARGE_LEN   	     2
+#define SB_BLE_EXTPOWER_LEN   	         1
+#define SB_BLE_MOISTUREMAP_LEN           10
+#define SB_BLE_SYSTEMTIME_LEN            4
 
 /*********************************************************************
  * TYPEDEFS
  */
+typedef enum {
+	SB_CHARACTERISTIC_TEMPERATURE = 0,
+	SB_CHARACTERISTIC_HUMIDITY = 1,
+	SB_CHARACTERISTIC_BANDAGEID = 2,
+	SB_CHARACTERISTIC_BANDAGESTATE = 3,
+	SB_CHARACTERISTIC_BATTCHARGE = 4,
+	SB_CHARACTERISTIC_EXTPOWER = 5,
+	SB_CHARACTERISTIC_MOISTUREMAP = 6,
+	SB_CHARACTERISTIC_SYSTEMTIME = 7,
 
+	SB_NUM_CHARACTERISTICS = 8
+} SB_CHARACTERISTIC;
   
 /*********************************************************************
  * MACROS
@@ -97,6 +115,17 @@ typedef struct
   simpleProfileChange_t        pfnSimpleProfileChange;  // Called when characteristic value changes
 } simpleProfileCBs_t;
 
+#define SB_PROFILE_UUID_LEN ATT_BT_UUID_SIZE
+
+typedef struct {
+	uint16 uuid;
+	uint8 uuidptr[SB_PROFILE_UUID_LEN];
+	uint8 props;
+	uint8 perms;
+	uint8*value;
+	uint8 length;
+	char* description;
+} SB_PROFILE_CHARACTERISTIC;
     
 
 /*********************************************************************
@@ -112,7 +141,7 @@ typedef struct
  *                     contain more than one service.
  */
 
-extern bStatus_t SimpleProfile_AddService( uint32 services );
+extern bStatus_t SB_Profile_AddService( uint32 services );
 
 /*
  * SimpleProfile_RegisterAppCBs - Registers the application callback function.
@@ -120,7 +149,7 @@ extern bStatus_t SimpleProfile_AddService( uint32 services );
  *
  *    appCallbacks - pointer to application callbacks.
  */
-extern bStatus_t SimpleProfile_RegisterAppCBs( simpleProfileCBs_t *appCallbacks );
+extern bStatus_t SB_Profile_RegisterAppCBs( simpleProfileCBs_t *appCallbacks );
 
 /*
  * SimpleProfile_SetParameter - Set a Simple GATT Profile parameter.
@@ -132,7 +161,7 @@ extern bStatus_t SimpleProfile_RegisterAppCBs( simpleProfileCBs_t *appCallbacks 
  *          data type (example: data type of uint16 will be cast to 
  *          uint16 pointer).
  */
-extern bStatus_t SimpleProfile_SetParameter( uint8 param, uint8 len, void *value );
+extern bStatus_t SB_Profile_SetParameter( SB_CHARACTERISTIC param, uint8 len, void *value );
   
 /*
  * SimpleProfile_GetParameter - Get a Simple GATT Profile parameter.
@@ -143,7 +172,7 @@ extern bStatus_t SimpleProfile_SetParameter( uint8 param, uint8 len, void *value
  *          data type (example: data type of uint16 will be cast to 
  *          uint16 pointer).
  */
-extern bStatus_t SimpleProfile_GetParameter( uint8 param, void *value );
+extern bStatus_t SB_Profile_GetParameter( SB_CHARACTERISTIC param, void *value, int maxlength );
 
 
 /*********************************************************************

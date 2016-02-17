@@ -17,7 +17,7 @@
 #include "gapgattserver.h"
 #include "gattservapp.h"
 #include "devinfoservice.h"
-#include "simpleGATTprofile.h"
+#include "../PROFILES/smartBandageProfile.h"
 
 #include "peripheral.h"
 #include "gapbondmgr.h"
@@ -27,62 +27,6 @@
 
 #include "util.h"
 #include "ble.h"
-
-/*********************************************************************
- * CONSTANTS
- */
-// Advertising interval when device is discoverable (units of 625us, 160=100ms)
-#define DEFAULT_ADVERTISING_INTERVAL          160
-
-// Limited discoverable mode advertises for 30.72s, and then stops
-// General discoverable mode advertises indefinitely
-#define DEFAULT_DISCOVERABLE_MODE             GAP_ADTYPE_FLAGS_GENERAL
-
-#ifndef FEATURE_OAD
-// Minimum connection interval (units of 1.25ms, 80=100ms) if automatic
-// parameter update request is enabled
-#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     80
-
-// Maximum connection interval (units of 1.25ms, 800=1000ms) if automatic
-// parameter update request is enabled
-#define DEFAULT_DESIRED_MAX_CONN_INTERVAL     800
-#else
-// Minimum connection interval (units of 1.25ms, 8=10ms) if automatic
-// parameter update request is enabled
-#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     8
-
-// Maximum connection interval (units of 1.25ms, 8=10ms) if automatic
-// parameter update request is enabled
-#define DEFAULT_DESIRED_MAX_CONN_INTERVAL     8
-#endif // FEATURE_OAD
-
-// Slave latency to use if automatic parameter update request is enabled
-#define DEFAULT_DESIRED_SLAVE_LATENCY         0
-
-// Supervision timeout value (units of 10ms, 1000=10s) if automatic parameter
-// update request is enabled
-#define DEFAULT_DESIRED_CONN_TIMEOUT          1000
-
-// Whether to enable automatic parameter update request when a connection is
-// formed
-#define DEFAULT_ENABLE_UPDATE_REQUEST         TRUE
-
-// Connection Pause Peripheral time value (in seconds)
-#define DEFAULT_CONN_PAUSE_PERIPHERAL         6
-
-// How often to perform periodic event (in msec)
-#define SBP_PERIODIC_EVT_PERIOD               5000
-
-#ifdef FEATURE_OAD
-// The size of an OAD packet.
-#define OAD_PACKET_SIZE                       ((OAD_BLOCK_SIZE) + 2)
-#endif // FEATURE_OAD
-
-// Internal Events for RTOS application
-#define SBP_STATE_CHANGE_EVT                  0x0001
-#define SBP_CHAR_CHANGE_EVT                   0x0002
-#define SBP_PERIODIC_EVT                      0x0004
-#define SBP_CONN_EVT_END_EVT                  0x0008
 
 /*********************************************************************
  * TYPEDEFS
@@ -122,9 +66,6 @@ static Queue_Struct oadQ;
 static Queue_Handle hOadQ;
 #endif //FEATURE_OAD
 
-// events flag for internal application events.
-static uint16_t events;
-
 // Task configuration
 Task_Struct sbpTask;
 Char sbpTaskStack[SBP_TASK_STACK_SIZE];
@@ -135,28 +76,22 @@ Char sbpTaskStack[SBP_TASK_STACK_SIZE];
 // GAP - SCAN RSP data (max size = 31 bytes)
 static uint8_t scanRspData[] =
 {
-  // complete name
-  0x14,   // length of this data
+  // human-readable name of the device
+  0xE,   // length of this data
   GAP_ADTYPE_LOCAL_NAME_COMPLETE,
-  0x53,   // 'S'
-  0x69,   // 'i'
-  0x6d,   // 'm'
-  0x70,   // 'p'
-  0x6c,   // 'l'
-  0x65,   // 'e'
-  0x42,   // 'B'
-  0x4c,   // 'L'
-  0x45,   // 'E'
-  0x50,   // 'P'
-  0x65,   // 'e'
-  0x72,   // 'r'
-  0x69,   // 'i'
-  0x70,   // 'p'
-  0x68,   // 'h'
-  0x65,   // 'e'
-  0x72,   // 'r'
-  0x61,   // 'a'
-  0x6c,   // 'l'
+  'S',
+  'm',
+  'a',
+  'r',
+  't',
+  ' ',
+  'B',
+  'a',
+  'n',
+  'd',
+  'a',
+  'g',
+  'e',
 
   // connection interval range
   0x05,   // length of this data
@@ -191,8 +126,8 @@ static uint8_t advertData[] =
   LO_UINT16(OAD_SERVICE_UUID),
   HI_UINT16(OAD_SERVICE_UUID)
 #else
-  LO_UINT16(SIMPLEPROFILE_SERV_UUID),
-  HI_UINT16(SIMPLEPROFILE_SERV_UUID)
+  LO_UINT16(SB_BLE_SERV_UUID),
+  HI_UINT16(SB_BLE_SERV_UUID)
 #endif //!FEATURE_OAD
 };
 
@@ -215,7 +150,6 @@ static uint8_t SimpleBLEPeripheral_processGATTMsg(gattMsgEvent_t *pMsg);
 static void SimpleBLEPeripheral_processAppMsg(sbpEvt_t *pMsg);
 static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState);
 static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID);
-static void SimpleBLEPeripheral_performPeriodicTask(void);
 
 static void SimpleBLEPeripheral_sendAttRsp(void);
 static void SimpleBLEPeripheral_freeAttRsp(uint8_t status);
@@ -231,20 +165,18 @@ void SimpleBLEPeripheral_processOadWriteCB(uint8_t event, uint16_t connHandle,
                                            uint8_t *pData);
 #endif //FEATURE_OAD
 
-static void SimpleBLEPeripheral_clockHandler(UArg arg);
-
 /*********************************************************************
  * PROFILE CALLBACKS
  */
 
 // GAP Role Callbacks
-static gapRolesCBs_t SimpleBLEPeripheral_gapRoleCBs =
+static gapRolesCBs_t SB_gapRoleCBs =
 {
   SimpleBLEPeripheral_stateChangeCB     // Profile State Change Callbacks
 };
 
 // GAP Bond Manager Callbacks
-static gapBondCBs_t simpleBLEPeripheral_BondMgrCBs =
+static gapBondCBs_t SB_BondMgrCBs =
 {
   NULL, // Passcode callback (not used by application)
   NULL  // Pairing / Bonding state Callback (not used by application)
@@ -252,7 +184,7 @@ static gapBondCBs_t simpleBLEPeripheral_BondMgrCBs =
 
 // Simple GATT Profile Callbacks
 #ifndef FEATURE_OAD
-static simpleProfileCBs_t SimpleBLEPeripheral_simpleProfileCBs =
+static simpleProfileCBs_t SB_simpleProfileCBs =
 {
   SimpleBLEPeripheral_charValueChangeCB // Characteristic value change callback
 };
@@ -305,152 +237,111 @@ void SimpleBLEPeripheral_createTask(void)
  */
 static void SimpleBLEPeripheral_init(void)
 {
-  // ******************************************************************
-  // N0 STACK API CALLS CAN OCCUR BEFORE THIS CALL TO ICall_registerApp
-  // ******************************************************************
-  // Register the current thread as an ICall dispatcher application
-  // so that the application can send and receive messages.
-  ICall_registerApp(&selfEntity, &sem);
+	// ******************************************************************
+	// N0 STACK API CALLS CAN OCCUR BEFORE THIS CALL TO ICall_registerApp
+	// ******************************************************************
+	// Register the current thread as an ICall dispatcher application
+	// so that the application can send and receive messages.
+	ICall_registerApp(&selfEntity, &sem);
 
-  // Hard code the BD Address till CC2650 board gets its own IEEE address
-  //uint8 bdAddress[B_ADDR_LEN] = { 0xAD, 0xD0, 0x0A, 0xAD, 0xD0, 0x0A };
-  //HCI_EXT_SetBDADDRCmd(bdAddress);
+	// Set device's Sleep Clock Accuracy
+	//HCI_EXT_SetSCACmd(40);
 
-  // Set device's Sleep Clock Accuracy
-  //HCI_EXT_SetSCACmd(40);
+	// Create an RTOS queue for message from profile to be sent to app.
+	appMsgQueue = Util_constructQueue(&appMsg);
 
-  // Create an RTOS queue for message from profile to be sent to app.
-  appMsgQueue = Util_constructQueue(&appMsg);
+	// Setup the GAP
+	GAP_SetParamValue(TGAP_CONN_PAUSE_PERIPHERAL, DEFAULT_CONN_PAUSE_PERIPHERAL);
 
-  // Create one-shot clocks for internal periodic events.
-  Util_constructClock(&periodicClock, SimpleBLEPeripheral_clockHandler,
-                      SBP_PERIODIC_EVT_PERIOD, 0, false, SBP_PERIODIC_EVT);
-  // Setup the GAP
-  GAP_SetParamValue(TGAP_CONN_PAUSE_PERIPHERAL, DEFAULT_CONN_PAUSE_PERIPHERAL);
+	// Setup the GAP Peripheral Role Profile
+	{
+		// For all hardware platforms, device starts advertising upon initialization
+		uint8_t initialAdvertEnable = DEFAULT_INITIAL_ADVERTISING;
+		uint16_t advertOffTime = DEFAULT_ADVERTISING_OFF_TIME;
+		uint8_t enableUpdateRequest = DEFAULT_ENABLE_UPDATE_REQUEST;
+		uint16_t desiredMinInterval = DEFAULT_DESIRED_MIN_CONN_INTERVAL;
+		uint16_t desiredMaxInterval = DEFAULT_DESIRED_MAX_CONN_INTERVAL;
+		uint16_t desiredSlaveLatency = DEFAULT_DESIRED_SLAVE_LATENCY;
+		uint16_t desiredConnTimeout = DEFAULT_DESIRED_CONN_TIMEOUT;
 
-  // Setup the GAP Peripheral Role Profile
-  {
-    // For all hardware platforms, device starts advertising upon initialization
-    uint8_t initialAdvertEnable = TRUE;
+		// Set the GAP Role Parameters
+		GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t), &initialAdvertEnable);
+		GAPRole_SetParameter(GAPROLE_ADVERT_OFF_TIME, sizeof(uint16_t), &advertOffTime);
 
-    // By setting this to zero, the device will go into the waiting state after
-    // being discoverable for 30.72 second, and will not being advertising again
-    // until the enabler is set back to TRUE
-    uint16_t advertOffTime = 0;
+		GAPRole_SetParameter(GAPROLE_SCAN_RSP_DATA, sizeof(scanRspData), scanRspData);
+		GAPRole_SetParameter(GAPROLE_ADVERT_DATA, sizeof(advertData), advertData);
 
-    uint8_t enableUpdateRequest = DEFAULT_ENABLE_UPDATE_REQUEST;
-    uint16_t desiredMinInterval = DEFAULT_DESIRED_MIN_CONN_INTERVAL;
-    uint16_t desiredMaxInterval = DEFAULT_DESIRED_MAX_CONN_INTERVAL;
-    uint16_t desiredSlaveLatency = DEFAULT_DESIRED_SLAVE_LATENCY;
-    uint16_t desiredConnTimeout = DEFAULT_DESIRED_CONN_TIMEOUT;
+		GAPRole_SetParameter(GAPROLE_PARAM_UPDATE_ENABLE, sizeof(uint8_t), &enableUpdateRequest);
+		GAPRole_SetParameter(GAPROLE_MIN_CONN_INTERVAL, sizeof(uint16_t), &desiredMinInterval);
+		GAPRole_SetParameter(GAPROLE_MAX_CONN_INTERVAL, sizeof(uint16_t), &desiredMaxInterval);
+		GAPRole_SetParameter(GAPROLE_SLAVE_LATENCY, sizeof(uint16_t), &desiredSlaveLatency);
+		GAPRole_SetParameter(GAPROLE_TIMEOUT_MULTIPLIER, sizeof(uint16_t), &desiredConnTimeout);
+	}
 
-    // Set the GAP Role Parameters
-    GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t),
-                         &initialAdvertEnable);
-    GAPRole_SetParameter(GAPROLE_ADVERT_OFF_TIME, sizeof(uint16_t),
-                         &advertOffTime);
+	// Set the GAP Characteristics
+	GGS_SetParameter(GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, attDeviceName);
 
-    GAPRole_SetParameter(GAPROLE_SCAN_RSP_DATA, sizeof(scanRspData),
-                         scanRspData);
-    GAPRole_SetParameter(GAPROLE_ADVERT_DATA, sizeof(advertData), advertData);
+	// Set advertising interval
+	{
+		uint16_t advInt = DEFAULT_ADVERTISING_INTERVAL;
 
-    GAPRole_SetParameter(GAPROLE_PARAM_UPDATE_ENABLE, sizeof(uint8_t),
-                         &enableUpdateRequest);
-    GAPRole_SetParameter(GAPROLE_MIN_CONN_INTERVAL, sizeof(uint16_t),
-                         &desiredMinInterval);
-    GAPRole_SetParameter(GAPROLE_MAX_CONN_INTERVAL, sizeof(uint16_t),
-                         &desiredMaxInterval);
-    GAPRole_SetParameter(GAPROLE_SLAVE_LATENCY, sizeof(uint16_t),
-                         &desiredSlaveLatency);
-    GAPRole_SetParameter(GAPROLE_TIMEOUT_MULTIPLIER, sizeof(uint16_t),
-                         &desiredConnTimeout);
-  }
+		GAP_SetParamValue(TGAP_LIM_DISC_ADV_INT_MIN, advInt);
+		GAP_SetParamValue(TGAP_LIM_DISC_ADV_INT_MAX, advInt);
+		GAP_SetParamValue(TGAP_GEN_DISC_ADV_INT_MIN, advInt);
+		GAP_SetParamValue(TGAP_GEN_DISC_ADV_INT_MAX, advInt);
+	}
 
-  // Set the GAP Characteristics
-  GGS_SetParameter(GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, attDeviceName);
+	// Setup the GAP Bond Manager
+	{
+		uint32_t passkey = DEFAULT_PASSKEY; // passkey "000000"
+		uint8_t pairMode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
+		uint8_t mitm = DEFAULT_MITM_PROTECTION;
+		uint8_t ioCap = DEFAULT_IO_CAP;
+		uint8_t bonding = DEFAULT_BONDING_ENABLED;
 
-  // Set advertising interval
-  {
-    uint16_t advInt = DEFAULT_ADVERTISING_INTERVAL;
+		GAPBondMgr_SetParameter(GAPBOND_DEFAULT_PASSCODE, sizeof(uint32_t), &passkey);
+		GAPBondMgr_SetParameter(GAPBOND_PAIRING_MODE, sizeof(uint8_t), &pairMode);
+		GAPBondMgr_SetParameter(GAPBOND_MITM_PROTECTION, sizeof(uint8_t), &mitm);
+		GAPBondMgr_SetParameter(GAPBOND_IO_CAPABILITIES, sizeof(uint8_t), &ioCap);
+		GAPBondMgr_SetParameter(GAPBOND_BONDING_ENABLED, sizeof(uint8_t), &bonding);
+	}
 
-    GAP_SetParamValue(TGAP_LIM_DISC_ADV_INT_MIN, advInt);
-    GAP_SetParamValue(TGAP_LIM_DISC_ADV_INT_MAX, advInt);
-    GAP_SetParamValue(TGAP_GEN_DISC_ADV_INT_MIN, advInt);
-    GAP_SetParamValue(TGAP_GEN_DISC_ADV_INT_MAX, advInt);
-  }
-
-  // Setup the GAP Bond Manager
-  {
-    uint32_t passkey = 0; // passkey "000000"
-    uint8_t pairMode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
-    uint8_t mitm = TRUE;
-    uint8_t ioCap = GAPBOND_IO_CAP_DISPLAY_ONLY;
-    uint8_t bonding = TRUE;
-
-    GAPBondMgr_SetParameter(GAPBOND_DEFAULT_PASSCODE, sizeof(uint32_t),
-                            &passkey);
-    GAPBondMgr_SetParameter(GAPBOND_PAIRING_MODE, sizeof(uint8_t), &pairMode);
-    GAPBondMgr_SetParameter(GAPBOND_MITM_PROTECTION, sizeof(uint8_t), &mitm);
-    GAPBondMgr_SetParameter(GAPBOND_IO_CAPABILITIES, sizeof(uint8_t), &ioCap);
-    GAPBondMgr_SetParameter(GAPBOND_BONDING_ENABLED, sizeof(uint8_t), &bonding);
-  }
-
-   // Initialize GATT attributes
-  GGS_AddService(GATT_ALL_SERVICES);           // GAP
-  GATTServApp_AddService(GATT_ALL_SERVICES);   // GATT attributes
-  DevInfo_AddService();                        // Device Information Service
+	// Initialize GATT attributes
+	GGS_AddService(GATT_ALL_SERVICES);           // GAP
+	GATTServApp_AddService(GATT_ALL_SERVICES);   // GATT attributes
+	DevInfo_AddService();                        // Device Information Service
 
 #ifndef FEATURE_OAD
-  SimpleProfile_AddService(GATT_ALL_SERVICES); // Simple GATT Profile
+	SB_Profile_AddService(GATT_ALL_SERVICES); // Simple GATT Profile
 #endif //!FEATURE_OAD
 
 #ifdef FEATURE_OAD
-  VOID OAD_addService();                 // OAD Profile
-  OAD_register((oadTargetCBs_t *)&simpleBLEPeripheral_oadCBs);
-  hOadQ = Util_constructQueue(&oadQ);
+	VOID OAD_addService();                 // OAD Profile
+	OAD_register((oadTargetCBs_t *)&simpleBLEPeripheral_oadCBs);
+	hOadQ = Util_constructQueue(&oadQ);
 #endif
 
 #ifdef IMAGE_INVALIDATE
-  Reset_addService();
+	Reset_addService();
 #endif //IMAGE_INVALIDATE
 
 
 #ifndef FEATURE_OAD
-  // Setup the SimpleProfile Characteristic Values
-  {
-    uint8_t charValue1 = 1;
-    uint8_t charValue2 = 125;
-    uint8_t charValue3 = 3;
-    uint8_t charValue4 = 4;
-    uint8_t charValue5[SIMPLEPROFILE_CHAR5_LEN] = { 1, 2, 3, 4, 5 };
-
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR1, sizeof(uint8_t),
-                               &charValue1);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR2, sizeof(uint8_t),
-                               &charValue2);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR3, sizeof(uint8_t),
-                               &charValue3);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(uint8_t),
-                               &charValue4);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR5, SIMPLEPROFILE_CHAR5_LEN,
-                               charValue5);
-  }
-
-  // Register callback with SimpleGATTprofile
-  SimpleProfile_RegisterAppCBs(&SimpleBLEPeripheral_simpleProfileCBs);
+	// Register callback with SimpleGATTprofile
+	SB_Profile_RegisterAppCBs(&SB_simpleProfileCBs);
 #endif //!FEATURE_OAD
 
-  // Start the Device
-  VOID GAPRole_StartDevice(&SimpleBLEPeripheral_gapRoleCBs);
+	// Start the Device
+	VOID GAPRole_StartDevice(&SB_gapRoleCBs);
 
-  // Start Bond Manager
-  VOID GAPBondMgr_Register(&simpleBLEPeripheral_BondMgrCBs);
+	// Start Bond Manager
+	VOID GAPBondMgr_Register(&SB_BondMgrCBs);
 
-  // Register with GAP for HCI/Host messages
-  GAP_RegisterForMsgs(selfEntity);
+	// Register with GAP for HCI/Host messages
+	GAP_RegisterForMsgs(selfEntity);
 
-  // Register for GATT local events and ATT Responses pending for transmission
-  GATT_RegisterForMsgs(selfEntity);
+	// Register for GATT local events and ATT Responses pending for transmission
+	GATT_RegisterForMsgs(selfEntity);
 }
 
 /*********************************************************************
@@ -526,16 +417,6 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
           ICall_free(pMsg);
         }
       }
-    }
-
-    if (events & SBP_PERIODIC_EVT)
-    {
-      events &= ~SBP_PERIODIC_EVT;
-
-      Util_startClock(&periodicClock);
-
-      // Perform periodic application task
-      SimpleBLEPeripheral_performPeriodicTask();
     }
 
 #ifdef FEATURE_OAD
@@ -947,60 +828,23 @@ static void SimpleBLEPeripheral_charValueChangeCB(uint8_t paramID)
 static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
 {
 #ifndef FEATURE_OAD
-  uint8_t newValue;
+	uint8_t newValue[4];
 
-  switch(paramID)
-  {
-    case SIMPLEPROFILE_CHAR1:
-      SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR1, &newValue);
+	switch(paramID)
+	{
+		case SB_CHARACTERISTIC_SYSTEMTIME:
+			// TODO: Integrate this with the rest of the system, and the storage mechanism
+			SB_Profile_GetParameter(SB_CHARACTERISTIC_SYSTEMTIME, &newValue, 4);
 
-      System_printf("Char 1: %d\n", (uint16_t)newValue);
-      break;
+			System_printf("System time set: %d\n", *(uint32_t*)newValue);
+			break;
 
-    case SIMPLEPROFILE_CHAR3:
-      SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR3, &newValue);
-
-      System_printf("Char 3: %d\n", (uint16_t)newValue);
-      break;
-
-    default:
-      // should not reach here!
-      break;
-  }
+		default:
+			// should not reach here!
+			break;
+	}
 #endif //!FEATURE_OAD
 }
-
-/*********************************************************************
- * @fn      SimpleBLEPeripheral_performPeriodicTask
- *
- * @brief   Perform a periodic application task. This function gets called
- *          every five seconds (SBP_PERIODIC_EVT_PERIOD). In this example,
- *          the value of the third characteristic in the SimpleGATTProfile
- *          service is retrieved from the profile, and then copied into the
- *          value of the the fourth characteristic.
- *
- * @param   None.
- *
- * @return  None.
- */
-static void SimpleBLEPeripheral_performPeriodicTask(void)
-{
-#ifndef FEATURE_OAD
-  uint8_t valueToCopy;
-
-  // Call to retrieve the value of the third characteristic in the profile
-  if (SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR3, &valueToCopy) == SUCCESS)
-  {
-    // Call to set that value of the fourth characteristic in the profile.
-    // Note that if notifications of the fourth characteristic have been
-    // enabled by a GATT client device, then a notification will be sent
-    // every time this function is called.
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(uint8_t),
-                               &valueToCopy);
-  }
-#endif //!FEATURE_OAD
-}
-
 
 #if defined(FEATURE_OAD)
 /*********************************************************************
@@ -1041,24 +885,6 @@ void SimpleBLEPeripheral_processOadWriteCB(uint8_t event, uint16_t connHandle,
   }
 }
 #endif //FEATURE_OAD
-
-/*********************************************************************
- * @fn      SimpleBLEPeripheral_clockHandler
- *
- * @brief   Handler function for clock timeouts.
- *
- * @param   arg - event type
- *
- * @return  None.
- */
-static void SimpleBLEPeripheral_clockHandler(UArg arg)
-{
-  // Store the event.
-  events |= arg;
-
-  // Wake up the application.
-  Semaphore_post(sem);
-}
 
 /*********************************************************************
  * @fn      SimpleBLEPeripheral_enqueueMsg
