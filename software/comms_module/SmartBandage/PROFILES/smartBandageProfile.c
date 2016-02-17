@@ -62,7 +62,6 @@
  */
 
 
-
 /*********************************************************************
  * TYPEDEFS
  */
@@ -343,6 +342,28 @@ bStatus_t SB_Profile_SetParameter( SB_CHARACTERISTIC param, uint8 len, void *val
 
 	VOID memcpy( characteristics[param].value, value, characteristics[param].length );
 
+
+	return SUCCESS;
+}
+
+/*********************************************************************
+ * @fn      SB_Profile_Set16bParameter
+ *
+ * @brief   Set a 16bit parameter within an array of 16bit parameters.
+ *
+ * @param   param - Profile parameter ID
+ * @param   value - 16bit value to write
+ * @param   valueIndex - Index of the 16bit parameter within the array to write to.
+ *
+ * @return  bStatus_t
+ */
+bStatus_t SB_Profile_Set16bParameter( SB_CHARACTERISTIC param, uint16 value, uint8 valueIndex )
+{
+	if ( sizeof(uint16)*valueIndex >= characteristics[param].length ) {
+		return bleInvalidRange;
+	}
+
+	VOID memcpy( characteristics[param].value + valueIndex*sizeof(uint16), &value, sizeof(uint16) );
 
 	return SUCCESS;
 }

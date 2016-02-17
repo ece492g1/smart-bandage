@@ -40,6 +40,10 @@
 #ifndef SIMPLEGATTPROFILE_H
 #define SIMPLEGATTPROFILE_H
 
+#include "hci_tl.h"
+#include "gatt.h"
+
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -162,7 +166,9 @@ extern bStatus_t SB_Profile_RegisterAppCBs( simpleProfileCBs_t *appCallbacks );
  *          uint16 pointer).
  */
 extern bStatus_t SB_Profile_SetParameter( SB_CHARACTERISTIC param, uint8 len, void *value );
-  
+
+extern bStatus_t SB_Profile_Set16bParameter( SB_CHARACTERISTIC param, uint16 value, uint8 valueIndex );
+
 /*
  * SimpleProfile_GetParameter - Get a Simple GATT Profile parameter.
  *
