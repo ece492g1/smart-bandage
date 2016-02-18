@@ -112,7 +112,7 @@ SB_Error applyHumiditySensorConfiguration() {
 	SB_i2cQueueTransaction(&configTransaction, BIOS_WAIT_FOREVER);
 
 	// Wait for completion
-	Semaphore_pend(PMGR.mcp9808DeviceSemaphores[deviceNo], BIOS_WAIT_FOREVER);
+	Semaphore_pend(PMGR.hdc1050DeviceSemaphore, BIOS_WAIT_FOREVER);
 
 	return configTransaction.completionResult;
 }
