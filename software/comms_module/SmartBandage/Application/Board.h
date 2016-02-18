@@ -21,11 +21,11 @@
 /*****************************************************************
  * Tasks Configuration
  ****************************************************************/
-#define DEFAULT_TASK_STACK_SIZE 700
+#define DEFAULT_TASK_STACK_SIZE 512
 
-#define I2C_TASK_STACK_SIZE DEFAULT_TASK_STACK_SIZE
+#define I2C_TASK_STACK_SIZE  DEFAULT_TASK_STACK_SIZE
 #define PMGR_TASK_STACK_SIZE DEFAULT_TASK_STACK_SIZE
-#define SBP_TASK_STACK_SIZE  644
+#define SBP_TASK_STACK_SIZE  DEFAULT_TASK_STACK_SIZE
 
 typedef enum {
 	IDLE_TASK_PRIORITY = 0,
