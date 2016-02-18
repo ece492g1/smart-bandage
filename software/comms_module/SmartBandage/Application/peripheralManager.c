@@ -13,6 +13,7 @@
 #include "i2c.h"
 #include "Board.h"
 #include "Devices/mcp9808.h"
+#include "Devices/hdc1050.h"
 #include "peripheralManager.h"
 #include "../PROFILES/smartBandageProfile.h"
 
@@ -20,6 +21,10 @@ struct {
 	MCP9808_DEVICE mcp9808Devices[SB_NUM_MCP9808_SENSORS];
 	SB_PeripheralState mcp9808DeviceStates[SB_NUM_MCP9808_SENSORS];
 	Semaphore_Handle mcp9808DeviceSemaphores[SB_NUM_MCP9808_SENSORS];
+
+	HDC1050_DEVICE hdc1050Device;
+	SB_PeripheralState hdc1050DeviceState;
+	Semaphore_Handle hdc1050DeviceSemaphore;
 
 	Task_Handle taskHandle;
 	Task_Struct task;
@@ -72,6 +77,41 @@ SB_Error applyTempSensorConfiguration(uint8_t deviceNo) {
 
 	// Wait for completion (twice)
 	Semaphore_pend(PMGR.mcp9808DeviceSemaphores[deviceNo], BIOS_WAIT_FOREVER);
+	Semaphore_pend(PMGR.mcp9808DeviceSemaphores[deviceNo], BIOS_WAIT_FOREVER);
+
+	return configTransaction.completionResult;
+}
+
+SB_Error applyHumiditySensorConfiguration() {
+	SB_i2cTransaction configTransaction;
+	I2C_Transaction configBaseTransaction;
+	uint8_t txBuf[3];
+
+	PMGR.hdc1050Device.configuration =
+		  HDC1050_REG_CONFIGURATION_HEAT_DSBL       << HDC1050_REG_CONFIGURATION_HEAT
+		| HDC1050_REG_CONFIGURATION_MODE_SEQUENTIAL << HDC1050_REG_CONFIGURATION_MODE
+		| HDC1050_REG_CONFIGURATION_TRES_14BIT 		<< HDC1050_REG_CONFIGURATION_TRES
+		| HDC1050_REG_CONFIGURATION_HRES_14BIT 		<< HDC1050_REG_CONFIGURATION_HRES
+	;
+
+	txBuf[0] = HDC1050_REG_CONFIGURATION;
+	txBuf[1] = 0xFF & (PMGR.hdc1050Device.configuration >> 8);
+	txBuf[2] = 0xFF & (PMGR.hdc1050Device.configuration >> 0);
+
+	// The configuration transaction
+	configBaseTransaction.writeCount   = 3;
+	configBaseTransaction.writeBuf     = txBuf;
+	configBaseTransaction.readCount    = 0;
+	configBaseTransaction.readBuf      = NULL;
+	configBaseTransaction.slaveAddress = PMGR.hdc1050Device.address;
+
+	configTransaction.baseTransaction = &configBaseTransaction;
+	configTransaction.completionSemaphore = &PMGR.hdc1050DeviceSemaphore;
+
+	// Queue the configuration and resolution transactions
+	SB_i2cQueueTransaction(&configTransaction, BIOS_WAIT_FOREVER);
+
+	// Wait for completion
 	Semaphore_pend(PMGR.mcp9808DeviceSemaphores[deviceNo], BIOS_WAIT_FOREVER);
 
 	return configTransaction.completionResult;

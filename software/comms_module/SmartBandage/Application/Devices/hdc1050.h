@@ -43,10 +43,13 @@
 #define HDC1050_MANUFACTURER_ID 0x5449
 #define HDC1050_DEVICE_ID       0x1050
 
+#define HDC1050_I2C_ADDRESS 0b1000000
+
 typedef struct {
 	uint16_t temperature;
 	uint16_t humidity;
 	uint16_t configuration;
+	uint8_t  address;
 } HDC1050_DEVICE;
 
 

@@ -12,7 +12,8 @@ typedef enum {
 	PState_Unknown,
 	PState_OK,
 	PState_Intermittent,
-	PState_FailedConfig
+	PState_FailedConfig,
+	PState_Failed,
 } SB_PeripheralFunctionalState;
 
 typedef struct {
