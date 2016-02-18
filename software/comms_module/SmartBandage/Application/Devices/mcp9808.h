@@ -9,6 +9,8 @@
 #ifndef APPLICATION_DEVICES_MCP9808_H_
 #define APPLICATION_DEVICES_MCP9808_H_
 
+#include "hci_tl.h"
+
 #define MCP9808_REG_CONFIG          0x01
 #define MCP9808_REG_TUPPER          0x02
 #define MCP9808_REG_TLOWER          0x03
@@ -92,13 +94,6 @@ typedef struct {
 	int16_t  Temperature;
 } MCP9808_DEVICE;
 
-int16_t mcp9808_convert_raw_temp_data(uint8_t upperByte, uint8_t lowerByte) {
-	if (upperByte & 0x10) {
-		// Negative temperature
-		return 256 - (upperByte & 0x0F)*16 + lowerByte/16;
-	} else {
-		return (upperByte & 0x0F) << 8 | lowerByte;
-	}
-}
+extern int16_t mcp9808_convert_raw_temp_data(uint8_t upperByte, uint8_t lowerByte);
 
 #endif /* APPLICATION_DEVICES_MCP9808_H_ */
