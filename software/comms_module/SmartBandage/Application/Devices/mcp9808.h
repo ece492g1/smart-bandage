@@ -9,6 +9,8 @@
 #ifndef APPLICATION_DEVICES_MCP9808_H_
 #define APPLICATION_DEVICES_MCP9808_H_
 
+#include "hci_tl.h"
+
 #define MCP9808_REG_CONFIG          0x01
 #define MCP9808_REG_TUPPER          0x02
 #define MCP9808_REG_TLOWER          0x03
@@ -37,6 +39,11 @@
 #define MCP9808_RESOLUTION_0P25     0b01
 #define MCP9808_RESOLUTION_0P125    0b10
 #define MCP9808_RESOLUTION_0P0625   0b11
+
+#define MCP9808_RES_TCONV_MS_0P5     30
+#define MCP9808_RES_TCONV_MS_0P25    65
+#define MCP9808_RES_TCONV_MS_0P125  130
+#define MCP9808_RES_TCONV_MS_0P0625 250
 
 #define MCP9808_CONFIG_ALERT_MODE      0
 #define MCP9808_CONFIG_ALERT_POLARITY  1
@@ -83,11 +90,10 @@ typedef struct {
 	int16_t  ManufacturerId;
 	int16_t  DeviceId;
 	uint16_t Configuration;
-	int16_t  TUpper;
-	int16_t  TLower;
-	int16_t  TCrit;
 	uint16_t Resolution;
 	int16_t  Temperature;
 } MCP9808_DEVICE;
+
+extern int16_t mcp9808_convert_raw_temp_data(uint8_t upperByte, uint8_t lowerByte);
 
 #endif /* APPLICATION_DEVICES_MCP9808_H_ */
