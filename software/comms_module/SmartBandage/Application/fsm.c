@@ -28,6 +28,17 @@ SB_State SB_dataChanged(void);
 SB_State SB_returnToSleep(void);
 void SB_setError(SB_Error);
 
+//EDITED HERE
+//callback function prototypes -- should these be pointers themselves?
+void SB_enterSleepCallback(void);
+void SB_transmitCallback(void);
+void SB_checkCallback(void);
+void SB_initSystemCallback(void);
+void SB_tempErrorCallback(void);
+void SB_permErrorCallback(void);
+void SB_registerStateTransitionCallback(SB_Callback, SB_State);
+
+
 //LUT TABLE
 //TODO: If we continue to run out of heap, implement this in a switch statement as with 5 events and 6 states this is 120bytes of memory
 //implemented a "do nothing" function for the events that are not relevent to a particular
@@ -48,20 +59,27 @@ SB_SystemState systemState = {
 	.lastError    = NoError,
 };
 
+//EDITED HERE
 //switch the states
 SB_State SB_switchState(SB_State newState) {
 	switch (newState) {
 	case S_INIT:
+		SB_registerStateTransitionCallback(SB_initSystemCallback, newState);
 	case S_SLEEP:
+		SB_registerStateTransitionCallback(SB_enterSleepCallback, newState);
 	case S_CHECK:
+		SB_registerStateTransitionCallback(SB_checkCallback, newState);
 	case S_TRANSMIT:
 		SB_setError(NoError);
 		// No "break" on purpose
+		SB_registerStateTransitionCallback(SB_transmitCallback, newState);
 	case S_ERROR_TEMP:
+		SB_registerStateTransitionCallback(SB_tempErrorCallback, newState);
 		systemState.currentState = newState;
 		break;
 
 	default:
+		SB_registerStateTransitionCallback(SB_permErrorCallback, newState);
 		systemState.currentState = S_ERROR_PERM;
 	}
 
@@ -136,4 +154,39 @@ inline void SB_setError(SB_Error error) {
 
 inline SB_State SB_currentState() {
 	return systemState.currentState;
+}
+
+//EDITED HERE
+void SB_enterSleepCallback() {
+	//Handle entering the sleep state. Turn off peripherals to reduce power consumption
+}
+
+void SB_transmitCallback() {
+	//Handle entering the transmit state. Turn on the bluetooth peripheral
+
+}
+
+void SB_checkCallback() {
+	//Handle entering the check state. Turn on all peripherals except for the bluetooth
+
+}
+
+void SB_initSystemCallback() {
+	//Handle system initialization
+
+}
+
+void SB_tempErrorCallback(){
+	//Handle temporary errors, possibly reset peripherals, depends on error
+
+}
+
+void SB_permErrorCallback() {
+	//Handle permanent error. Possibly turn on bluetooth peripheral if transmitting error
+
+}
+
+void SB_registerStateTransitionCallback(SB_Callback callback, SB_State state) {
+	//passes function pointer to be called in the future
+	(*callback)();
 }
