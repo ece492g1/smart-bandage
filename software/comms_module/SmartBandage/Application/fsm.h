@@ -47,5 +47,6 @@ SB_State SB_currentState();
 //EDITED HERE
 //function type for callback
 typedef void (*SB_Callback)(void);
+typedef void (*SB_EventHandler)(void);
 
 #endif
