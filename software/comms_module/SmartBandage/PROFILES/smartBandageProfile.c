@@ -490,8 +490,6 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 
 				//Write the value
 				if ( status == SUCCESS ) {
-//					uint8 *pCurValue = (uint8 *)pAttr->pValue;
-//					*pCurValue = pValue[0];
 					memcpy(pAttr->pValue + offset, pValue, len);
 
 					// Notify the application that system time changed
