@@ -483,20 +483,14 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 		switch ( uuid )
 		{
 			case SB_BLE_SYSTEMTIME_UUID:
-				//Validate the value
-				// Make sure it's not a blob oper
-				if ( offset == 0 ) {
-					if ( len != 1 ) {
-						status = ATT_ERR_INVALID_VALUE_SIZE;
-					}
-				} else {
-					status = ATT_ERR_ATTR_NOT_LONG;
+				// Ensure the length and offset don't cause us to overwrite
+				if  (offset >= characteristics[c].length || ((uint16)characteristics[c].length) - offset < len) {
+					status = ATT_ERR_INVALID_VALUE_SIZE;
 				}
 
 				//Write the value
 				if ( status == SUCCESS ) {
-					uint8 *pCurValue = (uint8 *)pAttr->pValue;
-					*pCurValue = pValue[0];
+					memcpy(pAttr->pValue + offset, pValue, len);
 
 					// Notify the application that system time changed
 					notifyApp = SB_CHARACTERISTIC_SYSTEMTIME;
