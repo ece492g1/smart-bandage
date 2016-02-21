@@ -69,6 +69,11 @@ extern uint8_t Mcp9808Addresses[];
 #define SB_NUM_MCP9808_SENSORS 1
 #endif
 
+#define SYSDSBL_REFRESH_CLOCK_PERIOD 500
+
+#define PIN_HIGH 1
+#define PIN_LOW  0
+
 /*****************************************************************
  * External MUX configurations
  ****************************************************************/
@@ -77,19 +82,19 @@ extern uint8_t Mcp9808Addresses[];
 #define Board_IOMUX_S0 					Board_MSW_0
 #define Board_IOMUX_S1 					Board_MSW_1
 #define Board_IOMUX_S2 					Board_MSW_2
-#define Board_IOMUX_BANDAGE_A_0			((MUX_SELECT)Y3)
-#define Board_IOMUX_BANDAGE_A_1			((MUX_SELECT)Y2)
-#define Board_IOMUX_BANDAGE_A_2			((MUX_SELECT)Y1)
-#define Board_IOMUX_BANDAGE_A_3			((MUX_SELECT)Y0)
-#define Board_IOMUX_BANDAGE_A_4			((MUX_SELECT)Y4)
-#define Board_IOMUX_PERIPHERAL_DETECT	((MUX_SELECT)Y5)
-#define Board_IOMUX_SYSDISBL_N			((MUX_SELECT)Y6)
-#define Board_IOMUX_V_PREBUCK_DIV2		((MUX_SELECT)Y7)
+#define Board_IOMUX_BANDAGE_A_0			((MUX_OUTPUT)Y3)
+#define Board_IOMUX_BANDAGE_A_1			((MUX_OUTPUT)Y2)
+#define Board_IOMUX_BANDAGE_A_2			((MUX_OUTPUT)Y1)
+#define Board_IOMUX_BANDAGE_A_3			((MUX_OUTPUT)Y0)
+#define Board_IOMUX_BANDAGE_A_4			((MUX_OUTPUT)Y4)
+#define Board_IOMUX_PERIPHERAL_DETECT	((MUX_OUTPUT)Y5)
+#define Board_IOMUX_SYSDISBL_N			((MUX_OUTPUT)Y6)
+#define Board_IOMUX_V_PREBUCK_DIV2		((MUX_OUTPUT)Y7)
 
 #define Board_PWRMUX_S 							Board_MPSW
 #define Board_PWRMUX_ENABLE_N 					Board_MP_EN_SW
-#define Board_PWRMUX_PERIPHERAL_VCC				((MUX_SELECT)Y1)
-#define Board_PWRMUX_1V3						((MUX_SELECT)Y0)
+#define Board_PWRMUX_PERIPHERAL_VCC				((MUX_OUTPUT)Y1)
+#define Board_PWRMUX_1V3						((MUX_OUTPUT)Y0)
 
 /*****************************************************************
  * I2C Configuration
@@ -149,6 +154,13 @@ typedef enum {
 	InvalidParameter,
 	OperationTimeout,
 	OutOfMemory,
+	SemaphorePendTimeout,
 } SB_Error;
+
+/*****************************************************************
+ * Helpers
+ ****************************************************************/
+
+#define _BV(bit_no) (1 << bit_no)
 
 #endif /* APPLICATION_CONFIG_H_ */

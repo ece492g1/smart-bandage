@@ -10,9 +10,9 @@
 #define APPLICATION_MUX_H_
 
 typedef enum {
-	S0 = 0,
-	S1 = 1,
-	S2 = 2,
+	S0 = 0b001,
+	S1 = 0b010,
+	S2 = 0b100,
 } MUX_SELECT;
 
 typedef enum {
@@ -25,5 +25,13 @@ typedef enum {
 	Y6 = 6,
 	Y7 = 7,
 } MUX_OUTPUT;
+
+typedef enum {
+	MUX_ENABLE,
+	MUX_DISABLE
+} MUX_OUTPUT_ENABLE;
+
+// Gets the value for MUX_SELECT input `muxSelect` to enable output pin `output`
+#define MUX_SELECT_VALUE(muxSelect, output) ((muxSelect & output) >> (muxSelect - S0))
 
 #endif /* APPLICATION_MUX_H_ */

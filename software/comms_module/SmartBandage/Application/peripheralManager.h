@@ -8,6 +8,8 @@
 #ifndef APPLICATION_PERIPHERALMANAGER_H_
 #define APPLICATION_PERIPHERALMANAGER_H_
 
+#include "Board.h"
+
 typedef enum {
 	PState_Unknown,
 	PState_OK,
@@ -21,6 +23,15 @@ typedef struct {
 	SB_PeripheralFunctionalState currentState;
 } SB_PeripheralState;
 
+typedef struct {
+	MUX_OUTPUT pwrmuxOutput;
+	MUX_OUTPUT_ENABLE pwrmuxOutputEnable;
+	MUX_OUTPUT iomuxOutput;
+} SB_MUXState;
+
 SB_Error SB_peripheralInit();
+SB_Error SB_setPeripheralsEnable(bool enable);
+SB_Error SB_sysDisableRefresh(uint32 semaphoreTimeout);
+SB_Error SB_sysDisableShutdown();
 
 #endif /* APPLICATION_PERIPHERALMANAGER_H_ */

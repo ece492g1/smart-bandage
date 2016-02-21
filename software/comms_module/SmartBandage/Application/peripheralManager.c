@@ -11,11 +11,18 @@
 #include <ti/drivers/PIN.h>
 
 #include "i2c.h"
-#include "Board.h"
+#include "util.h"
 #include "Devices/mcp9808.h"
 #include "Devices/hdc1050.h"
 #include "peripheralManager.h"
 #include "../PROFILES/smartBandageProfile.h"
+
+SB_Error applyTempSensorConfiguration(uint8_t deviceNo);
+SB_Error applyIOMuxState(MUX_OUTPUT_ENABLE outputEnable, MUX_OUTPUT output);
+SB_Error applyPWRMuxState(MUX_OUTPUT_ENABLE outputEnable, MUX_OUTPUT output);
+SB_Error applyFullMuxState(SB_MUXState muxState, uint32 timeout);
+SB_Error _applyFullMuxState(SB_MUXState muxState);
+void SB_sysdisblClockHandler(UArg arg);
 
 struct {
 	MCP9808_DEVICE mcp9808Devices[SB_NUM_MCP9808_SENSORS];
@@ -29,6 +36,12 @@ struct {
 	Task_Handle taskHandle;
 	Task_Struct task;
 	Char taskStack[PMGR_TASK_STACK_SIZE];
+
+	PIN_State PeripheralPower;
+	PIN_State MUXPins;
+	PIN_State AnalogPins;
+	Semaphore_Handle muxSemaphore;
+	Clock_Struct sysdisblClock;
 } PMGR;
 
 SB_Error applyTempSensorConfiguration(uint8_t deviceNo) {
@@ -188,6 +201,9 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 
 	uint16_t temperature;
 	while (1) {
+		// Enable peripherals
+		SB_setPeripheralsEnable(true);
+
 #ifdef LAUNCHPAD
 		PIN_setOutputValue(statusPin, Board_T_LED_GREEN, 1);
 #endif
@@ -204,15 +220,24 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 			// The temperature sensor is big endian and this device is little endian
 			// Also need to apply the mask for the data from the sensor: 0x0FFF
 			temperature = 0x0FFF & ((rxBuf[0] << 8) | (rxBuf[1]));
+#ifdef SB_DEBUG
 			System_printf("PMGR: Temperature read: %d\n", temperature>>4);
+#endif
 
 			// TODO: Calls like this should likely be protected with a semaphore
 			SB_Profile_Set16bParameter( SB_CHARACTERISTIC_TEMPERATURE, temperature, 1 );
 		} else {
+#ifdef SB_DEBUG
 			System_printf("PMGR: Temperature read failed.\n");
+#endif
 		}
 
+		// Disable peripherals
+		SB_setPeripheralsEnable(false);
+
+#ifdef SB_DEBUG
 		System_flush();
+#endif
 
 		Task_sleep(100000);
 	}
@@ -232,6 +257,79 @@ SB_Error SB_peripheralInit() {
 		}
 	}
 
+	// Initialize power pin
+	PIN_Config peripheralPowerConfigTable[] =
+	{
+		Board_PERIPHERAL_PWR,
+		PIN_TERMINATE,
+	};
+
+	if (!PIN_open(&PMGR.PeripheralPower, peripheralPowerConfigTable)) {
+#ifdef SB_DEBUG
+	System_printf("Failed to initialize power pin...\n");
+	System_flush();
+#endif
+		return OSResourceInitializationError;
+	}
+
+	// Initialize MUX pins
+	PIN_Config muxPinsConfigTable[] =
+	{
+		Board_MP_EN_SW,
+		Board_MSW_0,
+		Board_MSW_1,
+		Board_MSW_2,
+		Board_MPSW,
+		PIN_TERMINATE,
+	};
+
+	if (!PIN_open(&PMGR.MUXPins, muxPinsConfigTable)) {
+#ifdef SB_DEBUG
+	System_printf("Failed to initialize MUX pins...\n");
+	System_flush();
+#endif
+		return OSResourceInitializationError;
+	}
+
+	// Initialize analog input pins
+	PIN_Config analogPinsConfigTable[] =
+	{
+		Board_BANDAGE_A_0,
+		Board_CONN_STATE_RD,
+		Board_VSENSE_0,
+		Board_VSENSE_1,
+		Board_1V3,
+		PIN_TERMINATE,
+	};
+
+	if (!PIN_open(&PMGR.AnalogPins, analogPinsConfigTable)) {
+#ifdef SB_DEBUG
+	System_printf("Failed to initialize analog pins...\n");
+	System_flush();
+#endif
+		return OSResourceInitializationError;
+	}
+
+	// Initialize MUX semaphore with 1 free resource (use as mutex)
+	PMGR.muxSemaphore = Semaphore_create(1, NULL, NULL);
+
+	// Initialize sysdisbl clock
+	if (NULL == Util_constructClock(
+			&PMGR.sysdisblClock,
+			SB_sysdisblClockHandler,
+			SYSDSBL_REFRESH_CLOCK_PERIOD,
+			CLOCK_ONESHOT,
+			false,
+			NULL)) {
+
+#ifdef SB_DEBUG
+		System_printf("Failed to initialize sysdisbl clock...\n");
+		System_flush();
+#endif
+		return OSResourceInitializationError;
+	}
+
+	// Initialize peripheral manager task
 	Task_Params taskParams;
 
 	Task_Params_init(&taskParams);
@@ -249,4 +347,137 @@ SB_Error SB_peripheralInit() {
 	}
 
 	return NoError;
+}
+
+/**
+ * \brief Enables or disables power to external PCB peripherals
+ */
+SB_Error SB_setPeripheralsEnable(bool enable) {
+	PIN_Status result = PIN_setOutputValue(&PMGR.PeripheralPower, Board_PERIPHERAL_PWR, enable != false);
+	if (result == PIN_SUCCESS) {
+		return NoError;
+	}
+
+#ifdef SB_DEBUG
+	System_printf("Received error setting peripheral power: %d\n", result);
+	System_flush();
+#endif
+
+	return UnknownError;
+}
+
+/**
+ * \brief Applies the mux states to the PWR and IO muxes after pending on the MUX semaphore.
+ */
+SB_Error applyFullMuxState(SB_MUXState muxState, uint32 timeout) {
+	if (!Semaphore_pend(PMGR.muxSemaphore, timeout)) {
+		return SemaphorePendTimeout;
+	}
+
+	SB_Error result = _applyFullMuxState(muxState);
+
+	Semaphore_post(PMGR.muxSemaphore);
+
+	return result;
+}
+
+/**
+ * \brief Applies the mux states to the PWR and IO muxes without pending on the MUX semaphore.
+ * \remark You must posess a lock on the PMGR.muxSemaphore
+ */
+SB_Error _applyFullMuxState(SB_MUXState muxState) {
+	PIN_Status result =
+			PIN_setPortOutputValue(&PMGR.MUXPins,
+				// Set the MUX Select S* outputs
+				  (MUX_SELECT_VALUE(S0, muxState.iomuxOutput) << Board_IOMUX_S0)
+				| (MUX_SELECT_VALUE(S1, muxState.iomuxOutput) << Board_IOMUX_S1)
+				| (MUX_SELECT_VALUE(S2, muxState.iomuxOutput) << Board_IOMUX_S2)
+
+				| (MUX_SELECT_VALUE(S0, muxState.pwrmuxOutput) << Board_PWRMUX_S)
+
+				// Set the MUX enable output
+				| (muxState.pwrmuxOutputEnable << Board_PWRMUX_ENABLE_N));
+
+	if (result == PIN_SUCCESS) {
+		return NoError;
+	}
+
+#ifdef SB_DEBUG
+	System_printf("Received error setting IO MUX state: %d\n", result);
+	System_flush();
+#endif
+
+	return UnknownError;
+}
+
+/**
+ * \brief Refreshes the SYSDISBL hardware
+ * \remark Returns as soon as the output is assigned, but keeps the MUX semaphore.
+ * 			No MUX operations can complete until after SYSDSBL_REFRESH_CLOCK_PERIOD has elapsed.
+ */
+SB_Error SB_sysDisableRefresh(uint32 semaphoreTimeout) {
+	SB_MUXState refreshState  = {
+		.iomuxOutput = Board_IOMUX_SYSDISBL_N,
+		.pwrmuxOutput = Board_PWRMUX_PERIPHERAL_VCC,
+		.pwrmuxOutputEnable = MUX_ENABLE,
+	};
+
+	if (!Semaphore_pend(PMGR.muxSemaphore, semaphoreTimeout)) {
+		// This is unknown error as that pend should never return (BIOS_WAIT_FOREVER)
+		return UnknownError;
+	}
+
+	SB_Error result = _applyFullMuxState(refreshState);
+
+	if (result != NoError) {
+		Semaphore_post(PMGR.muxSemaphore);
+		return result;
+	}
+
+	Util_startClock(&PMGR.sysdisblClock);
+
+	return NoError;
+}
+
+void SB_sysdisblClockHandler(UArg arg) {
+	Semaphore_post(PMGR.muxSemaphore);
+}
+
+/**
+ * \brief Triggers the SYSDISBL shutdown. If shutdown is triggered this function does not return before the system loses power.
+ */
+SB_Error SB_sysDisableShutdown() {
+	// TODO: Generate an error if jack power is present
+
+	// IO MUX should connect the SYSDISBL output.
+	// PWRMUX doesn't matter which output is select as it is disabled.
+	SB_MUXState shutdownState  = {
+		.iomuxOutput = Board_IOMUX_SYSDISBL_N,
+		.pwrmuxOutput = Board_PWRMUX_PERIPHERAL_VCC,
+		.pwrmuxOutputEnable = MUX_DISABLE,
+	};
+
+	if (!Semaphore_pend(PMGR.muxSemaphore, BIOS_WAIT_FOREVER)) {
+		// This is unknown error as that pend should never return (BIOS_WAIT_FOREVER)
+		return UnknownError;
+	}
+
+	SB_Error result = _applyFullMuxState(shutdownState);
+
+	if (result != NoError) {
+		Semaphore_post(PMGR.muxSemaphore);
+		return result;
+	}
+
+	// Reconfigure the CONN_STATE_RD pin as a sink to speed shutdown
+	PIN_setConfig(PMGR.AnalogPins,
+		PIN_BM_INPUT_EN | PIN_BM_PULLING | PIN_BM_GPIO_OUTPUT_EN | PIN_BM_GPIO_OUTPUT_VAL | PIN_BM_OUTPUT_BUF,
+		PIN_INPUT_DIS   | PIN_NOPULL     | PIN_GPIO_OUTPUT_EN    | PIN_GPIO_LOW           | PIN_OPENDRAIN      | Board_CONN_STATE_RD);
+
+	// Enable the current sink output
+	PIN_setOutputValue(PMGR.AnalogPins, Board_CONN_STATE_RD, PIN_LOW);
+
+	// TODO: This loop should actually check on occasion if jack power has become available by switching MUX to V_PREBUCK_DIV2 for a moment
+	// This function doesn't return - the system is about to die.
+	while (1);
 }
