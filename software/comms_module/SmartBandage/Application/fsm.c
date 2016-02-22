@@ -29,23 +29,8 @@ SB_State SB_returnToSleep(void);
 void SB_setError(SB_Error);
 
 //EDITED HERE
-//callback function prototypes -- should these be pointers themselves?
-void SB_enterSleepCallback(void);
-void SB_transmitCallback(void);
-void SB_checkCallback(void);
-void SB_initSystemCallback(void);
-void SB_tempErrorCallback(void);
-void SB_permErrorCallback(void);
-void SB_registerStateTransitionCallback(SB_Callback, SB_State);
-
-//event handler function prototypes -- did not have one for the init event as this happens at the start, and is directed to sleep right away
-//so it isnt needed?
-void SB_sleepEventHandler(void);
-void SB_transmitEventHandler(void);
-void SB_checkEventHandler(void);
-void SB_tempErrorEventHandler(void);
-void SB_permErrorEventHandler(void);
-void SB_registerEvent(SB_EventHandler, SB_State);
+//void SB_registerEvent(SB_EventHandler, SB_State);
+void SB_registerStateTransitionCallback((void*), SB_State_Transition); // not sure if the (void *) is the correct way of prototyping for void(*function)(void)
 
 
 //LUT TABLE
@@ -66,15 +51,33 @@ SB_SystemState systemState = {
 	.lastState    = S_INIT,
 	.currentError = NoError,
 	.lastError    = NoError,
+	.transitionState = exitTempError, //starts out in the going to init stage?? //EDITED HERE
 };
 
 //EDITED HERE
 //switch the states
+
+/* ASSUMPTIONS:
+ *  - the tasks will have been previously created, and in the function SB_switchState we are using the tasks, but not creating any new ones
+ *
+ *
+ *
+ */
 SB_State SB_switchState(SB_State newState) {
 	switch (newState) {
 	case S_INIT:
 
 	case S_SLEEP:
+		// Pseudo code walk through of process:
+
+		// call highest priority task whose job it is to unblock the EXIT_STATE tasks.
+		// unblock the EXIT_STATE tasks, highest priority task yields or pends
+		// EXIT_STATES complete
+
+		//switch the state
+
+		//highest priority unblocks the ENTER_STATE tasks
+		//
 
 	case S_CHECK:
 
@@ -165,15 +168,31 @@ inline SB_State SB_currentState() {
 	return systemState.currentState;
 }
 
-//Edited here
-// errors here as no longer declared properly - start from here
-void SB_registerStateTransitionCallback(SB_Callback callback, SB_State state) {
+//EDITED HERE
+inline SB_State_Transition SB_transitioningState() {
+	return systemState.transitionState;
+}
+// Called from within periheral functions to register that the peripheral will need to be revisited when the state changes
+//
+void SB_registerStateTransitionCallback(void* callback(void), SB_State_Transition transitionTrigger) {
 	//passes function pointer to be called in the future
-	(*callback)();
+	//need to have the registerStateTransitionCallback function just waiting in the background until the right transition occcurs to execute the callbacks
+	if (SB_transitioningState() == transitionTrigger ) {
+		(*callback)();
+	}
+	//
 }
 
-
+/*
 void SB_registerEvent(SB_EventHandler eventHandler, SB_State state) {
 	//passes function pointer to be called in the future
 	(*eventHandler)();
 }
+*/
+
+//This is the calling function of the highest priority task (or that is called within task_disable() ?), which will proceed to unblock the tasks in either the ENTER_state or the EXIT_state
+//TODO still need to place the function prototype at the top
+void SB_unblockTasks() {
+
+}
+

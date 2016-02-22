@@ -30,12 +30,25 @@ typedef enum {
 	SB_NUM_EVENTS
 } SB_Event;
 
+//EDITED HERE
+// the transition stages of the state machine for the mcu
+typedef enum {
+	exitSleep,
+	exitCheck,
+	exitTransmit,
+	exitTempError,
+	exitPermError,
+	exitInit //this is needed for the case where you are going from the temp error and trying to initialize again
+
+} SB_State_Transition;
+
 typedef struct {
 	SB_State lastState;
 	SB_State currentState;
 	SB_Event lastEvent;
 	SB_Error currentError;
 	SB_Error lastError;
+	SB_State_Transition transitionState; //EDITED HERE
 } SB_SystemState;
 
 //function prototypes
@@ -43,6 +56,7 @@ SB_State SB_switchState(SB_State); //?
 SB_Event SB_getNewEvent(void);
 SB_State SB_handleEvent(SB_Event);
 SB_State SB_currentState();
+SB_State_Transition SB_transitioningState();    //EDITED HERE
 
 
 #endif
