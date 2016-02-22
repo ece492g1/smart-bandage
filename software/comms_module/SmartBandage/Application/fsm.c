@@ -73,29 +73,22 @@ SB_SystemState systemState = {
 SB_State SB_switchState(SB_State newState) {
 	switch (newState) {
 	case S_INIT:
-		//register callback to clean up from the state before switching to the new one
-		SB_registerStateTransitionCallback(SB_initSystemCallback, newState);
+
 	case S_SLEEP:
-		SB_registerStateTransitionCallback(SB_enterSleepCallback, newState);
-		//register the event occurances that will allow transition from the new state to the next new state
-		SB_registerEvent(SB_sleepEventHandler, newState);
+
 	case S_CHECK:
-		SB_registerStateTransitionCallback(SB_checkCallback, newState);
-		SB_registerEvent(SB_checkEventHandler, newState);
+
 	case S_TRANSMIT:
 		SB_setError(NoError);
 		// No "break" on purpose
-		SB_registerStateTransitionCallback(SB_transmitCallback, newState);
-		SB_registerEvent(SB_transmitEventHandler, newState);
+
 	case S_ERROR_TEMP:
-		SB_registerStateTransitionCallback(SB_tempErrorCallback, newState);
-		SB_registerEvent(SB_tempErrorEventHandler, newState);
+
 		systemState.currentState = newState;
 		break;
 
 	default:
-		SB_registerStateTransitionCallback(SB_permErrorCallback, newState);
-		SB_registerEvent(SB_permErrorEventHandler, newState);
+
 		systemState.currentState = S_ERROR_PERM;
 	}
 
@@ -172,65 +165,13 @@ inline SB_State SB_currentState() {
 	return systemState.currentState;
 }
 
-//EDITED HERE - callback functions
-void SB_enterSleepCallback() {
-	//Handle entering the sleep state. Turn off peripherals to reduce power consumption
-}
-
-void SB_transmitCallback() {
-	//Handle entering the transmit state. Turn on the bluetooth peripheral
-
-}
-
-void SB_checkCallback() {
-	//Handle entering the check state. Turn on all peripherals except for the bluetooth
-
-}
-
-void SB_initSystemCallback() {
-	//Handle system initialization
-
-}
-
-void SB_tempErrorCallback(){
-	//Handle temporary errors, possibly reset peripherals, depends on error
-
-}
-
-void SB_permErrorCallback() {
-	//Handle permanent error. Possibly turn on bluetooth peripheral if transmitting error
-
-}
-
+//Edited here
+// errors here as no longer declared properly - start from here
 void SB_registerStateTransitionCallback(SB_Callback callback, SB_State state) {
 	//passes function pointer to be called in the future
 	(*callback)();
 }
 
-//EDITED HERE - event handler functions
-void SB_sleepEventHandler() {
-	//Handle entering the sleep state. Turn off peripherals to reduce power consumption
-}
-
-void SB_transmitEventHandler() {
-	//Handle entering the transmit state. Turn on the bluetooth peripheral
-
-}
-
-void SB_checkEventHandler() {
-	//Handle entering the check state. Turn on all peripherals except for the bluetooth
-
-}
-
-void SB_tempErrorEventHandler(){
-	//Handle temporary errors, possibly reset peripherals, depends on error
-
-}
-
-void SB_permErrorEventHandler() {
-	//Handle permanent error. Possibly turn on bluetooth peripheral if transmitting error
-
-}
 
 void SB_registerEvent(SB_EventHandler eventHandler, SB_State state) {
 	//passes function pointer to be called in the future
