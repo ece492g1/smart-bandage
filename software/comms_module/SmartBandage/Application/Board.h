@@ -18,6 +18,7 @@
 //#define LAUNCHPAD // Only define if using Launchpad for testing. Can be defined as compiler argument instead.
 #define SB_DEBUG
 #define POWER_SAVING
+#define IOEXPANDER_PRESENT
 
 /*****************************************************************
  * Tasks Configuration

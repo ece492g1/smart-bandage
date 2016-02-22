@@ -14,6 +14,7 @@
 #include "util.h"
 #include "Devices/mcp9808.h"
 #include "Devices/hdc1050.h"
+#include "Devices/tca9554a.h"
 #include "peripheralManager.h"
 #include "../PROFILES/smartBandageProfile.h"
 
@@ -22,7 +23,7 @@ SB_Error applyIOMuxState(MUX_OUTPUT_ENABLE outputEnable, MUX_OUTPUT output);
 SB_Error applyPWRMuxState(MUX_OUTPUT_ENABLE outputEnable, MUX_OUTPUT output);
 SB_Error applyFullMuxState(SB_MUXState muxState, uint32 timeout);
 SB_Error _applyFullMuxState(SB_MUXState muxState);
-void SB_sysdisblClockHandler(UArg arg);
+void     SB_sysdisblClockHandler(UArg arg);
 
 struct {
 	MCP9808_DEVICE mcp9808Devices[SB_NUM_MCP9808_SENSORS];
@@ -32,6 +33,12 @@ struct {
 	HDC1050_DEVICE hdc1050Device;
 	SB_PeripheralState hdc1050DeviceState;
 	Semaphore_Handle hdc1050DeviceSemaphore;
+
+#ifdef IOEXPANDER_PRESENT
+	TCA9554A_DEVICE ioexpanderDevice;
+	SB_PeripheralState ioexpanderDeviceState;
+	Semaphore_Handle ioexpanderDeviceSemaphore;
+#endif
 
 	Task_Handle taskHandle;
 	Task_Struct task;
@@ -130,6 +137,46 @@ SB_Error applyHumiditySensorConfiguration() {
 	return configTransaction.completionResult;
 }
 
+#ifdef IOEXPANDER_PRESENT
+SB_Error applyIOExpanderConfiguration() {
+	SB_i2cTransaction configTransaction;
+	I2C_Transaction configBaseTransaction;
+	uint8_t txBuf[2];
+
+	PMGR.ioexpanderDevice.configuration =
+			  TCA9554A_CONFIG_INPUT  << IOPORT0
+			| TCA9554A_CONFIG_INPUT  << IOPORT1
+			| TCA9554A_CONFIG_OUTPUT << IOPORT2
+			| TCA9554A_CONFIG_OUTPUT << IOPORT3
+			| TCA9554A_CONFIG_OUTPUT << IOPORT4
+			| TCA9554A_CONFIG_OUTPUT << IOPORT5
+			| TCA9554A_CONFIG_OUTPUT << IOPORT6
+			| TCA9554A_CONFIG_OUTPUT << IOPORT7
+	;
+
+	txBuf[0] = TCA9554A_REG_CONFIG;
+	txBuf[1] = PMGR.ioexpanderDevice.configuration;
+
+	// The configuration transaction
+	configBaseTransaction.writeCount   = 2;
+	configBaseTransaction.writeBuf     = txBuf;
+	configBaseTransaction.readCount    = 0;
+	configBaseTransaction.readBuf      = NULL;
+	configBaseTransaction.slaveAddress = PMGR.ioexpanderDevice.address;
+
+	configTransaction.baseTransaction = &configBaseTransaction;
+	configTransaction.completionSemaphore = &PMGR.ioexpanderDeviceSemaphore;
+
+	// Queue the configuration and resolution transactions
+	SB_i2cQueueTransaction(&configTransaction, BIOS_WAIT_FOREVER);
+
+	// Wait for completion
+	Semaphore_pend(PMGR.ioexpanderDeviceSemaphore, BIOS_WAIT_FOREVER);
+
+	return configTransaction.completionResult;
+}
+#endif
+
 SB_Error initPeripherals() {
 	int i;
 
@@ -145,6 +192,19 @@ SB_Error initPeripherals() {
 			return PMGR.mcp9808DeviceStates[i].lastError;
 		}
 	}
+
+#ifdef IOEXPANDER_PRESENT
+	// Initialize IO Expander
+	PMGR.ioexpanderDevice.address = I2C_DBGIOEXP_ADDR;
+	PMGR.ioexpanderDeviceState.lastError = applyIOExpanderConfiguration();
+
+	if (NoError == PMGR.ioexpanderDeviceState.lastError) {
+		PMGR.ioexpanderDeviceState.currentState = PState_OK;
+	} else {
+		PMGR.ioexpanderDeviceState.currentState = PState_FailedConfig;
+		return PMGR.ioexpanderDeviceState.lastError;
+	}
+#endif
 
 	return NoError;
 }
@@ -470,12 +530,12 @@ SB_Error SB_sysDisableShutdown() {
 	}
 
 	// Reconfigure the CONN_STATE_RD pin as a sink to speed shutdown
-	PIN_setConfig(PMGR.AnalogPins,
+	PIN_setConfig(&PMGR.AnalogPins,
 		PIN_BM_INPUT_EN | PIN_BM_PULLING | PIN_BM_GPIO_OUTPUT_EN | PIN_BM_GPIO_OUTPUT_VAL | PIN_BM_OUTPUT_BUF,
 		PIN_INPUT_DIS   | PIN_NOPULL     | PIN_GPIO_OUTPUT_EN    | PIN_GPIO_LOW           | PIN_OPENDRAIN      | Board_CONN_STATE_RD);
 
 	// Enable the current sink output
-	PIN_setOutputValue(PMGR.AnalogPins, Board_CONN_STATE_RD, PIN_LOW);
+	PIN_setOutputValue(&PMGR.AnalogPins, Board_CONN_STATE_RD, PIN_LOW);
 
 	// TODO: This loop should actually check on occasion if jack power has become available by switching MUX to V_PREBUCK_DIV2 for a moment
 	// This function doesn't return - the system is about to die.
