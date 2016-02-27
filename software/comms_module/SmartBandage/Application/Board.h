@@ -15,7 +15,7 @@
 /*****************************************************************
  * Config Adjust Variables
  ****************************************************************/
-#define LAUNCHPAD // Only define if using Launchpad for testing. Can be defined as compiler argument instead.
+//#define LAUNCHPAD // Only define if using Launchpad for testing. Can be defined as compiler argument instead.
 #define SB_DEBUG
 #define POWER_SAVING
 
@@ -53,7 +53,8 @@ typedef enum {
 #define Board_1V3				IOID_13
 #define Board_VSENSE_0			IOID_14
 
-#define SB_NUM_MCP9808_SENSORS 3
+// TODO: Detect number of sensors. Should be 3 when bandage connected
+#define SB_NUM_MCP9808_SENSORS 1
 extern uint8_t Mcp9808Addresses[];
 
 #ifdef LAUNCHPAD
