@@ -30,8 +30,9 @@ void SB_setError(SB_Error);
 
 //EDITED HERE
 //void SB_registerEvent(SB_EventHandler, SB_State);
-void SB_registerStateTransitionCallback((void*), SB_State_Transition); // not sure if the (void *) is the correct way of prototyping for void(*function)(void)
-
+void SB_registerStateTransitionCallback(SB_CallbackFunc, SB_State_Transition); // not sure if the (void *) is the correct way of prototyping for void(*function)(void)
+SB_CallbackFunc* Callbacks[];
+//use linked list to register callbacks
 
 //LUT TABLE
 //TODO: If we continue to run out of heap, implement this in a switch statement as with 5 events and 6 states this is 120bytes of memory
@@ -51,8 +52,7 @@ SB_SystemState systemState = {
 	.lastState    = S_INIT,
 	.currentError = NoError,
 	.lastError    = NoError,
-	.transitionState = exitTempError, //starts out in the going to init stage?? //EDITED HERE
-};
+	};
 
 //EDITED HERE
 //switch the states
@@ -168,19 +168,11 @@ inline SB_State SB_currentState() {
 	return systemState.currentState;
 }
 
-//EDITED HERE
-inline SB_State_Transition SB_transitioningState() {
-	return systemState.transitionState;
-}
+
 // Called from within periheral functions to register that the peripheral will need to be revisited when the state changes
 //
-void SB_registerStateTransitionCallback(void* callback(void), SB_State_Transition transitionTrigger) {
-	//passes function pointer to be called in the future
-	//need to have the registerStateTransitionCallback function just waiting in the background until the right transition occcurs to execute the callbacks
-	if (SB_transitioningState() == transitionTrigger ) {
-		(*callback)();
-	}
-	//
+void SB_registerStateTransitionCallback(SB_CallbackFunc callbackfunc, SB_State_Transition peripheral) {
+
 }
 
 /*
@@ -190,9 +182,49 @@ void SB_registerEvent(SB_EventHandler eventHandler, SB_State state) {
 }
 */
 
-//This is the calling function of the highest priority task (or that is called within task_disable() ?), which will proceed to unblock the tasks in either the ENTER_state or the EXIT_state
+//This is the calling function of the highest priority task (or tkjju        hat is called within task_disable() ?), which will proceed to unblock the tasks in either the ENTER_state or the EXIT_state
 //TODO still need to place the function prototype at the top
-void SB_unblockTasks() {
+void SB_callCallback(transitionTable callbackList, SB_State_Transition state) {
 
+	//check if the linked list in empty, if it is then don't do anything, if it isn't, then iterate through list and call functions
+	//if(transitionTable.Callbacks[] == null) {
+
+	//}
+	//for (numElements){
+
+	//}
+
+}
+
+SB_CallbackFunc SB_createNewCallback(){}
+
+// Function to add the callbacks to the list to be used later.
+void SB_addCallback(transitionTable *callbackList, SB_CallbackFunc *callback ){
+
+
+
+	//passes function pointer to be called in the future
+		//build a linked list here
+
+		//probably should have this done elsewhere, so doesnt overwrite
+			SB_CallbackFunc *root;
+			SB_CallbackFunc *current;
+		    root = malloc( sizeof(SB_CallbackFunc) );
+		    root->next = 0;
+		    //root->transition = peripheral;
+		    //root->function = callbackfunc(peripheral);
+		    current = root;
+
+
+		    if ( current != 0 ) {
+		        while ( current->next != 0)
+		        {
+		        	current = current->next;
+		        }
+		    }
+
+		    current->next = malloc( sizeof(SB_CallbackFunc) );
+
+		    current = current->next;
 }
 
