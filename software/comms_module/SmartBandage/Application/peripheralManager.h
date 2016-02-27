@@ -9,6 +9,9 @@
 #define APPLICATION_PERIPHERALMANAGER_H_
 
 #include "Board.h"
+#include "Devices/tca9554a.h"
+
+#define IOEXP_I2CSTATUS_PIN IOPORT5
 
 typedef enum {
 	PState_Unknown,

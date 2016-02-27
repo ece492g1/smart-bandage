@@ -199,16 +199,26 @@ SB_Error initPeripherals() {
 
 #ifdef IOEXPANDER_PRESENT
 	// Initialize IO Expander
+	PMGR.ioexpanderDeviceState.lastError = tca9554a_init(&PMGR.ioexpanderDevice);
+	if (PMGR.ioexpanderDeviceState.lastError != NoError) {
+# ifdef SB_DEBUG
+		System_printf("IO Expander init failed: %d...\n", PMGR.ioexpanderDeviceState.lastError);
+		System_flush();
+# endif
+		PMGR.ioexpanderDeviceState.currentState = PState_FailedConfig;
+		return PMGR.ioexpanderDeviceState.lastError;
+	}
+
 	PMGR.ioexpanderDevice.address = I2C_DBGIOEXP_ADDR;
 	PMGR.ioexpanderDeviceState.lastError = applyIOExpanderConfiguration();
 
 	if (NoError == PMGR.ioexpanderDeviceState.lastError) {
 		PMGR.ioexpanderDeviceState.currentState = PState_OK;
 	} else {
-#ifdef SB_DEBUG
-		System_printf("IO Expander init failed...\n");
+# ifdef SB_DEBUG
+		System_printf("IO Expander config failed: %d...\n", PMGR.ioexpanderDeviceState.lastError);
 		System_flush();
-#endif
+# endif
 		PMGR.ioexpanderDeviceState.currentState = PState_FailedConfig;
 		return PMGR.ioexpanderDeviceState.lastError;
 	}
@@ -226,7 +236,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		Board_T_LED_GREEN | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
 		PIN_TERMINATE,
 	};
-#endif LAUNCHPAD
+#endif
 
 #ifdef SB_DEBUG
 		System_printf("Peripheral manager task started...\n");
@@ -275,6 +285,11 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 
 #ifdef LAUNCHPAD
 		PIN_setOutputValue(statusPin, Board_T_LED_GREEN, 1);
+#else
+		if (NoError != tca9554a_setPinStatus(&PMGR.ioexpanderDevice, IOEXP_I2CSTATUS_PIN, true)) {
+			System_printf("IOEXP Error");
+			System_flush();
+		}
 #endif
 		// Queue the configuration and resolution transactions
 		SB_i2cQueueTransaction(&taTransaction, BIOS_WAIT_FOREVER);
@@ -283,6 +298,11 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		Semaphore_pend(PMGR.mcp9808DeviceSemaphores[0], BIOS_WAIT_FOREVER);
 #ifdef LAUNCHPAD
 		PIN_setOutputValue(statusPin, Board_T_LED_GREEN, 0);
+#else
+		if (NoError != tca9554a_setPinStatus(&PMGR.ioexpanderDevice, IOEXP_I2CSTATUS_PIN, false)) {
+			System_printf("IOEXP Error");
+			System_flush();
+		}
 #endif
 
 		if (taTransaction.completionResult == NoError) {

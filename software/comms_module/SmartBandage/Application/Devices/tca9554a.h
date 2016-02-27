@@ -8,6 +8,10 @@
 #ifndef APPLICATION_DEVICES_TCA9554A_H_
 #define APPLICATION_DEVICES_TCA9554A_H_
 
+#include "hci_tl.h"
+#include "../Board.h"
+#include <ti/sysbios/knl/Semaphore.h>
+
 #define TCA9554A_REG_INPUT    0
 #define TCA9554A_REG_OUTPUT   1
 #define TCA9554A_REG_POLARITY 2
@@ -39,6 +43,11 @@ typedef struct {
 	uint8 polarityReg;
 	uint8 configuration;
 	uint8 address;
+	Semaphore_Handle operationSemaphore;
 } TCA9554A_DEVICE;
+
+SB_Error tca9554a_init(TCA9554A_DEVICE *device);
+SB_Error tca9554a_writePinStatus(TCA9554A_DEVICE *device);
+SB_Error tca9554a_setPinStatus(TCA9554A_DEVICE *device, TCA9554A_IO_PORT pin, bool status);
 
 #endif /* APPLICATION_DEVICES_TCA9554A_H_ */
