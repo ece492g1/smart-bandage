@@ -188,6 +188,10 @@ SB_Error initPeripherals() {
 		if (NoError == PMGR.mcp9808DeviceStates[i].lastError) {
 			PMGR.mcp9808DeviceStates[i].currentState = PState_OK;
 		} else {
+#ifdef SB_DEBUG
+		System_printf("MCP9808 device %d init failed...\n", i);
+		System_flush();
+#endif
 			PMGR.mcp9808DeviceStates[i].currentState = PState_FailedConfig;
 			return PMGR.mcp9808DeviceStates[i].lastError;
 		}
@@ -201,6 +205,10 @@ SB_Error initPeripherals() {
 	if (NoError == PMGR.ioexpanderDeviceState.lastError) {
 		PMGR.ioexpanderDeviceState.currentState = PState_OK;
 	} else {
+#ifdef SB_DEBUG
+		System_printf("IO Expander init failed...\n");
+		System_flush();
+#endif
 		PMGR.ioexpanderDeviceState.currentState = PState_FailedConfig;
 		return PMGR.ioexpanderDeviceState.lastError;
 	}
@@ -261,6 +269,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 
 	uint16_t temperature;
 	while (1) {
+
 		// Enable peripherals
 		SB_setPeripheralsEnable(true);
 
@@ -313,9 +322,20 @@ SB_Error SB_peripheralInit() {
 #endif
 		PMGR.mcp9808DeviceSemaphores[i] = Semaphore_create(0, NULL, NULL);
 		if (NULL == PMGR.mcp9808DeviceSemaphores[i]) {
+			System_printf("PMGR: Initializing data structures for MCP9808 Device %d failed!\n", i);
+			System_flush();
 			return OSResourceInitializationError;
 		}
 	}
+
+#ifdef IOEXPANDER_PRESENT
+	PMGR.ioexpanderDeviceSemaphore = Semaphore_create(0, NULL, NULL);
+	if (NULL == PMGR.ioexpanderDeviceSemaphore) {
+		System_printf("PMGR: Initializing data structures for io expander failed.\n");
+		System_flush();
+		return OSResourceInitializationError;
+	}
+#endif
 
 	// Initialize power pin
 	PIN_Config peripheralPowerConfigTable[] =

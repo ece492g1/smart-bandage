@@ -18,15 +18,15 @@
 //#define LAUNCHPAD // Only define if using Launchpad for testing. Can be defined as compiler argument instead.
 #define SB_DEBUG
 #define POWER_SAVING
-#define IOEXPANDER_PRESENT
+//#define IOEXPANDER_PRESENT
 
 /*****************************************************************
  * Tasks Configuration
  ****************************************************************/
-#define DEFAULT_TASK_STACK_SIZE 512
+#define DEFAULT_TASK_STACK_SIZE 700
 
 #define I2C_TASK_STACK_SIZE  DEFAULT_TASK_STACK_SIZE
-#define PMGR_TASK_STACK_SIZE DEFAULT_TASK_STACK_SIZE
+#define PMGR_TASK_STACK_SIZE 644
 #define SBP_TASK_STACK_SIZE  DEFAULT_TASK_STACK_SIZE
 
 typedef enum {
@@ -108,6 +108,9 @@ extern uint8_t Mcp9808Addresses[];
 #define I2C_SENSOR_HUMIDITY_ADDR 0b1000000
 #define I2C_SENSOR_GASGAUGE_ADDR 0b1110000
 #define I2C_DBGIOEXP_ADDR		 0b0111111
+
+/* Custom I2C module config */
+#define I2C_TIMEOUT_PERIOD 10
 
 /* Interface definitions */
 #define I2C_BITRATE    				1 			// 0 = 100kHz, 1 = 400kHz
