@@ -30,7 +30,7 @@ void SB_setError(SB_Error);
 
 //EDITED HERE
 //void SB_registerEvent(SB_EventHandler, SB_State);
-void SB_registerStateTransitionCallback(SB_CallbackFunc, SB_State_Transition); // not sure if the (void *) is the correct way of prototyping for void(*function)(void)
+//void SB_registerStateTransitionCallback((void*), SB_State_Transition); // not sure if the (void *) is the correct way of prototyping for void(*function)(void)
 SB_CallbackFunc* Callbacks[];
 //use linked list to register callbacks
 
@@ -171,7 +171,9 @@ inline SB_State SB_currentState() {
 
 // Called from within periheral functions to register that the peripheral will need to be revisited when the state changes
 //
-void SB_registerStateTransitionCallback(SB_CallbackFunc callbackfunc, SB_State_Transition peripheral) {
+void SB_registerStateTransitionCallback(void *function, SB_State_Transition peripheral) {
+	//create the callback
+	//pass it to function that adds it to the linked list
 
 }
 
@@ -182,8 +184,7 @@ void SB_registerEvent(SB_EventHandler eventHandler, SB_State state) {
 }
 */
 
-//This is the calling function of the highest priority task (or tkjju        hat is called within task_disable() ?), which will proceed to unblock the tasks in either the ENTER_state or the EXIT_state
-//TODO still need to place the function prototype at the top
+
 void SB_callCallback(transitionTable callbackList, SB_State_Transition state) {
 
 	//check if the linked list in empty, if it is then don't do anything, if it isn't, then iterate through list and call functions
@@ -196,7 +197,10 @@ void SB_callCallback(transitionTable callbackList, SB_State_Transition state) {
 
 }
 
-SB_CallbackFunc SB_createNewCallback(){}
+SB_createNewCallback(SB_CallbackFunc *callbackfunc, SB_State_Transition peripheral){
+	SB_CallbackFunc *newCallback = malloc( sizeof(SB_CallbackFunc));
+	return;
+}
 
 // Function to add the callbacks to the list to be used later.
 void SB_addCallback(transitionTable *callbackList, SB_CallbackFunc *callback ){
