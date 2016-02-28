@@ -170,8 +170,7 @@ inline SB_State SB_currentState() {
 
 
 // Called from within periheral functions to register that the peripheral will need to be revisited when the state changes
-//
-void SB_registerStateTransitionCallback(void *function(), SB_State_Transition peripheral) {
+void SB_registerStateTransitionCallback(void function(void), SB_State_Transition peripheral) {
 	//create the callback
 	SB_CallbackFunc *newCallback;
 	newCallback = (SB_CallbackFunc*)malloc( sizeof(SB_CallbackFunc));
@@ -179,6 +178,7 @@ void SB_registerStateTransitionCallback(void *function(), SB_State_Transition pe
 	newCallback->function = function;
 	newCallback->next = 0; //start with the new callback not pointing to anything
 
+	//add the callback to the transition table
 	SB_addCallback(callbackTable, newCallback);
 
 }
@@ -192,23 +192,23 @@ void SB_registerEvent(SB_EventHandler eventHandler, SB_State state) {
 
 
 void SB_callCallback(transitionTable callbackList, SB_State_Transition state) {
-
 	//check if the linked list in empty, if it is then don't do anything, if it isn't, then iterate through list and call functions
-	//if(transitionTable.Callbacks[] == null) {
+	if(callbackList.callbacks == NULL) {
+		return;
+	}
 
-	//}
-	//for (numElements){
-
-	//}
+	// This is the part where context switching has to be prevented
+	while(callbackList.callbacks != NULL) {
+		callbackList.callbacks->function();
+	}
 
 }
 
 
-
+// depending on how the linked list is declared, might need to return it
 // Function to add the callbacks to the list to be used later.
 void SB_addCallback(transitionTable *callbackList, SB_CallbackFunc *callback ){
 	if(callbackList == NULL) {
-
 		callbackList->callbacks = callback;
 		return;
 	}

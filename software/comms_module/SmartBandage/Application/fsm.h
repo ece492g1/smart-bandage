@@ -47,7 +47,7 @@ typedef enum {
 struct SB_CallbackFunc_struct;
 struct SB_CallbackFunc_struct {
 	struct SB_CallbackFunc_struct *next;
-	void(*function);//(SB_State_Transition transition);
+	void(*function)(void);//(SB_State_Transition transition);
 	SB_State_Transition transition;
 };
 typedef struct SB_CallbackFunc_struct SB_CallbackFunc;
