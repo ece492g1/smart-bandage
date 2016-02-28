@@ -21,8 +21,12 @@
 #define IOEXPANDER_PRESENT
 
 /*****************************************************************
- * Tasks Configuration
+ * General Configuration
  ****************************************************************/
+// System clock ticks at 10us period
+#define NTICKS_PER_SECOND 100000
+#define NTICKS_PER_MILLSECOND NTICKS_PER_SECOND/1000
+
 #define DEFAULT_TASK_STACK_SIZE 512
 
 #define I2C_TASK_STACK_SIZE  DEFAULT_TASK_STACK_SIZE

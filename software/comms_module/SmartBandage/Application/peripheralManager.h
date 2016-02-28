@@ -11,7 +11,12 @@
 #include "Board.h"
 #include "Devices/tca9554a.h"
 
-#define IOEXP_I2CSTATUS_PIN IOPORT5
+#define IOEXP_I2CSTATUS_PIN_TEMP0 IOPORT2
+#define IOEXP_I2CSTATUS_PIN_HUMIDITY (TCA9554A_IO_PORT)(IOEXP_I2CSTATUS_PIN_TEMP0 + (TCA9554A_IO_PORT)SB_NUM_MCP9808_SENSORS)
+
+#if IOEXP_I2CSTATIS_PIN_HUMIDITY > 7
+#error "Too many MCP9808 sensor for debug LEDs"
+#endif
 
 typedef enum {
 	PState_Unknown,
