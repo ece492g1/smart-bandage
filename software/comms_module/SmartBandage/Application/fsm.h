@@ -4,6 +4,7 @@
 #include "hci_tl.h"
 #include "Board.h"
 
+
 //main states for the state machine for the mcu
 typedef enum {
 	S_SLEEP,
@@ -46,13 +47,16 @@ typedef enum {
 struct SB_CallbackFunc_struct;
 struct SB_CallbackFunc_struct {
 	struct SB_CallbackFunc_struct *next;
-	void(*function)(SB_State_Transition transition);
+	void(*function);//(SB_State_Transition transition);
 	SB_State_Transition transition;
 };
 typedef struct SB_CallbackFunc_struct SB_CallbackFunc;
 
+//EDITED HERE
+#define NUM_TRANSITIONS 6
+
 typedef struct {
-	SB_CallbackFunc *callbacks; //?
+	SB_CallbackFunc *callbacks;//[NUM_TRANSITIONS]; //?
 } transitionTable;
 
 typedef struct {

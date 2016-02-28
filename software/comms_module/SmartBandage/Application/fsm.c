@@ -29,10 +29,10 @@ SB_State SB_returnToSleep(void);
 void SB_setError(SB_Error);
 
 //EDITED HERE
-//void SB_registerEvent(SB_EventHandler, SB_State);
+
 //void SB_registerStateTransitionCallback((void*), SB_State_Transition); // not sure if the (void *) is the correct way of prototyping for void(*function)(void)
-SB_CallbackFunc* Callbacks[];
-//use linked list to register callbacks
+void SB_addCallback(transitionTable*, SB_CallbackFunc* );
+transitionTable *callbackTable = NULL;
 
 //LUT TABLE
 //TODO: If we continue to run out of heap, implement this in a switch statement as with 5 events and 6 states this is 120bytes of memory
@@ -171,9 +171,15 @@ inline SB_State SB_currentState() {
 
 // Called from within periheral functions to register that the peripheral will need to be revisited when the state changes
 //
-void SB_registerStateTransitionCallback(void *function, SB_State_Transition peripheral) {
+void SB_registerStateTransitionCallback(void *function(), SB_State_Transition peripheral) {
 	//create the callback
-	//pass it to function that adds it to the linked list
+	SB_CallbackFunc *newCallback;
+	newCallback = (SB_CallbackFunc*)malloc( sizeof(SB_CallbackFunc));
+	newCallback->transition = peripheral;
+	newCallback->function = function;
+	newCallback->next = 0; //start with the new callback not pointing to anything
+
+	SB_addCallback(callbackTable, newCallback);
 
 }
 
@@ -197,38 +203,27 @@ void SB_callCallback(transitionTable callbackList, SB_State_Transition state) {
 
 }
 
-SB_createNewCallback(SB_CallbackFunc *callbackfunc, SB_State_Transition peripheral){
-	SB_CallbackFunc *newCallback = malloc( sizeof(SB_CallbackFunc));
-	return;
-}
+
 
 // Function to add the callbacks to the list to be used later.
 void SB_addCallback(transitionTable *callbackList, SB_CallbackFunc *callback ){
+	if(callbackList == NULL) {
 
+		callbackList->callbacks = callback;
+		return;
+	}
 
+	SB_CallbackFunc *current = callbackList->callbacks;
 
-	//passes function pointer to be called in the future
-		//build a linked list here
+	if ( current != 0 ) {
+		while ( current->next != 0)
+		{
+			current = current->next;
+		}
+	}
 
-		//probably should have this done elsewhere, so doesnt overwrite
-			SB_CallbackFunc *root;
-			SB_CallbackFunc *current;
-		    root = malloc( sizeof(SB_CallbackFunc) );
-		    root->next = 0;
-		    //root->transition = peripheral;
-		    //root->function = callbackfunc(peripheral);
-		    current = root;
-
-
-		    if ( current != 0 ) {
-		        while ( current->next != 0)
-		        {
-		        	current = current->next;
-		        }
-		    }
-
-		    current->next = malloc( sizeof(SB_CallbackFunc) );
-
-		    current = current->next;
+	//current->next = malloc( sizeof(SB_CallbackFunc) );
+	current->next = callback;
+	current = current->next;
 }
 
