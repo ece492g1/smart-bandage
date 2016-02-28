@@ -129,6 +129,7 @@ static void SB_i2cTask(UArg a0, UArg a1) {
 			Util_restartClock(&I2C_Core.timeoutClock, I2C_TIMEOUT_PERIOD);
 		} else {
 			Util_startClock(&I2C_Core.timeoutClock);
+			clockStarted = true;
 		}
 #endif
 

@@ -25,19 +25,19 @@ SB_Error applyFullMuxState(SB_MUXState muxState, uint32 timeout);
 SB_Error _applyFullMuxState(SB_MUXState muxState);
 void     SB_sysdisblClockHandler(UArg arg);
 
+SB_Error readSensorData();
+
 struct {
+	Semaphore_Handle i2cDeviceSem;
 	MCP9808_DEVICE mcp9808Devices[SB_NUM_MCP9808_SENSORS];
 	SB_PeripheralState mcp9808DeviceStates[SB_NUM_MCP9808_SENSORS];
-	Semaphore_Handle mcp9808DeviceSemaphores[SB_NUM_MCP9808_SENSORS];
 
 	HDC1050_DEVICE hdc1050Device;
 	SB_PeripheralState hdc1050DeviceState;
-	Semaphore_Handle hdc1050DeviceSemaphore;
 
 #ifdef IOEXPANDER_PRESENT
 	TCA9554A_DEVICE ioexpanderDevice;
 	SB_PeripheralState ioexpanderDeviceState;
-	Semaphore_Handle ioexpanderDeviceSemaphore;
 #endif
 
 	Task_Handle taskHandle;
@@ -79,7 +79,7 @@ SB_Error applyTempSensorConfiguration(uint8_t deviceNo) {
 	configBaseTransaction.slaveAddress = PMGR.mcp9808Devices[deviceNo].Address;
 
 	configTransaction.baseTransaction = &configBaseTransaction;
-	configTransaction.completionSemaphore = &PMGR.mcp9808DeviceSemaphores[deviceNo];
+	configTransaction.completionSemaphore = &PMGR.i2cDeviceSem;
 
 	// The resolution transaction
 	resolutionBaseTransaction.writeCount   = 2;
@@ -89,15 +89,15 @@ SB_Error applyTempSensorConfiguration(uint8_t deviceNo) {
 	resolutionBaseTransaction.slaveAddress = PMGR.mcp9808Devices[deviceNo].Address;
 
 	resolutionTransaction.baseTransaction = &resolutionBaseTransaction;
-	resolutionTransaction.completionSemaphore = &PMGR.mcp9808DeviceSemaphores[deviceNo];
+	resolutionTransaction.completionSemaphore = &PMGR.i2cDeviceSem;
 
 	// Queue the configuration and resolution transactions
 	SB_i2cQueueTransaction(&configTransaction, BIOS_WAIT_FOREVER);
 	SB_i2cQueueTransaction(&resolutionTransaction, BIOS_WAIT_FOREVER);
 
 	// Wait for completion (twice)
-	Semaphore_pend(PMGR.mcp9808DeviceSemaphores[deviceNo], BIOS_WAIT_FOREVER);
-	Semaphore_pend(PMGR.mcp9808DeviceSemaphores[deviceNo], BIOS_WAIT_FOREVER);
+	Semaphore_pend(PMGR.i2cDeviceSem, BIOS_WAIT_FOREVER);
+	Semaphore_pend(PMGR.i2cDeviceSem, BIOS_WAIT_FOREVER);
 
 	return configTransaction.completionResult;
 }
@@ -126,13 +126,13 @@ SB_Error applyHumiditySensorConfiguration() {
 	configBaseTransaction.slaveAddress = PMGR.hdc1050Device.address;
 
 	configTransaction.baseTransaction = &configBaseTransaction;
-	configTransaction.completionSemaphore = &PMGR.hdc1050DeviceSemaphore;
+	configTransaction.completionSemaphore = &PMGR.i2cDeviceSem;
 
 	// Queue the configuration and resolution transactions
 	SB_i2cQueueTransaction(&configTransaction, BIOS_WAIT_FOREVER);
 
 	// Wait for completion
-	Semaphore_pend(PMGR.hdc1050DeviceSemaphore, BIOS_WAIT_FOREVER);
+	Semaphore_pend(PMGR.i2cDeviceSem, BIOS_WAIT_FOREVER);
 
 	return configTransaction.completionResult;
 }
@@ -165,13 +165,13 @@ SB_Error applyIOExpanderConfiguration() {
 	configBaseTransaction.slaveAddress = PMGR.ioexpanderDevice.address;
 
 	configTransaction.baseTransaction = &configBaseTransaction;
-	configTransaction.completionSemaphore = &PMGR.ioexpanderDeviceSemaphore;
+	configTransaction.completionSemaphore = &PMGR.i2cDeviceSem;
 
 	// Queue the configuration and resolution transactions
 	SB_i2cQueueTransaction(&configTransaction, BIOS_WAIT_FOREVER);
 
 	// Wait for completion
-	Semaphore_pend(PMGR.ioexpanderDeviceSemaphore, BIOS_WAIT_FOREVER);
+	Semaphore_pend(PMGR.i2cDeviceSem, BIOS_WAIT_FOREVER);
 
 	return configTransaction.completionResult;
 }
@@ -180,35 +180,8 @@ SB_Error applyIOExpanderConfiguration() {
 SB_Error initPeripherals() {
 	int i;
 
-	// Initialize MCP9808 sensors
-	for (i = 0; i < SB_NUM_MCP9808_SENSORS; ++i) {
-		PMGR.mcp9808Devices[i].Address = Mcp9808Addresses[i];
-		PMGR.mcp9808DeviceStates[i].lastError = applyTempSensorConfiguration(i);
-
-		if (NoError == PMGR.mcp9808DeviceStates[i].lastError) {
-			PMGR.mcp9808DeviceStates[i].currentState = PState_OK;
-		} else {
-#ifdef SB_DEBUG
-		System_printf("MCP9808 device %d init failed...\n", i);
-		System_flush();
-#endif
-			PMGR.mcp9808DeviceStates[i].currentState = PState_FailedConfig;
-			return PMGR.mcp9808DeviceStates[i].lastError;
-		}
-	}
-
 #ifdef IOEXPANDER_PRESENT
 	// Initialize IO Expander
-	PMGR.ioexpanderDeviceState.lastError = tca9554a_init(&PMGR.ioexpanderDevice);
-	if (PMGR.ioexpanderDeviceState.lastError != NoError) {
-# ifdef SB_DEBUG
-		System_printf("IO Expander init failed: %d...\n", PMGR.ioexpanderDeviceState.lastError);
-		System_flush();
-# endif
-		PMGR.ioexpanderDeviceState.currentState = PState_FailedConfig;
-		return PMGR.ioexpanderDeviceState.lastError;
-	}
-
 	PMGR.ioexpanderDevice.address = I2C_DBGIOEXP_ADDR;
 	PMGR.ioexpanderDeviceState.lastError = applyIOExpanderConfiguration();
 
@@ -217,12 +190,40 @@ SB_Error initPeripherals() {
 	} else {
 # ifdef SB_DEBUG
 		System_printf("IO Expander config failed: %d...\n", PMGR.ioexpanderDeviceState.lastError);
-		System_flush();
 # endif
 		PMGR.ioexpanderDeviceState.currentState = PState_FailedConfig;
 		return PMGR.ioexpanderDeviceState.lastError;
 	}
+	PMANAGER_TASK_YIELD_HIGHERPRI();
 #endif
+
+	// Initialize MCP9808 sensors
+	for (i = 0; i < SB_NUM_MCP9808_SENSORS; ++i) {
+		if (PMGR.mcp9808DeviceStates[i].currentState != PState_Failed) {
+			PMGR.mcp9808Devices[i].Address = Mcp9808Addresses[i];
+			PMGR.mcp9808DeviceStates[i].lastError = applyTempSensorConfiguration(i);
+
+			if (NoError == PMGR.mcp9808DeviceStates[i].lastError) {
+				PMGR.mcp9808DeviceStates[i].currentState = PState_OK;
+			} else {
+				PMGR.mcp9808DeviceStates[i].currentState = PState_Intermittent;
+				if (++PMGR.mcp9808DeviceStates[i].numReadAttempts > PERIPHERAL_MAX_READ_ATTEMPTS) {
+					PMGR.mcp9808DeviceStates[i].currentState = PState_Failed;
+#ifdef SB_DEBUG
+					System_printf("PMGR: Temperature sensor failed permanently: %d\n", i);
+#endif
+				} else {
+#ifdef SB_DEBUG
+					System_printf("MCP9808 device %d init failed...\n", i);
+#endif
+				}
+			}
+
+			PMANAGER_TASK_YIELD_HIGHERPRI();
+		}
+	}
+
+	PMANAGER_TASK_YIELD_HIGHERPRI();
 
 	// Initialize Humidity Sensor
 	PMGR.hdc1050Device.address = HDC1050_I2C_ADDRESS;
@@ -235,7 +236,160 @@ SB_Error initPeripherals() {
 		System_flush();
 # endif
 		PMGR.hdc1050DeviceState.currentState = PState_FailedConfig;
-		return PMGR.hdc1050DeviceState.lastError;
+	}
+	PMANAGER_TASK_YIELD_HIGHERPRI();
+
+	// Start the conversion for the humidity sensor
+	PMGR.hdc1050DeviceState.lastError = hdc1050_startTempHumidityConversion(&PMGR.hdc1050Device, &PMGR.i2cDeviceSem);
+	if (PMGR.hdc1050DeviceState.lastError == NoError) {
+		PMGR.hdc1050Device.readReadyTime = HDC1050_READ_WAIT_TICKS + Clock_getTicks();
+	} else {
+		if (++PMGR.hdc1050DeviceState.numReadAttempts > PERIPHERAL_MAX_READ_ATTEMPTS) {
+			PMGR.hdc1050DeviceState.currentState = PState_Failed;
+#ifdef SB_DEBUG
+		System_printf("PMGR: HDC1050 sensor failed permanently: %d\n", i);
+#endif
+		} else {
+#ifdef SB_DEBUG
+		System_printf("PMGR: HDC1050 read failed.\n");
+#endif
+		}
+	}
+	PMANAGER_TASK_YIELD_HIGHERPRI();
+
+	return NoError;
+}
+
+SB_Error readSensorData() {
+	SB_i2cTransaction taTransaction;
+	I2C_Transaction taBaseTransaction;
+	uint8_t txBuf[1];
+	uint8_t rxBuf[2];
+	uint8_t i;
+
+	// The configuration transaction
+	taBaseTransaction.writeCount   = 1;
+	taBaseTransaction.writeBuf     = txBuf;
+	taBaseTransaction.readCount    = 2;
+	taBaseTransaction.readBuf      = rxBuf;
+
+	taTransaction.baseTransaction = &taBaseTransaction;
+	taTransaction.completionSemaphore = &PMGR.i2cDeviceSem;
+
+	// Read temperature sensors
+	{
+		for (i = 0; i < SB_NUM_MCP9808_SENSORS; ++i) {
+			// Only talk to good or intermittent sensors
+			if (PMGR.mcp9808DeviceStates[i].currentState == PState_OK || PMGR.mcp9808DeviceStates[i].currentState == PState_Intermittent) {
+#ifndef LAUNCHPAD
+				if (NoError != tca9554a_setPinStatus(&PMGR.ioexpanderDevice, &PMGR.i2cDeviceSem, IOEXP_I2CSTATUS_PIN_TEMP(i), true)) {
+					System_printf("IOEXP Error");
+					System_flush();
+				}
+				PMANAGER_TASK_YIELD_HIGHERPRI();
+#endif
+
+				txBuf[0] = MCP9808_REG_TA;
+				taBaseTransaction.slaveAddress = PMGR.mcp9808Devices[i].Address;
+
+				// Queue the configuration and resolution transactions
+				SB_i2cQueueTransaction(&taTransaction, BIOS_WAIT_FOREVER);
+
+				PMANAGER_TASK_YIELD_HIGHERPRI();
+
+				// Wait for completion (twice)
+				Semaphore_pend(PMGR.i2cDeviceSem, BIOS_WAIT_FOREVER);
+				PMANAGER_TASK_YIELD_HIGHERPRI();
+#ifndef LAUNCHPAD
+				if (NoError != tca9554a_setPinStatus(&PMGR.ioexpanderDevice, &PMGR.i2cDeviceSem, IOEXP_I2CSTATUS_PIN_TEMP(i), false)) {
+					System_printf("IOEXP Error");
+					System_flush();
+				}
+				PMANAGER_TASK_YIELD_HIGHERPRI();
+#endif
+
+				if (taTransaction.completionResult == NoError) {
+					// The temperature sensor is big endian and this device is little endian
+					// Also need to apply the mask for the data from the sensor: 0x0FFF
+					PMGR.mcp9808Devices[i].Temperature = 0x0FFF & ((rxBuf[0] << 8) | (rxBuf[1]));
+#ifdef SB_DEBUG
+					System_printf("PMGR: Temperature read: %d\n", PMGR.mcp9808Devices[i].Temperature>>4);
+#endif
+
+					// TODO: Calls like this should likely be protected with a semaphore
+					SB_Profile_Set16bParameter( SB_CHARACTERISTIC_TEMPERATURE, PMGR.mcp9808Devices[i].Temperature, i );
+				} else {
+					PMGR.mcp9808DeviceStates[i].currentState = PState_Intermittent;
+					if (++PMGR.mcp9808DeviceStates[i].numReadAttempts > PERIPHERAL_MAX_READ_ATTEMPTS) {
+						PMGR.mcp9808DeviceStates[i].currentState = PState_Failed;
+#ifdef SB_DEBUG
+					System_printf("PMGR: Temperature sensor failed permanently: %d\n", i);
+#endif
+					} else {
+#ifdef SB_DEBUG
+					System_printf("PMGR: Temperature read failed.\n");
+#endif
+					}
+				}
+
+				PMANAGER_TASK_YIELD_HIGHERPRI();
+			}
+		}
+	}
+
+	PMANAGER_TASK_YIELD_HIGHERPRI();
+
+	// Humidity Sensor has longest init time
+	{
+		if (PMGR.hdc1050DeviceState.currentState == PState_OK || PMGR.hdc1050DeviceState.currentState == PState_Intermittent) {
+			// Sleep if result not yet ready
+			int currentTime = Clock_getTicks();
+			if (PMGR.hdc1050Device.readReadyTime > currentTime) {
+				Task_sleep(PMGR.hdc1050Device.readReadyTime - currentTime);
+			}
+
+#ifndef LAUNCHPAD
+			if (NoError != tca9554a_setPinStatus(&PMGR.ioexpanderDevice, &PMGR.i2cDeviceSem, IOEXP_I2CSTATUS_PIN_HUMIDITY, true)) {
+				System_printf("IOEXP Error\n");
+				System_flush();
+			}
+			PMANAGER_TASK_YIELD_HIGHERPRI();
+#endif
+
+			// Start the conversion for the humidity sensor
+			PMGR.hdc1050DeviceState.lastError = hdc1050_readTempHumidity(&PMGR.hdc1050Device, &PMGR.i2cDeviceSem);
+			PMANAGER_TASK_YIELD_HIGHERPRI();
+			if (PMGR.hdc1050DeviceState.lastError == NoError) {
+#ifdef SB_DEBUG
+				System_printf("PMGR: Humidity read:  %d\n", PMGR.hdc1050Device.humidity/16);
+				System_printf("PMGR: HTemp read:  %d\n", PMGR.hdc1050Device.temperature/16);
+#endif
+
+				// TODO: Calls like this should likely be protected with a semaphore
+				SB_Profile_Set16bParameter( SB_CHARACTERISTIC_HUMIDITY, PMGR.hdc1050Device.humidity, 0 );
+				SB_Profile_Set16bParameter( SB_CHARACTERISTIC_TEMPERATURE, PMGR.hdc1050Device.temperature, 3 );
+			} else {
+				if (++PMGR.hdc1050DeviceState.numReadAttempts > PERIPHERAL_MAX_READ_ATTEMPTS) {
+					PMGR.hdc1050DeviceState.currentState = PState_Failed;
+#ifdef SB_DEBUG
+				System_printf("PMGR: HDC1050 sensor failed permanently: %d\n", i);
+#endif
+				} else {
+#ifdef SB_DEBUG
+				System_printf("PMGR: HDC1050 read failed.\n");
+#endif
+				}
+			}
+			PMANAGER_TASK_YIELD_HIGHERPRI();
+
+#ifndef LAUNCHPAD
+			if (NoError != tca9554a_setPinStatus(&PMGR.ioexpanderDevice, &PMGR.i2cDeviceSem, IOEXP_I2CSTATUS_PIN_HUMIDITY, false)) {
+				System_printf("IOEXP Error\n");
+				System_flush();
+			}
+			PMANAGER_TASK_YIELD_HIGHERPRI();
+#endif
+		}
 	}
 
 	return NoError;
@@ -243,14 +397,6 @@ SB_Error initPeripherals() {
 
 static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	SB_Error result;
-
-#ifdef LAUNCHPAD
-	PIN_Config pinConfigTable[] =
-	{
-		Board_T_LED_GREEN | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
-		PIN_TERMINATE,
-	};
-#endif
 
 #ifdef SB_DEBUG
 		System_printf("Peripheral manager task started...\n");
@@ -274,140 +420,24 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	PIN_Handle statusPin = PIN_open(&sbpPins, pinConfigTable);
 #endif
 
-	SB_i2cTransaction taTransaction;
-	I2C_Transaction taBaseTransaction;
-	uint8_t txBuf[1];
-	uint8_t rxBuf[2];
-
-	// The configuration transaction
-	taBaseTransaction.writeCount   = 1;
-	taBaseTransaction.writeBuf     = txBuf;
-	taBaseTransaction.readCount    = 2;
-	taBaseTransaction.readBuf      = rxBuf;
-	taBaseTransaction.slaveAddress = PMGR.mcp9808Devices[0].Address;
-
-	taTransaction.baseTransaction = &taBaseTransaction;
-
-	uint16_t temperature;
 	while (1) {
 
 		// Enable peripherals
 		SB_setPeripheralsEnable(true);
+		PMANAGER_TASK_YIELD_HIGHERPRI();
 
-		// Read temperature
-		{
-#ifdef LAUNCHPAD
-			PIN_setOutputValue(statusPin, Board_T_LED_GREEN, 1);
-#else
-			if (NoError != tca9554a_setPinStatus(&PMGR.ioexpanderDevice, IOEXP_I2CSTATUS_PIN_TEMP0, true)) {
-				System_printf("IOEXP Error");
-				System_flush();
-			}
-			Task_sleep(1);
-#endif
-			txBuf[0] = MCP9808_REG_TA;
-			taTransaction.completionSemaphore = &PMGR.mcp9808DeviceSemaphores[0];
+		// Initialize them
+		initPeripherals();
+		PMANAGER_TASK_YIELD_HIGHERPRI();
 
-			// Queue the configuration and resolution transactions
-			SB_i2cQueueTransaction(&taTransaction, BIOS_WAIT_FOREVER);
-
-			// Wait for completion (twice)
-			Semaphore_pend(PMGR.mcp9808DeviceSemaphores[0], BIOS_WAIT_FOREVER);
-#ifdef LAUNCHPAD
-			PIN_setOutputValue(statusPin, Board_T_LED_GREEN, 0);
-#else
-			if (NoError != tca9554a_setPinStatus(&PMGR.ioexpanderDevice, IOEXP_I2CSTATUS_PIN_TEMP0, false)) {
-				System_printf("IOEXP Error");
-				System_flush();
-			}
-			Task_sleep(1);
-#endif
-
-			if (taTransaction.completionResult == NoError) {
-				// The temperature sensor is big endian and this device is little endian
-				// Also need to apply the mask for the data from the sensor: 0x0FFF
-				temperature = 0x0FFF & ((rxBuf[0] << 8) | (rxBuf[1]));
-#ifdef SB_DEBUG
-				System_printf("PMGR: Temperature read: %d\n", temperature>>4);
-#endif
-
-				// TODO: Calls like this should likely be protected with a semaphore
-				SB_Profile_Set16bParameter( SB_CHARACTERISTIC_TEMPERATURE, temperature, 0 );
-			} else {
-#ifdef SB_DEBUG
-				System_printf("PMGR: Temperature read failed.\n");
-#endif
-			}
-
-			Task_sleep(1);
-#ifdef SB_DEBUG
-			System_flush();
-#endif
-			Task_sleep(1);
-		}
-
-		// Read humidity
-		{
-#ifdef LAUNCHPAD
-			PIN_setOutputValue(statusPin, Board_T_LED_GREEN, 1);
-#else
-			if (NoError != tca9554a_setPinStatus(&PMGR.ioexpanderDevice, IOEXP_I2CSTATUS_PIN_HUMIDITY, true)) {
-				System_printf("IOEXP Error\n");
-				System_flush();
-			}
-			Task_sleep(1);
-#endif
-
-			// Start the conversion
-			PMGR.hdc1050DeviceState.lastError = hdc1050_startTempHumidityConversion(&PMGR.hdc1050Device, &PMGR.hdc1050DeviceSemaphore);
-			if (PMGR.hdc1050DeviceState.lastError != NoError) {
-				// TODO: Handle this
-				System_printf("HDC1050 Start Error: %d\n", PMGR.hdc1050DeviceState.lastError);
-				System_flush();
-			}
-
-			// Wait for the conversion to be complete
-			Task_sleep(((uint16)(HDC1050_CONV_TIME_HRES_14BIT + HDC1050_CONV_TIME_TRES_14BIT)) * NTICKS_PER_MILLSECOND + (100 * NTICKS_PER_MILLSECOND));
-
-			// Read the result
-			PMGR.hdc1050DeviceState.lastError = hdc1050_readTempHumidity(&PMGR.hdc1050Device, &PMGR.hdc1050DeviceSemaphore);
-			if (PMGR.hdc1050DeviceState.lastError != NoError) {
-				System_printf("HDC1050 Read Error: %d\n", PMGR.hdc1050DeviceState.lastError);
-				System_flush();
-			}
-
-			Task_sleep(1);
-
-#ifdef LAUNCHPAD
-			PIN_setOutputValue(statusPin, Board_T_LED_GREEN, 0);
-#else
-			if (NoError != tca9554a_setPinStatus(&PMGR.ioexpanderDevice, IOEXP_I2CSTATUS_PIN_HUMIDITY, false)) {
-				System_printf("IOEXP Error\n");
-				System_flush();
-			}
-			Task_sleep(1);
-#endif
-
-			if (taTransaction.completionResult == NoError) {
-#ifdef SB_DEBUG
-				System_printf("PMGR: Humidity read:  %d\n", PMGR.hdc1050Device.humidity/16);
-				System_printf("PMGR: HTemp read:  %d\n", PMGR.hdc1050Device.temperature/16);
-#endif
-
-				// TODO: Calls like this should likely be protected with a semaphore
-				SB_Profile_Set16bParameter( SB_CHARACTERISTIC_HUMIDITY, PMGR.hdc1050Device.humidity, 0 );
-				SB_Profile_Set16bParameter( SB_CHARACTERISTIC_TEMPERATURE, PMGR.hdc1050Device.temperature, 3 );
-			} else {
-#ifdef SB_DEBUG
-				System_printf("PMGR: Humidity read failed.\n");
-#endif
-			}
+		// Read sensor data
+		readSensorData();
+		PMANAGER_TASK_YIELD_HIGHERPRI();
 
 #ifdef SB_DEBUG
 		Task_sleep(NTICKS_PER_MILLSECOND);
 		System_flush();
 #endif
-		}
 
 		// Disable peripherals
 		SB_setPeripheralsEnable(false);
@@ -419,33 +449,14 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 SB_Error SB_peripheralInit() {
 	int i;
 
+	PMGR.i2cDeviceSem = Semaphore_create(0, NULL, NULL);
+
 	for (i = 0; i < SB_NUM_MCP9808_SENSORS; ++i) {
 #ifdef SB_DEBUG
 		System_printf("PMGR: Initializing data structures for MCP9808 Device %d\n", i);
 		System_flush();
 #endif
-		PMGR.mcp9808DeviceSemaphores[i] = Semaphore_create(0, NULL, NULL);
-		if (NULL == PMGR.mcp9808DeviceSemaphores[i]) {
-			System_printf("PMGR: Initializing data structures for MCP9808 Device %d failed!\n", i);
-			System_flush();
-			return OSResourceInitializationError;
-		}
-	}
 
-#ifdef IOEXPANDER_PRESENT
-	PMGR.ioexpanderDeviceSemaphore = Semaphore_create(0, NULL, NULL);
-	if (NULL == PMGR.ioexpanderDeviceSemaphore) {
-		System_printf("PMGR: Initializing data structures for io expander failed.\n");
-		System_flush();
-		return OSResourceInitializationError;
-	}
-#endif
-
-	PMGR.hdc1050DeviceSemaphore = Semaphore_create(0, NULL, NULL);
-	if (NULL == PMGR.hdc1050DeviceSemaphore) {
-		System_printf("PMGR: Initializing data structures for humidity sensor failed.\n");
-		System_flush();
-		return OSResourceInitializationError;
 	}
 
 	// Initialize power pin

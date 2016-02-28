@@ -43,11 +43,9 @@ typedef struct {
 	uint8 polarityReg;
 	uint8 configuration;
 	uint8 address;
-	Semaphore_Handle operationSemaphore;
 } TCA9554A_DEVICE;
 
-SB_Error tca9554a_init(TCA9554A_DEVICE *device);
-SB_Error tca9554a_writePinStatus(TCA9554A_DEVICE *device);
-SB_Error tca9554a_setPinStatus(TCA9554A_DEVICE *device, TCA9554A_IO_PORT pin, bool status);
+SB_Error tca9554a_writePinStatus(TCA9554A_DEVICE *device, Semaphore_Handle *semaphore);
+SB_Error tca9554a_setPinStatus(TCA9554A_DEVICE *device, Semaphore_Handle *semaphore, TCA9554A_IO_PORT pin, bool status);
 
 #endif /* APPLICATION_DEVICES_TCA9554A_H_ */

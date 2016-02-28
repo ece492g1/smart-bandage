@@ -29,7 +29,7 @@
 
 #define DEFAULT_TASK_STACK_SIZE 512
 
-#define I2C_TASK_STACK_SIZE  DEFAULT_TASK_STACK_SIZE
+#define I2C_TASK_STACK_SIZE  256
 #define PMGR_TASK_STACK_SIZE 644
 #define SBP_TASK_STACK_SIZE  DEFAULT_TASK_STACK_SIZE
 
@@ -59,7 +59,7 @@ typedef enum {
 #define Board_VSENSE_0			IOID_14
 
 // TODO: Detect number of sensors. Should be 3 when bandage connected
-#define SB_NUM_MCP9808_SENSORS 1
+#define SB_NUM_MCP9808_SENSORS 3
 extern uint8_t Mcp9808Addresses[];
 
 #ifdef LAUNCHPAD

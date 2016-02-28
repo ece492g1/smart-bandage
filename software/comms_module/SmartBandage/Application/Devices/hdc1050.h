@@ -60,6 +60,7 @@ typedef struct {
 	uint16_t humidity;
 	uint16_t configuration;
 	uint8_t  address;
+	uint32_t readReadyTime;
 } HDC1050_DEVICE;
 
 SB_Error hdc1050_startTempHumidityConversion(HDC1050_DEVICE *device, Semaphore_Handle *semaphore);
