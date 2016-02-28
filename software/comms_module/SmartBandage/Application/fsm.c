@@ -191,6 +191,7 @@ void SB_registerEvent(SB_EventHandler eventHandler, SB_State state) {
 */
 
 
+// This will be put within the switchstate cases to make sure the peripherals are dealt with correctly
 void SB_callCallback(transitionTable callbackList, SB_State_Transition state) {
 	//check if the linked list in empty, if it is then don't do anything, if it isn't, then iterate through list and call functions
 	if(callbackList.callbacks == NULL) {
