@@ -23,7 +23,7 @@
 /*****************************************************************
  * Tasks Configuration
  ****************************************************************/
-#define DEFAULT_TASK_STACK_SIZE 700
+#define DEFAULT_TASK_STACK_SIZE 512
 
 #define I2C_TASK_STACK_SIZE  DEFAULT_TASK_STACK_SIZE
 #define PMGR_TASK_STACK_SIZE 644
@@ -110,6 +110,7 @@ extern uint8_t Mcp9808Addresses[];
 #define I2C_DBGIOEXP_ADDR		 0b0111111
 
 /* Custom I2C module config */
+//#define I2C_ENABLE_TIMEOUT
 #define I2C_TIMEOUT_PERIOD 10
 
 /* Interface definitions */
