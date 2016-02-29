@@ -139,11 +139,13 @@ SB_Error initPeripherals() {
 static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	SB_Error result;
 
+#ifdef LAUNCHPAD
 	PIN_Config pinConfigTable[] =
 	{
 		Board_T_LED_GREEN | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
 		PIN_TERMINATE,
 	};
+#endif LAUNCHPAD
 
 #ifdef SB_DEBUG
 		System_printf("Peripheral manager task started...\n");
@@ -162,8 +164,10 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		System_printf("PMGR: Peripherals initialized.\n", result);
 		System_flush();
 #endif
+#ifdef LAUNCHPAD
 	PIN_State sbpPins;
 	PIN_Handle statusPin = PIN_open(&sbpPins, pinConfigTable);
+#endif
 
 	SB_i2cTransaction taTransaction;
 	I2C_Transaction taBaseTransaction;
@@ -184,13 +188,17 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 
 	uint16_t temperature;
 	while (1) {
+#ifdef LAUNCHPAD
 		PIN_setOutputValue(statusPin, Board_T_LED_GREEN, 1);
+#endif
 		// Queue the configuration and resolution transactions
 		SB_i2cQueueTransaction(&taTransaction, BIOS_WAIT_FOREVER);
 
 		// Wait for completion (twice)
 		Semaphore_pend(PMGR.mcp9808DeviceSemaphores[0], BIOS_WAIT_FOREVER);
+#ifdef LAUNCHPAD
 		PIN_setOutputValue(statusPin, Board_T_LED_GREEN, 0);
+#endif
 
 		if (taTransaction.completionResult == NoError) {
 			// The temperature sensor is big endian and this device is little endian

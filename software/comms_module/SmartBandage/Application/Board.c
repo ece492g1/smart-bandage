@@ -15,8 +15,8 @@
  *  ============================= PIN configs===================================
 */
 PIN_Config BoardGpioInitTable[] = {
-	Board_SDA | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
-	Board_SCL | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
+	Board_SDA | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX | PIN_PULLUP,
+	Board_SCL | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX | PIN_PULLUP,
 	PIN_TERMINATE
 };
 
