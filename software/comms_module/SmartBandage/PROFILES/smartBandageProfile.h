@@ -78,7 +78,7 @@ extern "C"
 #define SB_BLE_SERVICE               0x00000001
 
 // Length of Characteristics in bytes
-#define SB_BLE_TEMPERATURE_LEN           10
+#define SB_BLE_TEMPERATURE_LEN           8
 #define SB_BLE_HUMIDITY_LEN   	         2
 #define SB_BLE_BANDAGEID_LEN   	         2
 #define SB_BLE_BANDAGESTATE_LEN	         2

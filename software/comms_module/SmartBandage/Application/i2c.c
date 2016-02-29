@@ -7,9 +7,10 @@
 
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Task.h>
-#include <ti/sysbios/knl/Clock.h>
 #include <ti/sysbios/knl/Queue.h>
-#include <ti/sysbios/knl/Clock.h>
+#include <ti/drivers/I2C.h>
+#include <ti/drivers/i2c/I2CCC26XX.h>
+#include <driverlib/i2c.h>
 #include <xdc/runtime/System.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,6 +18,10 @@
 #include "i2c.h"
 #include "util.h"
 #include "Devices/mcp9808.h"
+
+#ifdef I2C_ENABLE_TIMEOUT
+#include <ti/sysbios/knl/Clock.h>
+#endif
 
 struct {
 	I2C_Handle handle;
@@ -31,6 +36,10 @@ struct {
 	Semaphore_Handle i2cProcSem;
 
 	SB_i2cTransaction* currentTransaction;
+
+#ifdef I2C_ENABLE_TIMEOUT
+	Clock_Struct timeoutClock;
+#endif
 } I2C_Core;
 
 typedef struct {
@@ -42,10 +51,32 @@ static bool initialized = false;
 
 void SB_i2cTransferCompleteHandler(I2C_Handle handle, I2C_Transaction *transac, bool result);
 
+#ifdef I2C_ENABLE_TIMEOUT
+void SB_i2cTransactionTimeoutHandler(UArg arg);
+#endif
+
 static void SB_i2cTask(UArg a0, UArg a1) {
 #ifdef SB_DEBUG
 	System_printf("I2C Task started...\n");
 	System_flush();
+#endif
+
+#ifdef I2C_ENABLE_TIMEOUT
+	bool clockStarted = false;
+	// Initialize transaction timeout clock
+	if (NULL == Util_constructClock(
+			&I2C_Core.timeoutClock,
+			SB_i2cTransactionTimeoutHandler,
+			I2C_TIMEOUT_PERIOD,
+			CLOCK_ONESHOT,
+			false,
+			NULL)) {
+
+# ifdef SB_DEBUG
+		System_printf("Failed to initialize i2c timeout clock. Timeouts will not work.\n");
+		System_flush();
+# endif
+	}
 #endif
 
 	while (1) {
@@ -92,6 +123,16 @@ static void SB_i2cTask(UArg a0, UArg a1) {
 			continue;
 		}
 
+#ifdef I2C_ENABLE_TIMEOUT
+		// Start the timeout clock
+		if (clockStarted) {
+			Util_restartClock(&I2C_Core.timeoutClock, I2C_TIMEOUT_PERIOD);
+		} else {
+			Util_startClock(&I2C_Core.timeoutClock);
+			clockStarted = true;
+		}
+#endif
+
 		// Do I2C transfer receive
 		I2C_transfer(I2C_Core.handle, I2C_Core.currentTransaction->baseTransaction);
 	}
@@ -102,6 +143,7 @@ SB_Error SB_i2cInit(I2C_BitRate bitRate) {
 	params.bitRate = bitRate;
 
 	System_printf("Initializing I2C...\n");
+	System_printf("Clock tick: %d...\n", Clock_getTicks());
 	System_flush();
 
 	if (!initialized) {
@@ -127,6 +169,14 @@ SB_Error SB_i2cInit(I2C_BitRate bitRate) {
 
 	// Init i2c processing sem with 0 available
 	I2C_Core.i2cProcSem = Semaphore_create(0, NULL, NULL);
+
+	if (NULL == I2C_Core.i2cQueueSem || NULL == I2C_Core.i2cDataAvailSem || NULL == I2C_Core.i2cProcSem) {
+#ifdef SB_DEBUG
+		System_printf("Error initializing I2C system semaphores...\n");
+		System_flush();
+#endif
+		return OSResourceInitializationError;
+	}
 
 	// Configure and start the i2c task
 	Task_Params taskParams;
@@ -192,8 +242,12 @@ SB_Error SB_i2cQueueTransaction(SB_i2cTransaction* transaction, uint32_t timeout
 void SB_i2cTransferCompleteHandler(I2C_Handle handle, I2C_Transaction *transac, bool result) {
 	Semaphore_post(I2C_Core.i2cProcSem);
 
+#ifdef I2C_ENABLE_TIMEOUT
+	Util_stopClock(&I2C_Core.timeoutClock);
+#endif
+
 	if (I2C_Core.currentTransaction != NULL) {
-		I2C_Core.currentTransaction->completionResult = (result ? NoError : UnknownError);
+		I2C_Core.currentTransaction->completionResult = ((result != false) ? NoError : UnknownError);
 
 		if (I2C_Core.currentTransaction->completionSemaphore != NULL) {
 			Semaphore_post(*I2C_Core.currentTransaction->completionSemaphore);
@@ -202,3 +256,32 @@ void SB_i2cTransferCompleteHandler(I2C_Handle handle, I2C_Transaction *transac, 
 		I2C_Core.currentTransaction = NULL;
 	}
 }
+
+#ifdef I2C_ENABLE_TIMEOUT
+//extern void     I2CCC26XX_completeTransfer(I2C_Handle handle);
+void SB_i2cTransactionTimeoutHandler(UArg arg) {
+	/* Try to send a STOP bit to end all I2C communications immediately */
+    /*
+     * I2C_MASTER_CMD_BURST_SEND_ERROR_STOP -and-
+     * I2C_MASTER_CMD_BURST_RECEIVE_ERROR_STOP
+     * have the same values
+     */
+
+	if (I2C_Core.currentTransaction != NULL) {
+		UInt key = Hwi_disable();
+		I2CMasterControl(((I2CCC26XX_HWAttrs const *)I2C_Core.handle->hwAttrs)->baseAddr, //hwAttrs->baseAddr,
+				I2C_MASTER_CMD_BURST_SEND_ERROR_STOP);
+
+
+		I2CCC26XX_Object* obj = I2C_Core.handle->object;
+
+		if (obj->hwi.__f1 != NULL) {
+			(obj->hwi.__f1)((UArg)I2C_Core.handle);
+		}
+
+		Hwi_restore(key);
+	}
+//	(obj->hwi.__fxns->getFunc)();
+//	I2CCC26XX_completeTransfer(I2C_Core.handle);
+}
+#endif
