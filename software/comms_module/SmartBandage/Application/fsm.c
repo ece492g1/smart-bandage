@@ -206,10 +206,12 @@ void SB_callCallback(transitionTable callbackList, SB_State_Transition state) {
 }
 
 
+
 // depending on how the linked list is declared, might need to return it
 // Function to add the callbacks to the list to be used later.
 void SB_addCallback(transitionTable *callbackList, SB_CallbackFunc *callback ){
 	if(callbackList == NULL) {
+		callbackList = malloc(sizeof(transitionTable));
 		callbackList->callbacks = callback;
 		return;
 	}
