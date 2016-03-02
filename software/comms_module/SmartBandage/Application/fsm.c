@@ -194,6 +194,7 @@ void SB_registerEvent(SB_EventHandler eventHandler, SB_State state) {
 
 
 // This will be put within the switchstate cases to make sure the peripherals are dealt with correctly
+// This will be put within the switchstate cases to make sure the peripherals are dealt with correctly
 void SB_callCallback( SB_State_Transition state) {
 	//check if the linked list in empty, if it is then don't do anything, if it isn't, then iterate through list and call functions
     SB_CallbackFunc *current;
@@ -201,14 +202,20 @@ void SB_callCallback( SB_State_Transition state) {
         return;
 	}
 	current = callbackTable->callbacks ;
-
 	// disable context switching for other tasks in this section
 	taskKey = Task_disable();
 	while(current->next != NULL) {
-		current->function();
-		current = current->next;
+		if(state == current->transition){
+			current->function();
+			current = current->next;
+		} else {
+			current = current->next;
+		}
 	}
-	current->function();
+	//current = current->next;
+	if(state == current->transition) {
+		current->function();
+	}
 	// restore context switching for other tasks at this point
 	Task_restore(taskKey);
 }
