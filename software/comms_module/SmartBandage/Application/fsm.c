@@ -31,7 +31,7 @@ void SB_setError(SB_Error);
 //EDITED HERE
 
 //void SB_registerStateTransitionCallback((void*), SB_State_Transition); // not sure if the (void *) is the correct way of prototyping for void(*function)(void)
-void SB_addCallback(transitionTable*, SB_CallbackFunc* );
+void SB_addCallback(SB_CallbackFunc* );
 transitionTable *callbackTable = NULL;
 
 //LUT TABLE
@@ -78,6 +78,9 @@ SB_State SB_switchState(SB_State newState) {
 
 		//highest priority unblocks the ENTER_STATE tasks
 		//
+
+
+
 
 	case S_CHECK:
 
@@ -177,10 +180,8 @@ void SB_registerStateTransitionCallback(void function(void), SB_State_Transition
 	newCallback->transition = peripheral;
 	newCallback->function = function;
 	newCallback->next = 0; //start with the new callback not pointing to anything
-
 	//add the callback to the transition table
-	SB_addCallback(callbackTable, newCallback);
-
+	SB_addCallback(newCallback);
 }
 
 /*
@@ -192,31 +193,32 @@ void SB_registerEvent(SB_EventHandler eventHandler, SB_State state) {
 
 
 // This will be put within the switchstate cases to make sure the peripherals are dealt with correctly
-void SB_callCallback(transitionTable *callbackList, SB_State_Transition state) {
+void SB_callCallback( SB_State_Transition state) {
 	//check if the linked list in empty, if it is then don't do anything, if it isn't, then iterate through list and call functions
-	if(callbackList == NULL) {
-		return;
+    SB_CallbackFunc *current;
+	if(callbackTable == NULL) {
+        return;
 	}
+	current = callbackTable->callbacks ;
 
 	// This is the part where context switching has to be prevented
-	while(callbackList->callbacks->next != NULL) {
-		callbackList->callbacks->function();
+	while(current->next != NULL) {
+		current->function();
+		current = current->next;
 	}
-
+	current->function();
 }
 
 
-
-// depending on how the linked list is declared, might need to return it
 // Function to add the callbacks to the list to be used later.
-void SB_addCallback(transitionTable *callbackList, SB_CallbackFunc *callback ){
-	if(callbackList == NULL) {
-		callbackList = malloc(sizeof(transitionTable));
-		callbackList->callbacks = callback;
+void SB_addCallback( SB_CallbackFunc *callback ){
+	if(callbackTable == NULL) {
+        callbackTable = malloc(sizeof(transitionTable));
+        callbackTable->callbacks = callback;
 		return;
 	}
 
-	SB_CallbackFunc *current = callbackList->callbacks;
+	SB_CallbackFunc *current = callbackTable->callbacks;
 
 	if ( current != 0 ) {
 		while ( current->next != 0)
@@ -224,9 +226,6 @@ void SB_addCallback(transitionTable *callbackList, SB_CallbackFunc *callback ){
 			current = current->next;
 		}
 	}
-
-	//current->next = malloc( sizeof(SB_CallbackFunc) );
 	current->next = callback;
-	current = current->next;
 }
 
