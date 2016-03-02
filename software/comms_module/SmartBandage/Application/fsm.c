@@ -18,7 +18,7 @@ events:
  */
 
  #include "fsm.h"
-
+#include <ti/sysbios/knl/Task.h>
 //function prototypes
 SB_State SB_checkTimerExpired(void);
 SB_State SB_bleTimerExpired(void);
@@ -33,6 +33,7 @@ void SB_setError(SB_Error);
 //void SB_registerStateTransitionCallback((void*), SB_State_Transition); // not sure if the (void *) is the correct way of prototyping for void(*function)(void)
 void SB_addCallback(SB_CallbackFunc* );
 transitionTable *callbackTable = NULL;
+UInt taskKey;
 
 //LUT TABLE
 //TODO: If we continue to run out of heap, implement this in a switch statement as with 5 events and 6 states this is 120bytes of memory
@@ -201,12 +202,15 @@ void SB_callCallback( SB_State_Transition state) {
 	}
 	current = callbackTable->callbacks ;
 
-	// This is the part where context switching has to be prevented
+	// disable context switching for other tasks in this section
+	taskKey = Task_disable();
 	while(current->next != NULL) {
 		current->function();
 		current = current->next;
 	}
 	current->function();
+	// restore context switching for other tasks at this point
+	Task_restore(taskKey);
 }
 
 
