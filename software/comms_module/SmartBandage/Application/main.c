@@ -22,6 +22,7 @@
 #include "peripheralManager.h"
 #include "Board.h"
 #include "ble.h"
+#include "flash.h"
 
 /* Header files required to enable instruction fetch cache */
 #include <inc/hw_memmap.h>
@@ -103,6 +104,21 @@ int main()
 	System_printf("Peripherals Initialized.\n");
 	System_flush();
 #endif
+
+//	if (NoError != (error = SB_flashInit(sizeof(SB_PeripheralReadings), SB_REINIT_FLASH_ON_START))) {
+//#ifdef SB_DEBUG
+//		System_printf("Error No: %d\n", error);
+//		System_printf("SB application initialization failed while initializing non-volatile flash storage. This is a code error.\n");
+//		System_flush();
+//#endif
+//
+//		while(1);
+//	}
+//
+//#ifdef SB_DEBUG
+//	System_printf("Non-Volatile Memory Initialized.\n");
+//	System_flush();
+//#endif
 
 	/* Configure BLE */
 	SB_bleInit();

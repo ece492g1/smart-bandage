@@ -64,6 +64,10 @@
 #define RAM_BASE                0x20000000
 #define RAM_SIZE                0x5000
 
+#define PAGE_SIZE				0x1000
+//#define SB_NV_FLASH_PAGES		4
+#define SB_NV_FLASH_BASE_ADDR	ICALL_STACK0_ADDR - (PAGE_SIZE*SB_NV_FLASH_PAGES)
+#define SB_NV_FLASH_PAGE_FIRST  (SB_NV_FLASH_BASE - APP_BASE)/PAGE_SIZE
 
 /* System memory map */
 
@@ -78,10 +82,12 @@ MEMORY
     /* Application stored in and executes from internal flash */
     /* Flash Size 128 KB */
     #ifdef ICALL_STACK0_ADDR
-        FLASH (RX) : origin = APP_BASE, length = ICALL_STACK0_ADDR - APP_BASE - 1
+        FLASH (RX) : origin = APP_BASE, length = SB_NV_FLASH_BASE_ADDR - APP_BASE - 1
     #else // default
-        FLASH (RX) : origin = APP_BASE, length = 0x00008FFF
+        FLASH (RX) : origin = APP_BASE, length = 0x00008FFF - (PAGE_SIZE*SB_NV_FLASH_PAGES)
     #endif
+
+    SB_NV_FLASH (RW) : origin = SB_NV_FLASH_BASE_ADDR, length = (PAGE_SIZE*SB_NV_FLASH_PAGES) - 1
 
     // CCFG Page, contains .ccfg code section and some application code.
     FLASH_LAST_PAGE (RX) :  origin = FLASH_SIZE - 0x1000, length = 0x1000
@@ -109,6 +115,8 @@ SECTIONS
     .init_array     :   >> FLASH | FLASH_LAST_PAGE
     .emb_text       :   >> FLASH | FLASH_LAST_PAGE
     .ccfg           :   > FLASH_LAST_PAGE (HIGH)
+
+    .sb_nv_mem      :   >  SB_NV_FLASH
 
     .vtable         :   > SRAM
     .vtable_ram     :   > SRAM

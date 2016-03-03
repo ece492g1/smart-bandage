@@ -33,6 +33,11 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>HAL</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
 			<name>Include</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -46,6 +51,11 @@
 			<name>Board/Interfaces</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>HAL/hal_flash_wrapper.c</name>
+			<type>1</type>
+			<locationURI>TI_DIR/simplelink/ble_cc26xx_2_01_00_44423/Components/hal/target/CC2650TIRTOS/hal_flash_wrapper.c</locationURI>
 		</link>
 		<link>
 			<name>ICall/ICall.h</name>

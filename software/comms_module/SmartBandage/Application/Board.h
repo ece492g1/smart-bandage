@@ -17,6 +17,7 @@
  ****************************************************************/
 //#define LAUNCHPAD // Only define if using Launchpad for testing. Can be defined as compiler argument instead.
 #define SB_DEBUG
+#define SB_FLASH_SANITY_CHECKS
 #define POWER_SAVING
 #define IOEXPANDER_PRESENT
 
@@ -62,6 +63,11 @@ typedef enum {
 #define SB_NUM_MCP9808_SENSORS 3
 extern uint8_t Mcp9808Addresses[];
 
+#define SB_NUM_TEMPERATURE  1+SB_NUM_MCP9808_SENSORS
+#define SB_NUM_HUMIDITY		1
+#define SB_NUM_MOISTURE		5
+#define SB_READING_T		uint16
+
 #ifdef LAUNCHPAD
 #undef Board_SCL
 #undef Board_SDA
@@ -78,6 +84,17 @@ extern uint8_t Mcp9808Addresses[];
 
 #define PIN_HIGH 1
 #define PIN_LOW  0
+
+/*****************************************************************
+ * Time parameters
+ ****************************************************************/
+#define SB_TIMESTAMP_T uint32
+#define SB_TIMEDIFF_T  uint16
+
+/*****************************************************************
+ * Flash parameters
+ ****************************************************************/
+#define SB_REINIT_FLASH_ON_START false
 
 /*****************************************************************
  * External MUX configurations
@@ -164,6 +181,8 @@ typedef enum {
 	OperationTimeout,
 	OutOfMemory,
 	SemaphorePendTimeout,
+	SanityCheckFailed,
+	WritePermissionDenied,
 } SB_Error;
 
 /*****************************************************************

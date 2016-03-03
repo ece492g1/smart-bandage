@@ -10,6 +10,7 @@
 #include <xdc/runtime/System.h>
 #include <ti/drivers/PIN.h>
 
+#include "flash.h"
 #include "i2c.h"
 #include "util.h"
 #include "Devices/mcp9808.h"
@@ -410,6 +411,22 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 #endif
 		Task_exit();
 	}
+
+	SB_Error error;
+	if (NoError != (error = SB_flashInit(sizeof(SB_PeripheralReadings), SB_REINIT_FLASH_ON_START))) {
+#ifdef SB_DEBUG
+		System_printf("Error No: %d\n", error);
+		System_printf("SB application initialization failed while initializing non-volatile flash storage. This is a code error.\n");
+		System_flush();
+#endif
+
+		while(1);
+	}
+
+#ifdef SB_DEBUG
+	System_printf("Non-Volatile Memory Initialized.\n");
+	System_flush();
+#endif
 
 #ifdef SB_DEBUG
 		System_printf("PMGR: Peripherals initialized.\n", result);
