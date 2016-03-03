@@ -262,6 +262,7 @@ SB_Error initPeripherals() {
 }
 
 SB_Error readSensorData() {
+	SB_PeripheralReadings readings;
 	SB_i2cTransaction taTransaction;
 	I2C_Transaction taBaseTransaction;
 	uint8_t txBuf[1];
@@ -316,6 +317,7 @@ SB_Error readSensorData() {
 #ifdef SB_DEBUG
 					System_printf("PMGR: Temperature read: %d\n", PMGR.mcp9808Devices[i].Temperature>>4);
 #endif
+					readings.temperatures[i] = PMGR.mcp9808Devices[i].Temperature;
 
 					// TODO: Calls like this should likely be protected with a semaphore
 					SB_Profile_Set16bParameter( SB_CHARACTERISTIC_TEMPERATURE, PMGR.mcp9808Devices[i].Temperature, i );
@@ -368,7 +370,10 @@ SB_Error readSensorData() {
 
 				// TODO: Calls like this should likely be protected with a semaphore
 				SB_Profile_Set16bParameter( SB_CHARACTERISTIC_HUMIDITY, PMGR.hdc1050Device.humidity, 0 );
-				SB_Profile_Set16bParameter( SB_CHARACTERISTIC_TEMPERATURE, PMGR.hdc1050Device.temperature, 3 );
+				SB_Profile_Set16bParameter( SB_CHARACTERISTIC_TEMPERATURE, PMGR.hdc1050Device.temperature, SB_NUM_MCP9808_SENSORS );
+
+				readings.humidities[0] = PMGR.hdc1050Device.humidity;
+				readings.temperatures[SB_NUM_MCP9808_SENSORS] = PMGR.hdc1050Device.temperature;
 			} else {
 				if (++PMGR.hdc1050DeviceState.numReadAttempts > PERIPHERAL_MAX_READ_ATTEMPTS) {
 					PMGR.hdc1050DeviceState.currentState = PState_Failed;
@@ -393,7 +398,8 @@ SB_Error readSensorData() {
 		}
 	}
 
-	return NoError;
+	// Finally, write the data to flash storage
+	return SB_flashWriteReadings(&readings);
 }
 
 static void SB_peripheralManagerTask(UArg a0, UArg a1) {
@@ -448,8 +454,17 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		PMANAGER_TASK_YIELD_HIGHERPRI();
 
 		// Read sensor data
-		readSensorData();
+		result = readSensorData();
 		PMANAGER_TASK_YIELD_HIGHERPRI();
+		if (NoError != result) {
+#ifdef SB_DEBUG
+			PMANAGER_TASK_YIELD_HIGHERPRI();
+			System_printf("PMGR: Saving readings failed: %d.\n", result);
+			PMANAGER_TASK_YIELD_HIGHERPRI();
+			System_flush();
+			PMANAGER_TASK_YIELD_HIGHERPRI();
+#endif
+		}
 
 #ifdef SB_DEBUG
 		Task_sleep(NTICKS_PER_MILLSECOND);

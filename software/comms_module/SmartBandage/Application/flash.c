@@ -34,7 +34,7 @@
 
 // NV page header size in bytes
 #define SB_FLASH_PAGE_HDR_SIZE           sizeof(SB_FlashHeader)
-#define SB_FLASH_PAGE_HDR_OFFSET		 4
+#define SB_FLASH_PAGE_HDR_OFFSET		 0
 
 // Length in bytes of a flash word
 #define SB_FLASH_WORD_SIZE               HAL_FLASH_WORD_SIZE
@@ -54,6 +54,15 @@ typedef struct {
 	SB_FLASH_OFFSET_T    startOffset;
 	SB_TIMESTAMP_T		 timestamp;
 	uint8 				 readingSizeBytes;
+
+	/*
+	 * Used to point to the next instance of the header that is saved whenever the peripheral readies for power down.
+	 * This is because a write to flash is performed as a logical AND -- meaning it is not possible to set a bit to `1`
+	 * after it is written `0`. Therefore, we keep this value as all 1's until we have to save power state at which point
+	 * we write the address of the next header position. This forms a sort of linked-list of headers throughout the data.
+	 */
+	SB_FLASH_PAGE_T   nextHeaderPage;
+	SB_FLASH_OFFSET_T nextHeaderOffset;
 } SB_FlashHeader;
 
 /*********************************************************************
@@ -64,6 +73,7 @@ SB_Error writeAligned(uint8 * buf, uint8 count, SB_FLASH_PAGE_T page, SB_FLASH_O
 void SBFlashRead(uint8 pg, uint16 offset, uint8 *buf, uint16 cnt);
 //SB_Error SBFlashWrite(SB_FLASH_POINTER_T address, uint8 *buf, uint16 cnt);
 SB_Error SBFlashWrite(uint8 pg, uint16 offset, uint8 *buf, uint16 count);
+SB_Error erasePage(uint8 pg);
 static void enableFlashCache( uint8 state );
 static uint8 disableFlashCache();
 
@@ -76,7 +86,38 @@ static uint8 disableFlashCache();
 #pragma DATA_SECTION(firstFlashByte, ".sb_nv_mem")
 const uint8 firstFlashByte = 0x51;
 
-SB_Error SB_flashInit(uint8 readingSizeBytes, bool reinit) {SB_FlashHeader header;
+SB_FlashHeader header;
+
+SB_Error loadNextHeader(SB_FLASH_PAGE_T pg, SB_FLASH_OFFSET_T offset, SB_FlashHeader *target, uint8 readingSizeBytes) {
+	SB_Error result;
+	if (NULL == target) {
+		return InvalidParameter;
+	}
+
+	// Check for an existing header in flash memory
+	SBFlashRead(SB_FLASH_PAGE_FIRST, SB_FLASH_PAGE_HDR_OFFSET, (uint8*)target, sizeof(SB_FlashHeader));
+
+	// Check for invalid data in the loaded header. If its find reinitialize it and erase the first page
+	uint32 totalSize = target->entryCount * target->readingSizeBytes;
+	if (target->marker != SB_FLASH_MARKER || (target->readingSizeBytes != readingSizeBytes || totalSize >= (uint32)(SB_FLASH_NUM_PAGES * SB_FLASH_PAGE_SIZE))) {
+		// Initialize new header at start page and offset after the header position
+		target->marker = SB_FLASH_MARKER;
+		target->startPage = SB_FLASH_PAGE_FIRST;
+		target->startOffset = SB_FLASH_PAGE_HDR_SIZE;
+		target->entryCount = 0;
+		target->readingSizeBytes = readingSizeBytes;
+		target->nextHeaderPage = ~0;
+		target->nextHeaderOffset = ~0;
+
+		if (NoError != (result = erasePage(SB_FLASH_PAGE_FIRST))) {
+			return result;
+		}
+	}
+
+	return NoError;
+}
+
+SB_Error SB_flashInit(uint8 readingSizeBytes, bool reinit) {
 	SB_Error result;
 #ifdef SB_DEBUG
 	System_printf("SB Flash NV Storage Config:\n SB Flash Page No: %d\n SB Flash Base Addr: %x\n SB Flash Num Pages: %d\n SB Flash Last Page: %d\n SB Flash Last Addr: %x.\n Sector size: %d\n Reading Size (bytes): %d\n",
@@ -86,31 +127,20 @@ SB_Error SB_flashInit(uint8 readingSizeBytes, bool reinit) {SB_FlashHeader heade
 			SB_FLASH_PAGE_LAST,
 			SB_FLASH_END_ADDR,
 			FlashSectorSizeGet(),
-			readingSizeBytes); //SB_FLASH_PAGE_LAST);
+			readingSizeBytes);
 	System_flush();
 #endif
 
-	// Check for an existing header in flash memory
-	SBFlashRead(SB_FLASH_PAGE_FIRST, SB_FLASH_PAGE_HDR_OFFSET, (uint8*)&header, sizeof(SB_FlashHeader));
+	// Load the first header in the header chain
+	if (NoError != (result = loadNextHeader(SB_FLASH_PAGE_FIRST, SB_FLASH_PAGE_HDR_OFFSET, &header, readingSizeBytes))) {
+		return result;
+	}
 
-	if (header.marker == SB_FLASH_MARKER) {
-		uint32 totalSize = header.entryCount * header.readingSizeBytes;
-		if (header.readingSizeBytes != readingSizeBytes || totalSize >= (uint32)(SB_FLASH_NUM_PAGES * SB_FLASH_PAGE_SIZE)) {
-			// If the reading size has changed or the data is too large to fit into memory
-			// invalidate the old data and move to the end of the previous region for flash leveling
-			uint8 pageDiff = (header.startOffset + header.entryCount*header.readingSizeBytes) / SB_FLASH_PAGE_SIZE;
-			header.startPage += pageDiff;
-			header.startOffset = (header.startOffset + header.entryCount * header.readingSizeBytes) % SB_FLASH_PAGE_SIZE;
-			header.entryCount = 0;
-			header.readingSizeBytes = readingSizeBytes;
+	// Continue loading until we get to the last header
+	while (header.nextHeaderPage != ((SB_FLASH_PAGE_T) ~0) && header.nextHeaderOffset != ((SB_FLASH_OFFSET_T) ~0)) {
+		if (NoError != (result = loadNextHeader(header.nextHeaderPage, header.nextHeaderOffset, &header, readingSizeBytes))) {
+			return result;
 		}
-	} else {
-		// Initialize new header at start page and offset after the header position
-		header.marker = SB_FLASH_MARKER;
-		header.startPage = SB_FLASH_PAGE_FIRST;
-		header.startOffset = SB_FLASH_PAGE_HDR_SIZE;
-		header.entryCount = 0;
-		header.readingSizeBytes = readingSizeBytes;
 	}
 
 #ifndef SB_FLASH_NO_INIT_WRITE
@@ -118,76 +148,120 @@ SB_Error SB_flashInit(uint8 readingSizeBytes, bool reinit) {SB_FlashHeader heade
 
 	result = writeBuf((uint8*)&header, sizeof(header), SB_FLASH_PAGE_FIRST, SB_FLASH_PAGE_HDR_OFFSET);
 	if (result != NoError) {
-#ifdef SB_DEBUG
+# ifdef SB_DEBUG
 		System_printf("Flash header write failed: %d\n", result);
 		System_flush();
-#endif
+# endif
 		return result;
 	}
-#endif
 
-#ifdef SB_FLASH_SANITY_CHECKS
+# ifdef SB_FLASH_SANITY_CHECKS
 	{
 		// Sanity check
 		SB_FlashHeader checkHeader;
 		SBFlashRead(SB_FLASH_PAGE_FIRST, SB_FLASH_PAGE_HDR_OFFSET, (uint8*)&checkHeader, sizeof(SB_FlashHeader));
 
 		if (header.marker != checkHeader.marker) {
-#ifdef SB_DEBUG
+#  ifdef SB_DEBUG
 			System_printf("Flash failed sanity check! Header marker wrote %x, but read %x at address %x\n", header.marker, checkHeader.marker, SB_FLASH_BEGIN_ADDR); //SB_FLASH_PAGE_LAST);
 			System_flush();
-#endif
+#  endif
 			return SanityCheckFailed;
 		}
 
 		if (header.entryCount != checkHeader.entryCount) {
-#ifdef SB_DEBUG
+#  ifdef SB_DEBUG
 			System_printf("Flash failed sanity check! Header entryCount wrote %x, but read %x at address %x\n", header.entryCount, checkHeader.entryCount, SB_FLASH_BEGIN_ADDR); //SB_FLASH_PAGE_LAST);
 			System_flush();
-#endif
+#  endif
 			return SanityCheckFailed;
 		}
 
 		if (header.startPage != checkHeader.startPage) {
-#ifdef SB_DEBUG
+#  ifdef SB_DEBUG
 			System_printf("Flash failed sanity check! Header readingSizeBytes wrote %x, but read %x at address %x\n", header.startPage, checkHeader.startPage, SB_FLASH_BEGIN_ADDR); //SB_FLASH_PAGE_LAST);
 			System_flush();
-#endif
+#  endif
 			return SanityCheckFailed;
 		}
 
 		if (header.startOffset != checkHeader.startOffset) {
-#ifdef SB_DEBUG
+#  ifdef SB_DEBUG
 			System_printf("Flash failed sanity check! Header readingSizeBytes wrote %x, but read %x at address %x\n", header.startOffset, checkHeader.startOffset, SB_FLASH_BEGIN_ADDR); //SB_FLASH_PAGE_LAST);
 			System_flush();
-#endif
+#  endif
 			return SanityCheckFailed;
 		}
 
 		if (header.timestamp != checkHeader.timestamp) {
-#ifdef SB_DEBUG
+#  ifdef SB_DEBUG
 			System_printf("Flash failed sanity check! Header readingSizeBytes wrote %x, but read %x at address %x\n", header.timestamp, checkHeader.timestamp, SB_FLASH_BEGIN_ADDR); //SB_FLASH_PAGE_LAST);
 			System_flush();
-#endif
+#  endif
 			return SanityCheckFailed;
 		}
 
 		if (header.readingSizeBytes != checkHeader.readingSizeBytes) {
-#ifdef SB_DEBUG
+#  ifdef SB_DEBUG
 			System_printf("Flash failed sanity check! Header readingSizeBytes wrote %x, but read %x at address %x\n", header.readingSizeBytes, checkHeader.readingSizeBytes, SB_FLASH_BEGIN_ADDR); //SB_FLASH_PAGE_LAST);
 			System_flush();
-#endif
+#  endif
+			return SanityCheckFailed;
+		}
+
+		if (header.nextHeaderPage != checkHeader.nextHeaderPage) {
+#  ifdef SB_DEBUG
+			System_printf("Flash failed sanity check! Header nextHeaderPage wrote %x, but read %x at address %x\n", header.nextHeaderPage, checkHeader.nextHeaderPage, SB_FLASH_BEGIN_ADDR); //SB_FLASH_PAGE_LAST);
+			System_flush();
+#  endif
+			return SanityCheckFailed;
+		}
+
+		if (header.nextHeaderOffset != checkHeader.nextHeaderOffset) {
+#  ifdef SB_DEBUG
+			System_printf("Flash failed sanity check! Header nextHeaderOffset wrote %x, but read %x at address %x\n", header.nextHeaderOffset, checkHeader.nextHeaderOffset, SB_FLASH_BEGIN_ADDR); //SB_FLASH_PAGE_LAST);
+			System_flush();
+#  endif
 			return SanityCheckFailed;
 		}
 	}
+# endif
 #endif
 
 	return NoError;
 }
 
-SB_Error SB_flashWriteReadings(void * readings);
+SB_Error SB_flashWriteReadings(void * readings) {
+	SB_Error result;
 
-SB_FLASH_COUNT_T SB_flashReadingCount();
+	if (NULL == readings) {
+		return InvalidParameter;
+	}
+
+	SB_FLASH_PAGE_T page = header.startPage + (header.entryCount * header.readingSizeBytes + header.startOffset) / SB_FLASH_PAGE_SIZE;
+	SB_FLASH_OFFSET_T offset = (header.entryCount * header.readingSizeBytes + header.startOffset) % SB_FLASH_PAGE_SIZE;
+
+	// We're on a new, unused page - erase it to ensure we can write to it
+	if (offset < header.readingSizeBytes && page > header.startPage) {
+		if (NoError != (result = erasePage(page))) {
+			return result;
+		}
+	}
+
+	// Write the data
+	if (NoError != (result = writeBuf(readings, header.readingSizeBytes, page, offset))) {
+		return result;
+	}
+
+	// Increment the entry count
+	++header.entryCount;
+
+	return NoError;
+}
+
+SB_FLASH_COUNT_T SB_flashReadingCount() {
+	return header.entryCount;
+}
 
 SB_Error SB_flashGetReading(SB_FLASH_COUNT_T index, void * reading);
 
@@ -199,6 +273,7 @@ SB_Error SB_flashPrepShutdown();
 // more advanced boundary checking.
 SB_Error writeBuf(uint8 * buf, uint8 count, SB_FLASH_PAGE_T page, SB_FLASH_OFFSET_T offset) {
 	uint8 i, alignmentBuf[SB_FLASH_WORD_SIZE];
+	SB_Error error;
 
 	// If the data is not word-aligned at the start
 	if (offset % SB_FLASH_WORD_SIZE != 0) {
@@ -207,10 +282,12 @@ SB_Error writeBuf(uint8 * buf, uint8 count, SB_FLASH_PAGE_T page, SB_FLASH_OFFSE
 
 		// Add the non-aligned start bits to the alignmentBuffer
 		for (i = 0; i < (SB_FLASH_WORD_SIZE - (offset % SB_FLASH_WORD_SIZE)) && i < count; ++i) {
-			alignmentBuf[i + offset % SB_FLASH_WORD_SIZE] = buf[i];
+			alignmentBuf[i + (offset % SB_FLASH_WORD_SIZE)] = buf[i];
 		}
 
-		SBFlashWrite(page, offset, alignmentBuf, SB_FLASH_WORD_SIZE);
+		if (NoError != (error = SBFlashWrite(page, offset - (offset % SB_FLASH_WORD_SIZE), alignmentBuf, SB_FLASH_WORD_SIZE))) {
+			return error;
+		}
 
 		offset += i;
 		buf    += i;
@@ -223,26 +300,24 @@ SB_Error writeBuf(uint8 * buf, uint8 count, SB_FLASH_PAGE_T page, SB_FLASH_OFFSE
 
 	// If the data is not word-aligned at the end
 	if ((offset + count) % SB_FLASH_WORD_SIZE != 0) {
-		int32  startOffset = offset; // Signed on purpose
-		SB_FLASH_POINTER_T startPage = page;
+		SB_FLASH_OFFSET_T  startOffset = offset + count - ((offset + count) % SB_FLASH_WORD_SIZE);
+		SB_FLASH_PAGE_T    startPage = page;
 
 		// It is only possible to cross a single page boundary because `count` is a `uint8`
-		if ((startOffset + count) >= SB_FLASH_PAGE_SIZE) {
+		if ((offset + count) >= SB_FLASH_PAGE_SIZE) {
 			++startPage;
 			startOffset -= SB_FLASH_PAGE_SIZE;
 		}
 
-		SB_FLASH_POINTER_T startAddr = startOffset + count - ((startOffset + count) % SB_FLASH_WORD_SIZE);
-
 		// Read the data within the same word but before the current write into the buf
-		SBFlashRead(startPage, startAddr, alignmentBuf, SB_FLASH_WORD_SIZE);
+		SBFlashRead(startPage, startOffset, alignmentBuf, SB_FLASH_WORD_SIZE);
 
 		// Add the non-aligned start bits to the alignmentBuffer
-		for (i = 0; i < (SB_FLASH_WORD_SIZE - (offset % SB_FLASH_WORD_SIZE)) && i < count; ++i) {
-			alignmentBuf[i] = buf[count - (offset % SB_FLASH_WORD_SIZE) + i];
+		for (i = 0; i < (SB_FLASH_WORD_SIZE - ((offset + count) % SB_FLASH_WORD_SIZE)) && i < count; ++i) {
+			alignmentBuf[i] = buf[count - ((offset + count) % SB_FLASH_WORD_SIZE) + i];
 		}
 
-		SBFlashWrite(startPage, startAddr, alignmentBuf, SB_FLASH_WORD_SIZE);
+		SBFlashWrite(startPage, startOffset, alignmentBuf, SB_FLASH_WORD_SIZE);
 
 		count  -= i;
 	}
@@ -384,4 +459,35 @@ static uint8 disableFlashCache ( void )
   }
 
   return state;
+}
+
+SB_Error erasePage(uint8 pg) {
+	uint32 result = 0;
+	halIntState_t cs;
+	uint32 addr = ((pg % HAL_NV_PAGE_BEG )* HAL_FLASH_PAGE_SIZE);
+
+	// Enter Critical Section.
+	HAL_ENTER_CRITICAL_SECTION(cs);
+
+	uint8 state = disableFlashCache();
+
+	// Write the data
+	result = FlashSectorErase(addr);
+
+	enableFlashCache(state);
+
+	// Exit Critical Section.
+	HAL_EXIT_CRITICAL_SECTION(cs);
+
+	switch (result) {
+	case FAPI_STATUS_SUCCESS:
+		break;
+	case FAPI_STATUS_INCORRECT_DATABUFFER_LENGTH:
+		return InvalidParameter;
+	case FAPI_STATUS_FSM_ERROR:
+	default:
+		return UnknownError;
+	}
+
+	return NoError;
 }
