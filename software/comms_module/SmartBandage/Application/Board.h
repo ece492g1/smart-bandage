@@ -15,17 +15,22 @@
 /*****************************************************************
  * Config Adjust Variables
  ****************************************************************/
-#define LAUNCHPAD // Only define if using Launchpad for testing. Can be defined as compiler argument instead.
+//#define LAUNCHPAD // Only define if using Launchpad for testing. Can be defined as compiler argument instead.
 #define SB_DEBUG
 #define POWER_SAVING
+#define IOEXPANDER_PRESENT
 
 /*****************************************************************
- * Tasks Configuration
+ * General Configuration
  ****************************************************************/
+// System clock ticks at 10us period
+#define NTICKS_PER_SECOND 100000
+#define NTICKS_PER_MILLSECOND NTICKS_PER_SECOND/1000
+
 #define DEFAULT_TASK_STACK_SIZE 512
 
-#define I2C_TASK_STACK_SIZE  DEFAULT_TASK_STACK_SIZE
-#define PMGR_TASK_STACK_SIZE DEFAULT_TASK_STACK_SIZE
+#define I2C_TASK_STACK_SIZE  256
+#define PMGR_TASK_STACK_SIZE 644
 #define SBP_TASK_STACK_SIZE  DEFAULT_TASK_STACK_SIZE
 
 typedef enum {
@@ -53,6 +58,7 @@ typedef enum {
 #define Board_1V3				IOID_13
 #define Board_VSENSE_0			IOID_14
 
+// TODO: Detect number of sensors. Should be 3 when bandage connected
 #define SB_NUM_MCP9808_SENSORS 3
 extern uint8_t Mcp9808Addresses[];
 
@@ -68,6 +74,11 @@ extern uint8_t Mcp9808Addresses[];
 #define SB_NUM_MCP9808_SENSORS 1
 #endif
 
+#define SYSDSBL_REFRESH_CLOCK_PERIOD 500
+
+#define PIN_HIGH 1
+#define PIN_LOW  0
+
 /*****************************************************************
  * External MUX configurations
  ****************************************************************/
@@ -76,19 +87,19 @@ extern uint8_t Mcp9808Addresses[];
 #define Board_IOMUX_S0 					Board_MSW_0
 #define Board_IOMUX_S1 					Board_MSW_1
 #define Board_IOMUX_S2 					Board_MSW_2
-#define Board_IOMUX_BANDAGE_A_0			((MUX_SELECT)Y3)
-#define Board_IOMUX_BANDAGE_A_1			((MUX_SELECT)Y2)
-#define Board_IOMUX_BANDAGE_A_2			((MUX_SELECT)Y1)
-#define Board_IOMUX_BANDAGE_A_3			((MUX_SELECT)Y0)
-#define Board_IOMUX_BANDAGE_A_4			((MUX_SELECT)Y4)
-#define Board_IOMUX_PERIPHERAL_DETECT	((MUX_SELECT)Y5)
-#define Board_IOMUX_SYSDISBL_N			((MUX_SELECT)Y6)
-#define Board_IOMUX_V_PREBUCK_DIV2		((MUX_SELECT)Y7)
+#define Board_IOMUX_BANDAGE_A_0			((MUX_OUTPUT)Y3)
+#define Board_IOMUX_BANDAGE_A_1			((MUX_OUTPUT)Y2)
+#define Board_IOMUX_BANDAGE_A_2			((MUX_OUTPUT)Y1)
+#define Board_IOMUX_BANDAGE_A_3			((MUX_OUTPUT)Y0)
+#define Board_IOMUX_BANDAGE_A_4			((MUX_OUTPUT)Y4)
+#define Board_IOMUX_PERIPHERAL_DETECT	((MUX_OUTPUT)Y5)
+#define Board_IOMUX_SYSDISBL_N			((MUX_OUTPUT)Y6)
+#define Board_IOMUX_V_PREBUCK_DIV2		((MUX_OUTPUT)Y7)
 
 #define Board_PWRMUX_S 							Board_MPSW
 #define Board_PWRMUX_ENABLE_N 					Board_MP_EN_SW
-#define Board_PWRMUX_PERIPHERAL_VCC				((MUX_SELECT)Y1)
-#define Board_PWRMUX_1V3						((MUX_SELECT)Y0)
+#define Board_PWRMUX_PERIPHERAL_VCC				((MUX_OUTPUT)Y1)
+#define Board_PWRMUX_1V3						((MUX_OUTPUT)Y0)
 
 /*****************************************************************
  * I2C Configuration
@@ -101,6 +112,10 @@ extern uint8_t Mcp9808Addresses[];
 #define I2C_SENSOR_HUMIDITY_ADDR 0b1000000
 #define I2C_SENSOR_GASGAUGE_ADDR 0b1110000
 #define I2C_DBGIOEXP_ADDR		 0b0111111
+
+/* Custom I2C module config */
+//#define I2C_ENABLE_TIMEOUT
+#define I2C_TIMEOUT_PERIOD 10
 
 /* Interface definitions */
 #define I2C_BITRATE    				1 			// 0 = 100kHz, 1 = 400kHz
@@ -148,6 +163,13 @@ typedef enum {
 	InvalidParameter,
 	OperationTimeout,
 	OutOfMemory,
+	SemaphorePendTimeout,
 } SB_Error;
+
+/*****************************************************************
+ * Helpers
+ ****************************************************************/
+
+#define _BV(bit_no) (1 << bit_no)
 
 #endif /* APPLICATION_CONFIG_H_ */

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // Outline for finite state machine for MCU
 
 /* 
@@ -69,19 +70,6 @@ SB_State SB_switchState(SB_State newState) {
 	case S_INIT:
 
 	case S_SLEEP:
-		// Pseudo code walk through of process:
-
-		// call highest priority task whose job it is to unblock the EXIT_STATE tasks.
-		// unblock the EXIT_STATE tasks, highest priority task yields or pends
-		// EXIT_STATES complete
-
-		//switch the state
-
-		//highest priority unblocks the ENTER_STATE tasks
-		//
-
-
-
 
 	case S_CHECK:
 
