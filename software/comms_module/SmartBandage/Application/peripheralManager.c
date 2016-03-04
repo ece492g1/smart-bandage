@@ -463,6 +463,7 @@ SB_Error readSensorData() {
 	System_printf("PMGR: Battery voltage: %fmV\n", stc3115_deviceVoltage(PMGR.gasGaugeDevice)/16.);
 //	System_printf("PMGR: Battery temp: %d\n", stc3115_deviceTemp(PMGR.gasGaugeDevice));
 #endif
+	SB_Profile_Set16bParameter( SB_CHARACTERISTIC_BATTCHARGE, stc3115_deviceVoltage(PMGR.gasGaugeDevice), 0 );
 
 	// Finally, write the data to flash storage
 	return SB_flashWriteReadings(&readings);
