@@ -230,7 +230,9 @@ SB_Error SB_flashInit(uint8 readingSizeBytes, bool reinit) {
 
 	return NoError;
 }
-
+//TODO: This function not yet working accross page boundaries
+// Should write a function to check if a write will cross a page boundary, and if yes
+// erase the next page.
 SB_Error SB_flashWriteReadings(void * readings) {
 	SB_Error result;
 
@@ -344,9 +346,22 @@ SB_Error writeAligned(uint8 * buf, uint8 count, SB_FLASH_PAGE_T page, SB_FLASH_O
 	SB_Error result;
 
 	while (writtenBytes < count) {
+		bool bankOverrun = false, pageOverrun = false;
 		// If applicable adjust the count so that we don't go over a memory bank boundary
-		if (((address + thisCount) / SB_FLASH_PAGE_SIZE) / SB_FLASH_BANK_PAGE_COUNT > currentMemoryBank) {
-			thisCount = SB_FLASH_BANK_SIZE * (currentMemoryBank + 1) - address;
+//		if (((address + thisCount) / SB_FLASH_PAGE_SIZE) / SB_FLASH_BANK_PAGE_COUNT > currentMemoryBank) {
+//			thisCount = SB_FLASH_BANK_SIZE * (currentMemoryBank + 1) - address;
+//			bankOverrun = true;
+//		}
+
+		// If applicable adjust the count so that we don't go over a page bank boundary
+		if (SB_FLASH_PAGE_SIZE * ((SB_FLASH_POINTER_T)page + 1) <= address) {
+			// Write starts on the next page
+			++page;
+			offset -= SB_FLASH_PAGE_SIZE;
+		} else if ((address + thisCount) / SB_FLASH_PAGE_SIZE > page) {
+			// The write starts on one page and extends over the boundary. Cut into smaller writes
+			thisCount = SB_FLASH_PAGE_SIZE * ((SB_FLASH_POINTER_T)page + 1) - address;
+			pageOverrun = true;
 		}
 
 		result = SBFlashWrite(page, offset, buf, thisCount);
@@ -359,7 +374,9 @@ SB_Error writeAligned(uint8 * buf, uint8 count, SB_FLASH_PAGE_T page, SB_FLASH_O
 		address += thisCount;
 
 		// Go to the next bank if the initial write would have crossed the boundary
-		if (thisCount < count) {
+		if (pageOverrun) {
+			++page;
+		} else if (thisCount < count) {
 			++currentMemoryBank;
 		}
 	}

@@ -20,6 +20,7 @@
 #define SB_FLASH_SANITY_CHECKS
 #define POWER_SAVING
 #define IOEXPANDER_PRESENT
+#define Board_BATT_110MAH
 
 /*****************************************************************
  * General Configuration
@@ -117,6 +118,16 @@ extern uint8_t Mcp9808Addresses[];
 #define Board_PWRMUX_ENABLE_N 					Board_MP_EN_SW
 #define Board_PWRMUX_PERIPHERAL_VCC				((MUX_OUTPUT)Y1)
 #define Board_PWRMUX_1V3						((MUX_OUTPUT)Y0)
+
+/*****************************************************************
+ * Gas Gauge Configuration
+ ****************************************************************/
+#define GASGAUGE_SENSE_RESISTOR 		 10
+
+#ifdef Board_BATT_110MAH
+#define GASGAUGE_BATT_INTERNAL_IMPEDANCE 250
+#define GASGAUGE_BATT_CAPACITY 			 110
+#endif
 
 /*****************************************************************
  * I2C Configuration

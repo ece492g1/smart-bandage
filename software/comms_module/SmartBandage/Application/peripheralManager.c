@@ -16,6 +16,7 @@
 #include "Devices/mcp9808.h"
 #include "Devices/hdc1050.h"
 #include "Devices/tca9554a.h"
+#include "Devices/stc3115.h"
 #include "peripheralManager.h"
 #include "../PROFILES/smartBandageProfile.h"
 
@@ -40,6 +41,10 @@ struct {
 	TCA9554A_DEVICE ioexpanderDevice;
 	SB_PeripheralState ioexpanderDeviceState;
 #endif
+
+	STC3115_DEV_DECL(gasGaugeDevice);
+//	STC3115_DEVICE gasGaugeDevice;
+	SB_PeripheralState gasGaugeDeviceState;
 
 	Task_Handle taskHandle;
 	Task_Struct task;
@@ -261,6 +266,58 @@ SB_Error initPeripherals() {
 	return NoError;
 }
 
+SB_Error initAlwaysOnPeripherals() {
+	// Initialize Gas Gauge
+//	PMGR.gasGaugeDeviceState.currentState = PState_Failed;
+	if (PMGR.gasGaugeDeviceState.currentState != PState_Failed) {
+		stc3115_address(PMGR.gasGaugeDevice) = I2C_SENSOR_GASGAUGE_ADDR;
+		PMGR.gasGaugeDeviceState.currentState = PState_Intermittent;
+
+		PMGR.gasGaugeDeviceState.lastError = stc3115_init(PMGR.gasGaugeDevice, &PMGR.i2cDeviceSem);
+		if (PMGR.gasGaugeDeviceState.lastError == NoError) {
+			PMGR.gasGaugeDeviceState.lastError = stc3115_configure(
+					PMGR.gasGaugeDevice,
+
+					&PMGR.i2cDeviceSem,
+					GASGAUGE_SENSE_RESISTOR,
+					GASGAUGE_BATT_INTERNAL_IMPEDANCE,
+					GASGAUGE_BATT_CAPACITY);
+
+			if (PMGR.gasGaugeDeviceState.lastError == NoError) {
+				PMGR.gasGaugeDeviceState.currentState = PState_OK;
+			} else {
+				if (++PMGR.gasGaugeDeviceState.numReadAttempts > PERIPHERAL_MAX_READ_ATTEMPTS) {
+					PMGR.gasGaugeDeviceState.currentState = PState_Failed;
+#ifdef SB_DEBUG
+				System_printf("PMGR: Gas Gauge failed permanently: %d\n", PMGR.gasGaugeDeviceState.lastError);
+#endif
+				} else {
+#ifdef SB_DEBUG
+				System_printf("PMGR: Gas Gauge read failed.\n");
+#endif
+				}
+			}
+		} else {
+			if (++PMGR.gasGaugeDeviceState.numReadAttempts > PERIPHERAL_MAX_READ_ATTEMPTS) {
+				PMGR.gasGaugeDeviceState.currentState = PState_Failed;
+#ifdef SB_DEBUG
+			System_printf("PMGR: Gas Gauge failed permanently: %d\n", PMGR.gasGaugeDeviceState.lastError);
+#endif
+			} else {
+#ifdef SB_DEBUG
+			System_printf("PMGR: Gas Gauge read failed.\n");
+#endif
+			}
+		}
+	}
+
+	if (stc3115_id(PMGR.gasGaugeDevice) != STC3115_DEVICE_ID) {
+		return ResourceNotInitialized;
+	}
+
+	return NoError;
+}
+
 SB_Error readSensorData() {
 	SB_PeripheralReadings readings;
 	SB_i2cTransaction taTransaction;
@@ -390,13 +447,22 @@ SB_Error readSensorData() {
 
 #ifndef LAUNCHPAD
 			if (NoError != tca9554a_setPinStatus(&PMGR.ioexpanderDevice, &PMGR.i2cDeviceSem, IOEXP_I2CSTATUS_PIN_HUMIDITY, false)) {
+# ifdef SB_DEBUG
 				System_printf("IOEXP Error\n");
 				System_flush();
+# endif
 			}
 			PMANAGER_TASK_YIELD_HIGHERPRI();
 #endif
 		}
 	}
+
+	// Read gas gauge
+	stc3115_readInfo(PMGR.gasGaugeDevice, &PMGR.i2cDeviceSem);
+#ifdef SB_DEBUG
+	System_printf("PMGR: Battery voltage: %fmV\n", stc3115_deviceVoltage(PMGR.gasGaugeDevice)/16.);
+//	System_printf("PMGR: Battery temp: %d\n", stc3115_deviceTemp(PMGR.gasGaugeDevice));
+#endif
 
 	// Finally, write the data to flash storage
 	return SB_flashWriteReadings(&readings);
@@ -409,6 +475,29 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		System_printf("Peripheral manager task started...\n");
 		System_flush();
 #endif
+
+#ifdef SB_DEBUG
+		System_printf("Set MUX 1.3 V...\n");
+		System_flush();
+#endif
+
+	SB_setPeripheralsEnable(true);
+	result = SB_sysDisableRefresh(BIOS_WAIT_FOREVER);
+
+	if (NoError != result) {
+#ifdef SB_DEBUG
+		System_printf("Peripheral initialization failure: %d. Could not set MUX output.\n", result);
+		System_flush();
+#endif
+	}
+
+	if (NoError != (result = initAlwaysOnPeripherals())) {
+#ifdef SB_DEBUG
+		System_printf("Always on peripheral initialization failure: %d. Peripheral Manager stalled.\n", result);
+		System_flush();
+#endif
+		Task_exit();
+	}
 
 	if (NoError != (result = initPeripherals())) {
 #ifdef SB_DEBUG
@@ -446,7 +535,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	while (1) {
 
 		// Enable peripherals
-		SB_setPeripheralsEnable(true);
+//		SB_setPeripheralsEnable(true);
 		PMANAGER_TASK_YIELD_HIGHERPRI();
 
 		// Initialize them
@@ -472,7 +561,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 #endif
 
 		// Disable peripherals
-		SB_setPeripheralsEnable(false);
+//		SB_setPeripheralsEnable(false);
 
 		Task_sleep(100000);
 	}
@@ -488,7 +577,6 @@ SB_Error SB_peripheralInit() {
 		System_printf("PMGR: Initializing data structures for MCP9808 Device %d\n", i);
 		System_flush();
 #endif
-
 	}
 
 	// Initialize power pin
@@ -509,11 +597,11 @@ SB_Error SB_peripheralInit() {
 	// Initialize MUX pins
 	PIN_Config muxPinsConfigTable[] =
 	{
-		Board_MP_EN_SW,
-		Board_MSW_0,
-		Board_MSW_1,
-		Board_MSW_2,
-		Board_MPSW,
+		Board_MP_EN_SW		 | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
+		Board_MSW_0			 | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
+		Board_MSW_1			 | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
+		Board_MSW_2			 | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
+		Board_MPSW			 | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
 		PIN_TERMINATE,
 	};
 
@@ -587,7 +675,7 @@ SB_Error SB_peripheralInit() {
  * \brief Enables or disables power to external PCB peripherals
  */
 SB_Error SB_setPeripheralsEnable(bool enable) {
-	PIN_Status result = PIN_setOutputValue(&PMGR.PeripheralPower, Board_PERIPHERAL_PWR, enable != false);
+	PIN_Status result = PIN_setOutputValue(&PMGR.PeripheralPower, Board_PERIPHERAL_PWR, enable == false);
 	if (result == PIN_SUCCESS) {
 		return NoError;
 	}
@@ -631,6 +719,11 @@ SB_Error _applyFullMuxState(SB_MUXState muxState) {
 
 				// Set the MUX enable output
 				| (muxState.pwrmuxOutputEnable << Board_PWRMUX_ENABLE_N));
+
+#ifdef SB_DEBUG
+	System_printf("MUX output states: %d\n", PIN_getPortOutputValue(&PMGR.MUXPins));
+	System_flush();
+#endif
 
 	if (result == PIN_SUCCESS) {
 		return NoError;
