@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // Outline for finite state machine for MCU
 
 /* 
