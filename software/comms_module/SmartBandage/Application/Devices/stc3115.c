@@ -9,38 +9,7 @@
 #include "../i2c.h"
 #include <ti/sysbios/BIOS.h>
 
-inline void swapEndianness(uint16_t *value) {
-	uint8_t temp = ((uint8_t*)value)[0];
-	((uint8_t*)value)[0] = ((uint8_t*)value)[1];
-	((uint8_t*)value)[1] = temp;
-}
-
-void stc3115_preTransfer(STC3115_DEVICE_HANDLE device, STC3115_ENDIANNESS desiredEndianness) {
-//	if (desiredEndianness != device->endianness) {
-//		swapEndianness(&device->counter);
-//		swapEndianness(&device->current);
-//		swapEndianness(&device->voltage);
-//		swapEndianness(&device->ocv);
-//		swapEndianness(&device->cc_cnf);
-//		swapEndianness(&device->vm_cnf);
-//		swapEndianness(&device->acc_cc_adj);
-//		swapEndianness(&device->acc_vm_adj);
-//
-//		device->endianness = desiredEndianness;
-//	}
-//
-//	memcpy(((uint8_t*)&device->ocv) -1, &device->ocv, (uint8_t)(((uint8_t*)&device->address) - ((uint8_t*)&device->ocv)) - 1);
-}
-
-void stc3115_postTransfer(STC3115_DEVICE_HANDLE device, STC3115_ENDIANNESS desiredEndianness) {
-//	// Need to do some alignment fixing
-//	memcpy(&device->ocv, ((uint8_t*)&device->ocv) -1, (uint8_t)(((uint8_t*)&device->address) - ((uint8_t*)&device->ocv))
-//				- 1);
-//	stc3115_preTransfer(device, desiredEndianness);
-}
-
 SB_Error stc3115_init(STC3115_DEVICE_HANDLE device, Semaphore_Handle *semaphore) {
-	stc3115_endianness(device) = LITTLE_ENDIAN;
 	return stc3115_readInfo(device, semaphore);
 }
 
@@ -68,8 +37,6 @@ SB_Error stc3115_configure(STC3115_DEVICE_HANDLE device, Semaphore_Handle *semap
 	stc3115_cc_cnf(device) = ((uint32_t)rsense * battCapacity)*STC3115_REG_CC_CNF_CONV_FACTOR;
 	stc3115_vm_cnf(device) = ((uint32_t)battImpedance * battCapacity)*STC3115_REG_VM_CNF_CONV_FACTOR;
 
-	stc3115_preTransfer(device, BIG_ENDIAN);
-
 	// Write the new config
 	baseTransaction.writeCount   = STC3115_WRITE_REG_COUNT(device);
 	baseTransaction.writeBuf     = STC3115_WRITE_PTR(device);
@@ -86,9 +53,7 @@ SB_Error stc3115_configure(STC3115_DEVICE_HANDLE device, Semaphore_Handle *semap
 
 	Semaphore_pend(*semaphore, BIOS_WAIT_FOREVER);
 
-//	stc3115_postTransfer(device, LITTLE_ENDIAN);
-
-	return NoError;
+	return transaction.completionResult;
 }
 
 SB_Error stc3115_readInfo(STC3115_DEVICE_HANDLE device, Semaphore_Handle *semaphore) {
@@ -97,8 +62,6 @@ SB_Error stc3115_readInfo(STC3115_DEVICE_HANDLE device, Semaphore_Handle *semaph
 	SB_Error result;
 
 	stc3115_devAddrPointer(device) = STC3115_REG_MODE;
-
-	stc3115_preTransfer(device, BIG_ENDIAN);
 
 	// First read all device state
 	baseTransaction.writeCount   = 1;
@@ -116,16 +79,15 @@ SB_Error stc3115_readInfo(STC3115_DEVICE_HANDLE device, Semaphore_Handle *semaph
 
 	Semaphore_pend(*semaphore, BIOS_WAIT_FOREVER);
 
-	stc3115_postTransfer(device, LITTLE_ENDIAN);
-
-	return NoError;
+	return transaction.completionResult;
 }
 
-inline uint16_t stc3115_deviceVoltage(STC3115_DEVICE_HANDLE device) {
+// Returns the converted voltage 16x mV
+inline uint16_t stc3115_convertedVoltage(STC3115_DEVICE_HANDLE device) {
 	return stc3115_voltage(device) * 2.2 * 16;
 }
 
-
-inline uint16_t stc3115_deviceTemp(STC3115_DEVICE_HANDLE device) {
+// Returns the converted temperature in 16x deg. C
+inline uint16_t stc3115_convertedTemp(STC3115_DEVICE_HANDLE device) {
 	return stc3115_temperature(device);
 }

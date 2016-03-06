@@ -42,7 +42,7 @@ struct {
 	SB_PeripheralState ioexpanderDeviceState;
 #endif
 
-	STC3115_DEV_DECL(gasGaugeDevice);
+	STC3115_DEVICE_HANDLE gasGaugeDevice;
 //	STC3115_DEVICE gasGaugeDevice;
 	SB_PeripheralState gasGaugeDeviceState;
 
@@ -460,10 +460,9 @@ SB_Error readSensorData() {
 	// Read gas gauge
 	stc3115_readInfo(PMGR.gasGaugeDevice, &PMGR.i2cDeviceSem);
 #ifdef SB_DEBUG
-	System_printf("PMGR: Battery voltage: %fmV\n", stc3115_deviceVoltage(PMGR.gasGaugeDevice)/16.);
-//	System_printf("PMGR: Battery temp: %d\n", stc3115_deviceTemp(PMGR.gasGaugeDevice));
+	System_printf("PMGR: Battery voltage: %fmV\n", stc3115_convertedVoltage(PMGR.gasGaugeDevice)/16.);
 #endif
-	SB_Profile_Set16bParameter( SB_CHARACTERISTIC_BATTCHARGE, stc3115_deviceVoltage(PMGR.gasGaugeDevice), 0 );
+	SB_Profile_Set16bParameter( SB_CHARACTERISTIC_BATTCHARGE, stc3115_convertedVoltage(PMGR.gasGaugeDevice), 0 );
 
 	// Finally, write the data to flash storage
 	return SB_flashWriteReadings(&readings);
@@ -474,11 +473,6 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 
 #ifdef SB_DEBUG
 		System_printf("Peripheral manager task started...\n");
-		System_flush();
-#endif
-
-#ifdef SB_DEBUG
-		System_printf("Set MUX 1.3 V...\n");
 		System_flush();
 #endif
 
