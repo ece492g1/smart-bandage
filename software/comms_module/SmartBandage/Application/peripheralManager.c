@@ -325,6 +325,7 @@ SB_Error readSensorData() {
 	uint8_t txBuf[1];
 	uint8_t rxBuf[2];
 	uint8_t i;
+	SB_Error result;
 
 	// The configuration transaction
 	taBaseTransaction.writeCount   = 1;
@@ -464,8 +465,22 @@ SB_Error readSensorData() {
 #endif
 	SB_Profile_Set16bParameter( SB_CHARACTERISTIC_BATTCHARGE, stc3115_convertedVoltage(PMGR.gasGaugeDevice), 0 );
 
-	// Finally, write the data to flash storage
-	return SB_flashWriteReadings(&readings);
+	PMANAGER_TASK_YIELD_HIGHERPRI();
+
+	// Write the data to flash storage
+	result = SB_flashWriteReadings(&readings);
+	if (NoError != result) {
+		return result;
+	}
+
+	PMANAGER_TASK_YIELD_HIGHERPRI();
+
+	// Update bluetooth characteristics
+	if (SUCCESS != SB_Profile_SetParameter( SB_CHARACTERISTIC_READINGCOUNT, sizeof(uint32_t), SB_flashReadingCountRef())) {
+		return BLECharacteristicWriteError;
+	}
+
+	return NoError;
 }
 
 static void SB_peripheralManagerTask(UArg a0, UArg a1) {
@@ -475,6 +490,8 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		System_printf("Peripheral manager task started...\n");
 		System_flush();
 #endif
+
+	SB_Profile_Set16bParameter( SB_CHARACTERISTIC_READINGSIZE, sizeof(SB_PeripheralReadings), 0 );
 
 	SB_setPeripheralsEnable(true);
 	result = SB_sysDisableRefresh(BIOS_WAIT_FOREVER);

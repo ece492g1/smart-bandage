@@ -106,6 +106,11 @@ static uint8 charValExtPower[SB_BLE_EXTPOWER_LEN];
 static uint8 charValMoistureMap[SB_BLE_MOISTUREMAP_LEN];
 static uint8 charValSystemTime[SB_BLE_SYSTEMTIME_LEN];
 
+static uint8 charValReadings[SB_BLE_READINGS_LEN];
+static uint8 charValReadingSize[SB_BLE_READINGSIZE_LEN];
+static uint8 charValReadingCount[SB_BLE_READINGCOUNT_LEN];
+static uint8 charValReadingRefTimestamp[SB_BLE_READINGREFTIMESTAMP_LEN];
+
 // Characteristic structs
 static SB_PROFILE_CHARACTERISTIC characteristics[SB_NUM_CHARACTERISTICS] = {
 	// Temperature characteristic
@@ -194,6 +199,50 @@ static SB_PROFILE_CHARACTERISTIC characteristics[SB_NUM_CHARACTERISTICS] = {
 		.value  	 = charValSystemTime,
 		.length 	 = SB_BLE_SYSTEMTIME_LEN,
 		.description = "SystemTime",
+	},
+
+	// Readings characteristic
+	{
+		.uuid   	 = SB_BLE_READINGS_UUID,
+		.uuidptr	 = { LO_UINT16(SB_BLE_READINGS_UUID), HI_UINT16(SB_BLE_READINGS_UUID) },
+		.props  	 = GATT_PROP_READ,
+		.perms		 = GATT_PERMIT_READ,
+		.value  	 = charValReadings,
+		.length 	 = SB_BLE_READINGS_LEN,
+		.description = "Readings",
+	},
+
+	// ReadingsSize characteristic
+	{
+		.uuid   	 = SB_BLE_READINGSIZE_UUID,
+		.uuidptr	 = { LO_UINT16(SB_BLE_READINGSIZE_UUID), HI_UINT16(SB_BLE_READINGSIZE_UUID) },
+		.props  	 = GATT_PROP_READ  | GATT_PROP_WRITE,
+		.perms		 = GATT_PERMIT_READ | GATT_PERMIT_WRITE,
+		.value  	 = charValReadingSize,
+		.length 	 = SB_BLE_READINGSIZE_LEN,
+		.description = "ReadingSize",
+	},
+
+	// ReadingCount characteristic
+	{
+		.uuid   	 = SB_BLE_READINGCOUNT_UUID,
+		.uuidptr	 = { LO_UINT16(SB_BLE_READINGCOUNT_UUID), HI_UINT16(SB_BLE_READINGCOUNT_UUID) },
+		.props  	 = GATT_PROP_READ,
+		.perms		 = GATT_PERMIT_READ,
+		.value  	 = charValReadingCount,
+		.length 	 = SB_BLE_READINGCOUNT_LEN,
+		.description = "ReadingCount",
+	},
+
+	// ReadingsRefTime characteristic
+	{
+		.uuid   	 = SB_BLE_READINGREFTIMESTAMP_UUID,
+		.uuidptr	 = { LO_UINT16(SB_BLE_READINGREFTIMESTAMP_UUID), HI_UINT16(SB_BLE_READINGREFTIMESTAMP_UUID) },
+		.props  	 = GATT_PROP_READ,
+		.perms		 = GATT_PERMIT_READ,
+		.value  	 = charValReadingRefTimestamp,
+		.length 	 = SB_BLE_READINGREFTIMESTAMP_LEN,
+		.description = "ReadingsRefTime",
 	},
 };
 
@@ -321,7 +370,7 @@ bStatus_t SB_Profile_RegisterAppCBs( simpleProfileCBs_t *appCallbacks )
 }
 
 /*********************************************************************
- * @fn      SimpleProfile_SetParameter
+ * @fn      SB_Profile_SetParameter
  *
  * @brief   Set a Simple Profile parameter.
  *
@@ -334,13 +383,33 @@ bStatus_t SB_Profile_RegisterAppCBs( simpleProfileCBs_t *appCallbacks )
  *
  * @return  bStatus_t
  */
-bStatus_t SB_Profile_SetParameter( SB_CHARACTERISTIC param, uint8 len, void *value )
+inline bStatus_t SB_Profile_SetParameter( SB_CHARACTERISTIC param, uint8 len, const void *value )
 {
-	if ( len != characteristics[param].length ) {
+	return SB_Profile_SetParameterPartial( param, len, 0, value );
+}
+
+/*********************************************************************
+ * @fn      SB_Profile_SetParameterPartial
+ *
+ * @brief   Partially set a parameter.
+ *
+ * @param   param - Profile parameter ID
+ * @param   len - length of data to write
+ * @param   offset - The offset (from the start of data) where writing should start
+ * @param   value - pointer to data to write.  This is dependent on
+ *          the parameter ID and WILL be cast to the appropriate
+ *          data type (example: data type of uint16 will be cast to
+ *          uint16 pointer).
+ *
+ * @return  bStatus_t
+ */
+bStatus_t SB_Profile_SetParameterPartial( SB_CHARACTERISTIC param, uint8 len, uint8_t offset, const void *value )
+{
+	if ( (offset + len) > characteristics[param].length || len == 0 ) {
 		return bleInvalidRange;
 	}
 
-	VOID memcpy( characteristics[param].value, value, characteristics[param].length );
+	VOID memcpy( characteristics[param].value + offset, value, len );
 
 
 	return SUCCESS;
@@ -357,15 +426,9 @@ bStatus_t SB_Profile_SetParameter( SB_CHARACTERISTIC param, uint8 len, void *val
  *
  * @return  bStatus_t
  */
-bStatus_t SB_Profile_Set16bParameter( SB_CHARACTERISTIC param, uint16 value, uint8 valueIndex )
+inline bStatus_t SB_Profile_Set16bParameter( SB_CHARACTERISTIC param, uint16 value, uint8 valueIndex )
 {
-	if ( sizeof(uint16)*valueIndex >= characteristics[param].length ) {
-		return bleInvalidRange;
-	}
-
-	VOID memcpy( characteristics[param].value + valueIndex*sizeof(uint16), &value, sizeof(uint16) );
-
-	return SUCCESS;
+	return SB_Profile_SetParameterPartial( param, sizeof(uint16), valueIndex*sizeof(uint16), &value );
 }
 
 /*********************************************************************
@@ -421,23 +484,32 @@ static bStatus_t simpleProfile_ReadAttrCB(uint16_t connHandle,
 		return ( ATT_ERR_INSUFFICIENT_AUTHOR );
 	}
 
-	// Make sure it's not a blob operation (no attributes in the profile are long)
-	if ( offset > 0 )
-	{
-		return ( ATT_ERR_ATTR_NOT_LONG );
-	}
-
 	if ( pAttr->type.len == ATT_BT_UUID_SIZE ) {
 		uint16 uuid = BUILD_UINT16( pAttr->type.uuid[0], pAttr->type.uuid[1]);
 		uint8 c = uuid - SB_BLE_SERV_UUID - 1;
+
+		// Validate the characteristic
 		if (c >= SB_NUM_CHARACTERISTICS) {
 			// Invalid characteristic
 			*pLen = 0;
-			status = ATT_ERR_ATTR_NOT_FOUND;
-		} else {
-			*pLen = characteristics[c].length;
-			memcpy( pValue, pAttr->pValue, characteristics[c].length );
+			return ATT_ERR_ATTR_NOT_FOUND;
 		}
+
+		// Validate offset
+		if ( offset >= characteristics[c].length) {
+			*pLen = 0;
+			return ( ATT_ERR_INVALID_OFFSET );
+		}
+
+		*pLen = characteristics[c].length - offset;
+
+		// Ensure we don't write too much data
+		if (*pLen > maxLen) {
+			*pLen = maxLen;
+		}
+
+		// Copy the data to the output buffer
+		memcpy( pValue, pAttr->pValue + offset, *pLen );
 	} else {
 		// 128-bit UUID
 		*pLen = 0;
@@ -482,21 +554,34 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 
 		switch ( uuid )
 		{
-			case SB_BLE_SYSTEMTIME_UUID:
-				// Ensure the length and offset don't cause us to overwrite
-				if  (offset >= characteristics[c].length || ((uint16)characteristics[c].length) - offset < len) {
-					status = ATT_ERR_INVALID_VALUE_SIZE;
-				}
-
-				//Write the value
-				if ( status == SUCCESS ) {
-					memcpy(pAttr->pValue + offset, pValue, len);
-
-					// Notify the application that system time changed
-					notifyApp = SB_CHARACTERISTIC_SYSTEMTIME;
-				}
-
+		case SB_BLE_SYSTEMTIME_UUID:
+			// Ensure the length and offset don't cause us to overwrite
+			if  (offset >= characteristics[c].length || ((uint16)characteristics[c].length) - offset < len) {
+				status = ATT_ERR_INVALID_VALUE_SIZE;
 				break;
+			}
+
+			//Write the value
+			memcpy(pAttr->pValue + offset, pValue, len);
+
+			// Notify the application that system time changed
+			notifyApp = SB_CHARACTERISTIC_SYSTEMTIME;
+
+			break;
+
+		case SB_BLE_READINGSIZE_UUID:
+			// Ensure the length and offset don't cause us to overwrite
+			if  (offset >= characteristics[c].length || ((uint16)characteristics[c].length) - offset < len) {
+				status = ATT_ERR_INVALID_VALUE_SIZE;
+				break;
+			}
+
+			// The value does not actually get changed by the write
+
+			// Notify the application that the write was performed
+			notifyApp = SB_CHARACTERISTIC_READINGSIZE;
+
+			break;
 
 			case GATT_CLIENT_CHAR_CFG_UUID:
 				status = GATTServApp_ProcessCCCWriteReq( connHandle, pAttr, pValue, len,

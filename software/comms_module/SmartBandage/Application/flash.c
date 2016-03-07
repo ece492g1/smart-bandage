@@ -265,6 +265,10 @@ SB_FLASH_COUNT_T SB_flashReadingCount() {
 	return header.entryCount;
 }
 
+const SB_FLASH_COUNT_T* SB_flashReadingCountRef() {
+	return &header.entryCount;
+}
+
 SB_Error SB_flashGetReading(SB_FLASH_COUNT_T index, void * reading);
 
 SB_Error SB_flashPrepShutdown();

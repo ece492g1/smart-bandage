@@ -42,13 +42,22 @@ SB_Error SB_flashInit(uint8 readingSizeBytes, bool reinit);
 SB_Error SB_flashWriteReadings(void * readings);
 
 /*********************************************************************
+ * @fn      SB_flashReadingCount
+ *
+ * @brief   Get the number of readings stored in memory
+ *
+ * @return  The reading count
+ */
+SB_FLASH_COUNT_T SB_flashReadingCount();
+
+/*********************************************************************
  * @fn      SB_flashWriteReadings
  *
  * @brief   Get the number of readings stored in memory
  *
  * @return  NoError if properly written, otherwise the error
  */
-SB_FLASH_COUNT_T SB_flashReadingCount();
+const SB_FLASH_COUNT_T* SB_flashReadingCountRef();
 
 /*********************************************************************
  * @fn      SB_flashGetReading

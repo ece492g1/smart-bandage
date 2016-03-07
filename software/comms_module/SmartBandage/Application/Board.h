@@ -32,7 +32,7 @@
 #define DEFAULT_TASK_STACK_SIZE 512
 
 #define I2C_TASK_STACK_SIZE  256
-#define PMGR_TASK_STACK_SIZE 644
+#define PMGR_TASK_STACK_SIZE 512
 #define SBP_TASK_STACK_SIZE  DEFAULT_TASK_STACK_SIZE
 
 typedef enum {
@@ -194,6 +194,7 @@ typedef enum {
 	SemaphorePendTimeout,
 	SanityCheckFailed,
 	WritePermissionDenied,
+	BLECharacteristicWriteError,
 } SB_Error;
 
 /*****************************************************************
