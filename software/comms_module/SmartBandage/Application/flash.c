@@ -269,7 +269,27 @@ const SB_FLASH_COUNT_T* SB_flashReadingCountRef() {
 	return &header.entryCount;
 }
 
-SB_Error SB_flashGetReading(SB_FLASH_COUNT_T index, void * reading);
+SB_Error SB_flashGetReading(SB_FLASH_COUNT_T index, uint8_t * reading, uint32_t * refTimestamp);
+
+SB_Error SB_flashReadNext(uint8_t * reading, uint32_t * refTimestamp) {
+	if (header.entryCount == 0) {
+		refTimestamp = NULL;
+		return NoDataAvailable;
+	}
+
+	SBFlashRead(header.startPage, header.startOffset, reading, header.readingSizeBytes);
+	*refTimestamp = header.timestamp;
+
+	header.startOffset += header.readingSizeBytes;
+	if (header.startOffset >= SB_FLASH_PAGE_SIZE) {
+		header.startOffset -= header.readingSizeBytes;
+		header.startPage = (header.startPage + 1) % SB_FLASH_NUM_PAGES;
+	}
+
+	--header.entryCount;
+
+	return NoError;
+}
 
 SB_Error SB_flashPrepShutdown();
 

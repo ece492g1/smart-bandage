@@ -16,7 +16,7 @@
 #include "gatt.h"
 #include "gapgattserver.h"
 #include "gattservapp.h"
-#include "devinfoservice.h"
+//#include "devinfoservice.h"
 #include "../PROFILES/smartBandageProfile.h"
 
 #include "peripheral.h"
@@ -27,6 +27,8 @@
 
 #include "util.h"
 #include "ble.h"
+
+#include "readingsManager.h"
 
 /*********************************************************************
  * TYPEDEFS
@@ -52,9 +54,6 @@ static ICall_EntityID selfEntity;
 
 // Semaphore globally used to post events to the application thread
 static ICall_Semaphore sem;
-
-// Clock instances for internal periodic events.
-static Clock_Struct periodicClock;
 
 // Queue object used for app messages
 static Queue_Struct appMsg;
@@ -309,7 +308,7 @@ static void SimpleBLEPeripheral_init(void)
 	// Initialize GATT attributes
 	GGS_AddService(GATT_ALL_SERVICES);           // GAP
 	GATTServApp_AddService(GATT_ALL_SERVICES);   // GATT attributes
-	DevInfo_AddService();                        // Device Information Service
+//	DevInfo_AddService();                        // Device Information Service
 
 #ifndef FEATURE_OAD
 	SB_Profile_AddService(GATT_ALL_SERVICES); // Simple GATT Profile
@@ -670,25 +669,25 @@ static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState)
     case GAPROLE_STARTED:
       {
         uint8_t ownAddress[B_ADDR_LEN];
-        uint8_t systemId[DEVINFO_SYSTEM_ID_LEN];
+//        uint8_t systemId[DEVINFO_SYSTEM_ID_LEN];
 
         GAPRole_GetParameter(GAPROLE_BD_ADDR, ownAddress);
 
         // use 6 bytes of device address for 8 bytes of system ID value
-        systemId[0] = ownAddress[0];
-        systemId[1] = ownAddress[1];
-        systemId[2] = ownAddress[2];
+//        systemId[0] = ownAddress[0];
+//        systemId[1] = ownAddress[1];
+//        systemId[2] = ownAddress[2];
+//
+//        // set middle bytes to zero
+//        systemId[4] = 0x00;
+//        systemId[3] = 0x00;
+//
+//        // shift three bytes up
+//        systemId[7] = ownAddress[5];
+//        systemId[6] = ownAddress[4];
+//        systemId[5] = ownAddress[3];
 
-        // set middle bytes to zero
-        systemId[4] = 0x00;
-        systemId[3] = 0x00;
-
-        // shift three bytes up
-        systemId[7] = ownAddress[5];
-        systemId[6] = ownAddress[4];
-        systemId[5] = ownAddress[3];
-
-        DevInfo_SetParameter(DEVINFO_SYSTEM_ID, DEVINFO_SYSTEM_ID_LEN, systemId);
+//        DevInfo_SetParameter(DEVINFO_SYSTEM_ID, DEVINFO_SYSTEM_ID_LEN, systemId);
 
         // Display device address
         System_printf(Util_convertBdAddr2Str(ownAddress));
@@ -734,8 +733,6 @@ static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState)
 
         GAPRole_GetParameter(GAPROLE_CONN_BD_ADDR, peerAddress);
 
-        Util_startClock(&periodicClock);
-
         System_printf("BLE Connected\n");
         System_printf(Util_convertBdAddr2Str(peerAddress));
 
@@ -768,7 +765,6 @@ static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState)
       break;
 
     case GAPROLE_WAITING:
-      Util_stopClock(&periodicClock);
       SimpleBLEPeripheral_freeAttRsp(bleNotConnected);
 
       System_printf("BLE Disconnected\n");
@@ -838,6 +834,13 @@ static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
 
 			System_printf("System time set: %d\n", *(uint32_t*)newValue);
 			break;
+
+		case SB_CHARACTERISTIC_READINGCOUNT:
+			SB_Profile_GetParameter(SB_CHARACTERISTIC_SYSTEMTIME, &newValue, 2);
+
+			System_printf("Readings read.\n Reading count set: %d\n", *(uint16_t*)newValue);
+
+			SB_currentReadingsRead();
 
 		default:
 			// should not reach here!

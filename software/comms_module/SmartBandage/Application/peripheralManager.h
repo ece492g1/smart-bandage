@@ -49,13 +49,6 @@ typedef struct {
 	MUX_OUTPUT iomuxOutput;
 } SB_MUXState;
 
-typedef struct {
-	SB_READING_T  temperatures[SB_NUM_TEMPERATURE];
-	SB_READING_T  humidities[SB_NUM_HUMIDITY];
-	SB_READING_T  moistures[SB_NUM_MOISTURE];
-	SB_TIMEDIFF_T timeDiff;
-} SB_PeripheralReadings;
-
 SB_Error SB_peripheralInit();
 SB_Error SB_setPeripheralsEnable(bool enable);
 SB_Error SB_sysDisableRefresh(uint32 semaphoreTimeout);

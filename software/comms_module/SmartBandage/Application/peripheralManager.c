@@ -18,6 +18,7 @@
 #include "Devices/tca9554a.h"
 #include "Devices/stc3115.h"
 #include "peripheralManager.h"
+#include "readingsManager.h"
 #include "../PROFILES/smartBandageProfile.h"
 
 SB_Error applyTempSensorConfiguration(uint8_t deviceNo);
@@ -475,10 +476,7 @@ SB_Error readSensorData() {
 
 	PMANAGER_TASK_YIELD_HIGHERPRI();
 
-	// Update bluetooth characteristics
-	if (SUCCESS != SB_Profile_SetParameter( SB_CHARACTERISTIC_READINGCOUNT, sizeof(uint32_t), SB_flashReadingCountRef())) {
-		return BLECharacteristicWriteError;
-	}
+	SB_newReadingsAvailable();
 
 	return NoError;
 }
@@ -535,9 +533,19 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	System_flush();
 #endif
 
+	if (NoError != (error = SB_readingsManagerInit())) {
 #ifdef SB_DEBUG
-		System_printf("PMGR: Peripherals initialized.\n", result);
+		System_printf("Error No: %d\n", error);
+		System_printf("SB application initialization failed while initializing readings manager. This is a code error.\n");
 		System_flush();
+#endif
+
+		while(1);
+	}
+
+#ifdef SB_DEBUG
+	System_printf("PMGR: Peripherals initialized.\n", result);
+	System_flush();
 #endif
 #ifdef LAUNCHPAD
 	PIN_State sbpPins;

@@ -110,6 +110,7 @@ static uint8 charValReadings[SB_BLE_READINGS_LEN];
 static uint8 charValReadingSize[SB_BLE_READINGSIZE_LEN];
 static uint8 charValReadingCount[SB_BLE_READINGCOUNT_LEN];
 static uint8 charValReadingRefTimestamp[SB_BLE_READINGREFTIMESTAMP_LEN];
+static uint8 charValReadingDataOffsets[SB_BLE_READINGDATAOFFSETS_LEN];
 
 // Characteristic structs
 static SB_PROFILE_CHARACTERISTIC characteristics[SB_NUM_CHARACTERISTICS] = {
@@ -216,8 +217,8 @@ static SB_PROFILE_CHARACTERISTIC characteristics[SB_NUM_CHARACTERISTICS] = {
 	{
 		.uuid   	 = SB_BLE_READINGSIZE_UUID,
 		.uuidptr	 = { LO_UINT16(SB_BLE_READINGSIZE_UUID), HI_UINT16(SB_BLE_READINGSIZE_UUID) },
-		.props  	 = GATT_PROP_READ  | GATT_PROP_WRITE,
-		.perms		 = GATT_PERMIT_READ | GATT_PERMIT_WRITE,
+		.props  	 = GATT_PROP_READ,
+		.perms		 = GATT_PERMIT_READ,
 		.value  	 = charValReadingSize,
 		.length 	 = SB_BLE_READINGSIZE_LEN,
 		.description = "ReadingSize",
@@ -227,8 +228,8 @@ static SB_PROFILE_CHARACTERISTIC characteristics[SB_NUM_CHARACTERISTICS] = {
 	{
 		.uuid   	 = SB_BLE_READINGCOUNT_UUID,
 		.uuidptr	 = { LO_UINT16(SB_BLE_READINGCOUNT_UUID), HI_UINT16(SB_BLE_READINGCOUNT_UUID) },
-		.props  	 = GATT_PROP_READ,
-		.perms		 = GATT_PERMIT_READ,
+		.props  	 = GATT_PROP_READ  | GATT_PROP_WRITE,
+		.perms		 = GATT_PERMIT_READ | GATT_PERMIT_WRITE,
 		.value  	 = charValReadingCount,
 		.length 	 = SB_BLE_READINGCOUNT_LEN,
 		.description = "ReadingCount",
@@ -243,6 +244,17 @@ static SB_PROFILE_CHARACTERISTIC characteristics[SB_NUM_CHARACTERISTICS] = {
 		.value  	 = charValReadingRefTimestamp,
 		.length 	 = SB_BLE_READINGREFTIMESTAMP_LEN,
 		.description = "ReadingsRefTime",
+	},
+
+	// ReadingDataOffsets characteristic
+	{
+		.uuid   	 = SB_BLE_READINGDATAOFFSETS_UUID,
+		.uuidptr	 = { LO_UINT16(SB_BLE_READINGDATAOFFSETS_UUID), HI_UINT16(SB_BLE_READINGDATAOFFSETS_UUID) },
+		.props  	 = GATT_PROP_READ,
+		.perms		 = GATT_PERMIT_READ,
+		.value  	 = charValReadingDataOffsets,
+		.length 	 = SB_BLE_READINGDATAOFFSETS_LEN,
+		.description = "ReadingsDataOffsets",
 	},
 };
 
@@ -416,6 +428,33 @@ bStatus_t SB_Profile_SetParameterPartial( SB_CHARACTERISTIC param, uint8 len, ui
 }
 
 /*********************************************************************
+ * @fn      SB_Profile_SetParameterPartial
+ *
+ * @brief   Get a pointer to the characteristic buffer at the specified offset.
+ * 			The pointer returned is valid only for `len` bytes.
+ * 			This should only be used for sufficiently large values where data should
+ * 			be written directly to the buffer.
+ *
+ * @param   param - Profile parameter ID
+ * @param   len - length of data to write
+ * @param   offset - The offset (from the start of data) where writing should start
+ * @param   value - pointer to data to write.  This is dependent on
+ *          the parameter ID and WILL be cast to the appropriate
+ *          data type (example: data type of uint16 will be cast to
+ *          uint16 pointer).
+ *
+ * @return  NULL if invalid range, or the pointer to characteristic memory
+ */
+uint8* SB_Profile_GetCharacteristicWritePTR( SB_CHARACTERISTIC param, uint8 len, uint8_t offset )
+{
+	if ( (offset + len) > characteristics[param].length || len == 0 ) {
+		return NULL;
+	}
+
+	return characteristics[param].value + offset;
+}
+
+/*********************************************************************
  * @fn      SB_Profile_Set16bParameter
  *
  * @brief   Set a 16bit parameter within an array of 16bit parameters.
@@ -496,7 +535,7 @@ static bStatus_t simpleProfile_ReadAttrCB(uint16_t connHandle,
 		}
 
 		// Validate offset
-		if ( offset >= characteristics[c].length) {
+		if ( offset > characteristics[c].length) {
 			*pLen = 0;
 			return ( ATT_ERR_INVALID_OFFSET );
 		}

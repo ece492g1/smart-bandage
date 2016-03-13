@@ -71,7 +71,7 @@ const SB_FLASH_COUNT_T* SB_flashReadingCountRef();
  *
  * @return  NoError if properly read, otherwise the error. If error `reading` will be NULL.
  */
-SB_Error SB_flashGetReading(SB_FLASH_COUNT_T index, void * reading);
+SB_Error SB_flashGetReading(SB_FLASH_COUNT_T index, uint8_t * reading, uint32_t * refTimestamp);
 
 /*********************************************************************
  * @fn      SB_flashReadNext
@@ -83,7 +83,7 @@ SB_Error SB_flashGetReading(SB_FLASH_COUNT_T index, void * reading);
  *
  * @return  NoError if properly read, otherwise the error. If error `reading` will be NULL.
  */
-SB_Error SB_flashReadNext(void * reading);
+SB_Error SB_flashReadNext(uint8_t * reading, uint32_t * refTimestamp);
 
 /*********************************************************************
  * @fn      SB_flashPrepShutdown

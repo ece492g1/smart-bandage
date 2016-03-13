@@ -74,6 +74,7 @@ extern "C"
 #define SB_BLE_READINGSIZE_UUID	            (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_READINGSIZE)
 #define SB_BLE_READINGCOUNT_UUID	        (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_READINGCOUNT)
 #define SB_BLE_READINGREFTIMESTAMP_UUID     (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_READINGREFTIMESTAMP)
+#define SB_BLE_READINGDATAOFFSETS_UUID      (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_READINGDATAOFFSETS)
 
 // For each characteristic the server has three entries, plus on for the service
 #define SERVAPP_NUM_PROP_PER_CHARACTERISTIC 3
@@ -91,10 +92,11 @@ extern "C"
 #define SB_BLE_EXTPOWER_LEN   	         1
 #define SB_BLE_MOISTUREMAP_LEN           10
 #define SB_BLE_SYSTEMTIME_LEN            4
-#define SB_BLE_READINGS_LEN            	 64
+#define SB_BLE_READINGS_LEN            	 66
 #define SB_BLE_READINGSIZE_LEN           2
 #define SB_BLE_READINGCOUNT_LEN          4
 #define SB_BLE_READINGREFTIMESTAMP_LEN   4
+#define SB_BLE_READINGDATAOFFSETS_LEN    4
 
 /*********************************************************************
  * TYPEDEFS
@@ -112,6 +114,7 @@ typedef enum {
 	SB_CHARACTERISTIC_READINGSIZE,
 	SB_CHARACTERISTIC_READINGCOUNT,
 	SB_CHARACTERISTIC_READINGREFTIMESTAMP,
+	SB_CHARACTERISTIC_READINGDATAOFFSETS,
 
 	SB_NUM_CHARACTERISTICS
 } SB_CHARACTERISTIC;
@@ -221,6 +224,21 @@ extern bStatus_t SB_Profile_SetParameterPartial( SB_CHARACTERISTIC param, uint8 
  */
 extern bStatus_t SB_Profile_GetParameter( SB_CHARACTERISTIC param, void *value, int maxlength );
 
+/*********************************************************************
+ * @fn      SB_Profile_SetParameterPartial
+ *
+ * @brief   Get a pointer to the characteristic buffer at the specified offset.
+ * 			The pointer returned is valid only for `len` bytes.
+ * 			This should only be used for sufficiently large values where data should
+ * 			be written directly to the buffer.
+ *
+ * @param   param - Profile parameter ID
+ * @param   len - length of data to write
+ * @param   offset - The offset (from the start of data) where writing should start
+ *
+ * @return  NULL if invalid range, or the pointer to characteristic memory
+ */
+uint8* SB_Profile_GetCharacteristicWritePTR( SB_CHARACTERISTIC param, uint8 len, uint8_t offset );
 
 /*********************************************************************
 *********************************************************************/

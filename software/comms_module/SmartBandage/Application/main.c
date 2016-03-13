@@ -64,6 +64,7 @@ int main()
 #ifdef SB_DEBUG
 	System_printf("ICall Remote Tasks Initialized.\n");
 	System_flush();
+
 #endif
 
     /* Kick off profile - Priority 3 */

@@ -33,7 +33,7 @@
 
 #define I2C_TASK_STACK_SIZE  256
 #define PMGR_TASK_STACK_SIZE 512
-#define SBP_TASK_STACK_SIZE  DEFAULT_TASK_STACK_SIZE
+#define SBP_TASK_STACK_SIZE  512
 
 typedef enum {
 	IDLE_TASK_PRIORITY = 0,
@@ -195,6 +195,7 @@ typedef enum {
 	SanityCheckFailed,
 	WritePermissionDenied,
 	BLECharacteristicWriteError,
+	NoDataAvailable,
 } SB_Error;
 
 /*****************************************************************
