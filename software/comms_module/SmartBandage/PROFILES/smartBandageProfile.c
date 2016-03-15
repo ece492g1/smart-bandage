@@ -685,9 +685,7 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 			status = GATTServApp_ProcessCCCWriteReq( connHandle, pAttr, pValue, len,
 													 offset, GATT_CLIENT_CFG_INDICATE );
 
-//			if (pAttr->type.uuid == characteristics[SB_CHARACTERISTIC_READINGS].uuidptr) {
-				_readingsNotificationStateChanged = true;
-//			}
+			_readingsNotificationStateChanged = true;
 
 			break;
 

@@ -602,7 +602,6 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 				SB_processBLEMessages();
 			}
 		}
-//		Task_sleep(500000);
 	}
 }
 

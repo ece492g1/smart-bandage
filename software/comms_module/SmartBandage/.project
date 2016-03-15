@@ -63,11 +63,6 @@
 			<locationURI>PARENT-7-ORG_PROJ_DIR/Components/icall/include/ICall.h</locationURI>
 		</link>
 		<link>
-			<name>ICall/ICallAddrs.h</name>
-			<type>1</type>
-			<locationURI>PARENT-7-ORG_PROJ_DIR/Components/hal/target/CC2650TIRTOS/ICallAddrs.h</locationURI>
-		</link>
-		<link>
 			<name>ICall/ICallBleAPI.c</name>
 			<type>1</type>
 			<locationURI>PARENT-4-CG_TOOL_ROOT/simplelink/ble_cc26xx_2_01_00_44423/Projects/ble/ICall/Application/ICallBleAPI.c</locationURI>

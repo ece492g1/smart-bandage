@@ -88,7 +88,6 @@ SB_Error SB_newReadingsAvailable() {
 	if (RM.bleReadingsPopulated) {
 
 		if (SB_Profile_NotificationStateChanged( SB_CHARACTERISTIC_READINGS )) {
-			System_printf("Sending readings update...\n");
 			if (0 != (status = SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC_READINGS ))) {
 				System_printf("Failed to mark characteristic updated %d\n", status);
 			}
@@ -154,7 +153,6 @@ SB_Error SB_newReadingsAvailable() {
 
 	// TODO: Send change notification
 	RM.bleReadingsPopulated = true;
-	System_printf("Sending readings update...\n");
 	if (0 != (status = SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC_READINGS ))) {
 		System_printf("Failed to mark characteristic updated %d\n", status);
 	}

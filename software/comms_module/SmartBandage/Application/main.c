@@ -106,28 +106,6 @@ int main()
 	System_flush();
 #endif
 
-//	if (NoError != (error = SB_flashInit(sizeof(SB_PeripheralReadings), SB_REINIT_FLASH_ON_START))) {
-//#ifdef SB_DEBUG
-//		System_printf("Error No: %d\n", error);
-//		System_printf("SB application initialization failed while initializing non-volatile flash storage. This is a code error.\n");
-//		System_flush();
-//#endif
-//
-//		while(1);
-//	}
-//
-//#ifdef SB_DEBUG
-//	System_printf("Non-Volatile Memory Initialized.\n");
-//	System_flush();
-//#endif
-
-	/* Configure BLE */
-//	SB_bleInit();
-//#ifdef SB_DEBUG
-//	System_printf("SB BLE Initialized.\n");
-//	System_flush();
-//#endif
-
 	/* enable interrupts and start SYS/BIOS */
 #ifdef SB_DEBUG
     System_printf("Smart Bandage Initialized.\n");
@@ -138,12 +116,3 @@ int main()
 
     return 0;
 }
-//
-//#pragma optimize=none
-//void exceptionHandler(struct exceptionFrame *e, unsigned int execLr) {
-//	static unsigned int failPC = 0;
-//	static unsigned int lr = 0;
-//	failPC = e->_pc; // This is the Program Counter when the exception happened
-//	lr = execLR; // The exception LR
-//	while (1);
-//}

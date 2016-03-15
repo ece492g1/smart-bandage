@@ -200,28 +200,6 @@ static oadTargetCBs_t simpleBLEPeripheral_oadCBs =
  */
 
 /*********************************************************************
- * @fn      SimpleBLEPeripheral_createTask
- *
- * @brief   Task creation function for the Simple BLE Peripheral.
- *
- * @param   None.
- *
- * @return  None.
- */
-//void SimpleBLEPeripheral_createTask(void)
-//{
-//  Task_Params taskParams;
-//
-//  // Configure task
-//  Task_Params_init(&taskParams);
-//  taskParams.stack = sbpTaskStack;
-//  taskParams.stackSize = SBP_TASK_STACK_SIZE;
-//  taskParams.priority = SBP_TASK_PRIORITY;
-//
-//  Task_construct(&sbpTask, SimpleBLEPeripheral_taskFxn, &taskParams, NULL);
-//}
-
-/*********************************************************************
  * @fn      SimpleBLEPeripheral_init
  *
  * @brief   Called during initialization and contains application
@@ -330,31 +308,6 @@ void SimpleBLEPeripheral_init(void)
 	// Register for GATT local events and ATT Responses pending for transmission
 	GATT_RegisterForMsgs(selfEntity);
 }
-
-///*********************************************************************
-// * @fn      SimpleBLEPeripheral_taskFxn
-// *
-// * @brief   Application task entry point for the Simple BLE Peripheral.
-// *
-// * @param   a0, a1 - not used.
-// *
-// * @return  None.
-// */
-//void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
-//{
-//  // Initialize application
-//  SimpleBLEPeripheral_init();
-//
-//  // Application main loop
-//  for (;;)
-//  {
-//    // Waits for a signal to the semaphore associated with the calling thread.
-//    // Note that the semaphore associated with a thread is signaled when a
-//    // message is queued to the message receive queue of the thread or when
-//    // ICall_signal() function is called onto the semaphore.
-//
-//  }
-//}
 
 void SB_processBLEMessages() {
 
@@ -894,7 +847,3 @@ static void SimpleBLEPeripheral_enqueueMsg(uint8_t event, uint8_t state)
 
 /*********************************************************************
 *********************************************************************/
-//
-//void SB_bleInit() {
-//	SimpleBLEPeripheral_createTask();
-//}
