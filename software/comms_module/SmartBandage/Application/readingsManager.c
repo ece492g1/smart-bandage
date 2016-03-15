@@ -74,6 +74,7 @@ SB_Error SB_readingsManagerInit() {
  * @brief   Called when new readings are available. May update bluetooth characteristics.
  */
 SB_Error SB_newReadingsAvailable() {
+	static uint8_t valueIndex = 0;
 	uint8_t i = 0, j = 0;
 	uint32_t refTimestamp = 0;
 	SB_Error result;
@@ -134,6 +135,9 @@ SB_Error SB_newReadingsAvailable() {
 			basePtr[i].timeDiff = 1;
 		}
 
+		// TODO: Remove this
+		basePtr[i].timeDiff = valueIndex++;
+
 		refTimestamp = thisRef;
 	}
 
@@ -144,6 +148,10 @@ SB_Error SB_newReadingsAvailable() {
 
 	// TODO: Send change notification
 	RM.bleReadingsPopulated = true;
+	uint8_t status;
+	if (0 != (status = SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC_READINGCOUNT ))) {
+		System_printf("Failed to mark characteristic updated %d\n", status);
+	}
 
 	return NoError;
 }
@@ -157,16 +165,16 @@ SB_Error SB_currentReadingsRead() {
 	SB_PeripheralReadings* basePtr;
 
 	RM.bleReadingsPopulated = false;
-
-	if (SB_flashReadingCount() >= READINGS_MANAGER_THRESHOLD) {
-		// If there are more readings available, place the next once in the characteristic buffer
-		return SB_newReadingsAvailable();
-	}
-
-	// Update the reading count
-	if (SUCCESS != SB_Profile_SetParameter( SB_CHARACTERISTIC_READINGCOUNT, sizeof(uint32_t), SB_flashReadingCountRef())) {
-		return BLECharacteristicWriteError;
-	}
+//
+//	if (SB_flashReadingCount() >= READINGS_MANAGER_THRESHOLD) {
+//		// If there are more readings available, place the next once in the characteristic buffer
+//		return SB_newReadingsAvailable();
+//	}
+//
+//	// Update the reading count
+//	if (SUCCESS != SB_Profile_SetParameter( SB_CHARACTERISTIC_READINGCOUNT, sizeof(uint32_t), SB_flashReadingCountRef())) {
+//		return BLECharacteristicWriteError;
+//	}
 
 	// Clear the readings buffer
 	basePtr = (SB_PeripheralReadings*)

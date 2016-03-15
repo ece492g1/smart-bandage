@@ -314,17 +314,6 @@ static void SimpleBLEPeripheral_init(void)
 	SB_Profile_AddService(GATT_ALL_SERVICES); // Simple GATT Profile
 #endif //!FEATURE_OAD
 
-#ifdef FEATURE_OAD
-	VOID OAD_addService();                 // OAD Profile
-	OAD_register((oadTargetCBs_t *)&simpleBLEPeripheral_oadCBs);
-	hOadQ = Util_constructQueue(&oadQ);
-#endif
-
-#ifdef IMAGE_INVALIDATE
-	Reset_addService();
-#endif //IMAGE_INVALIDATE
-
-
 #ifndef FEATURE_OAD
 	// Register callback with SimpleGATTprofile
 	SB_Profile_RegisterAppCBs(&SB_simpleProfileCBs);

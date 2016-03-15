@@ -112,6 +112,8 @@ static uint8 charValReadingCount[SB_BLE_READINGCOUNT_LEN];
 static uint8 charValReadingRefTimestamp[SB_BLE_READINGREFTIMESTAMP_LEN];
 static uint8 charValReadingDataOffsets[SB_BLE_READINGDATAOFFSETS_LEN];
 
+static gattCharCfg_t *readCountCharConfig;
+
 // Characteristic structs
 static SB_PROFILE_CHARACTERISTIC characteristics[SB_NUM_CHARACTERISTICS] = {
 	// Temperature characteristic
@@ -228,7 +230,7 @@ static SB_PROFILE_CHARACTERISTIC characteristics[SB_NUM_CHARACTERISTICS] = {
 	{
 		.uuid   	 = SB_BLE_READINGCOUNT_UUID,
 		.uuidptr	 = { LO_UINT16(SB_BLE_READINGCOUNT_UUID), HI_UINT16(SB_BLE_READINGCOUNT_UUID) },
-		.props  	 = GATT_PROP_READ  | GATT_PROP_WRITE,
+		.props  	 = GATT_PROP_READ  | GATT_PROP_WRITE_NO_RSP | GATT_PROP_NOTIFY,
 		.perms		 = GATT_PERMIT_READ | GATT_PERMIT_WRITE,
 		.value  	 = charValReadingCount,
 		.length 	 = SB_BLE_READINGCOUNT_LEN,
@@ -333,6 +335,15 @@ bStatus_t SB_Profile_AddService( uint32 services )
 		simpleProfileAttrTbl[i  ].handle 	  = NULL;
 		simpleProfileAttrTbl[i++].pValue 	  = characteristics[c].value;
 
+		// Characteristic configuration (notify only)
+		if (characteristics[c].props & GATT_PROP_NOTIFY) {
+			simpleProfileAttrTbl[i  ].type.len    = ATT_BT_UUID_SIZE;
+			simpleProfileAttrTbl[i  ].type.uuid   = clientCharCfgUUID;
+			simpleProfileAttrTbl[i  ].permissions = GATT_PERMIT_READ | GATT_PERMIT_WRITE;
+			simpleProfileAttrTbl[i  ].handle 	  = NULL;
+			simpleProfileAttrTbl[i++].pValue 	  = (uint8_t*) &readCountCharConfig;
+		}
+
 		// Characteristic description
 		simpleProfileAttrTbl[i  ].type.len    = ATT_BT_UUID_SIZE;
 		simpleProfileAttrTbl[i  ].type.uuid   = charUserDescUUID;
@@ -340,6 +351,14 @@ bStatus_t SB_Profile_AddService( uint32 services )
 		simpleProfileAttrTbl[i  ].handle 	  = NULL;
 		simpleProfileAttrTbl[i++].pValue 	  = (uint8*)characteristics[c].description;
 	}
+
+	readCountCharConfig = (gattCharCfg_t *) ICall_malloc( sizeof(gattCharCfg_t) * linkDBNumConns );
+
+	if (NULL == readCountCharConfig) {
+		return INVALID_MEM_SIZE;
+	}
+
+	GATTServApp_InitCharCfg( INVALID_CONNHANDLE, readCountCharConfig );
 
 	if ( services & SB_BLE_SERVICE )
 	{
@@ -494,6 +513,29 @@ bStatus_t SB_Profile_GetParameter( SB_CHARACTERISTIC param, void *value, int max
 	return SUCCESS;
 }
 
+bStatus_t SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC param ) {
+	bStatus_t status;
+
+	if (param >= SB_NUM_CHARACTERISTICS || !(characteristics[param].props & GATT_PROP_NOTIFY)) {
+		return INVALIDPARAMETER;
+	}
+
+	if (param != SB_CHARACTERISTIC_READINGCOUNT)  {
+		return INVALIDPARAMETER;
+	}
+
+	status = GATTServApp_ProcessCharCfg(
+		readCountCharConfig,
+		characteristics[param].value,
+		false,
+		simpleProfileAttrTbl,
+		GATT_NUM_ATTRS( simpleProfileAttrTbl ),
+		INVALID_TASK_ID,
+		simpleProfile_ReadAttrCB );
+
+	return status;
+}
+
 /*********************************************************************
  * @fn          simpleProfile_ReadAttrCB
  *
@@ -608,7 +650,7 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 
 			break;
 
-		case SB_BLE_READINGSIZE_UUID:
+		case SB_BLE_READINGCOUNT_UUID:
 			// Ensure the length and offset don't cause us to overwrite
 			if  (offset >= characteristics[c].length || ((uint16)characteristics[c].length) - offset < len) {
 				status = ATT_ERR_INVALID_VALUE_SIZE;
@@ -618,22 +660,22 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 			// The value does not actually get changed by the write
 
 			// Notify the application that the write was performed
-			notifyApp = SB_CHARACTERISTIC_READINGSIZE;
+			notifyApp = SB_CHARACTERISTIC_READINGCOUNT;
 
 			break;
 
-			case GATT_CLIENT_CHAR_CFG_UUID:
-				status = GATTServApp_ProcessCCCWriteReq( connHandle, pAttr, pValue, len,
-														 offset, GATT_CLIENT_CFG_NOTIFY );
-				break;
+		case GATT_CLIENT_CHAR_CFG_UUID:
+			status = GATTServApp_ProcessCCCWriteReq( connHandle, pAttr, pValue, len,
+													 offset, GATT_CLIENT_CFG_NOTIFY );
+			break;
 
-			default:
-				// Characteristic not found, or doesn't have write permissions
-				if (c < SB_NUM_CHARACTERISTICS) {
-					status = ATT_ERR_WRITE_NOT_PERMITTED;
-				} else {
-					status = ATT_ERR_ATTR_NOT_FOUND;
-				}
+		default:
+			// Characteristic not found, or doesn't have write permissions
+			if (c < SB_NUM_CHARACTERISTICS) {
+				status = ATT_ERR_WRITE_NOT_PERMITTED;
+			} else {
+				status = ATT_ERR_ATTR_NOT_FOUND;
+			}
 		}
 	} else {
 		// 128-bit UUID

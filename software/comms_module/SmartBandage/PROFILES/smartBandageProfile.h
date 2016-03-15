@@ -77,11 +77,13 @@ extern "C"
 #define SB_BLE_READINGDATAOFFSETS_UUID      (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_READINGDATAOFFSETS)
 
 // For each characteristic the server has three entries, plus on for the service
+#define SERVAPP_NUM_NOTIFY_PROPS 			1
 #define SERVAPP_NUM_PROP_PER_CHARACTERISTIC 3
-#define SERVAPP_NUM_ATTR_SUPPORTED         (SB_NUM_CHARACTERISTICS*SERVAPP_NUM_PROP_PER_CHARACTERISTIC + 1)
+#define SERVAPP_NUM_ATTR_SUPPORTED         (SB_NUM_CHARACTERISTICS*SERVAPP_NUM_PROP_PER_CHARACTERISTIC + 1 + SERVAPP_NUM_NOTIFY_PROPS)
 
 // Simple Keys Profile Services bit fields
 #define SB_BLE_SERVICE               0x00000001
+#define SB_MAX_NUM_CONNS			 2
 
 // Length of Characteristics in bytes
 #define SB_BLE_TEMPERATURE_LEN           8
@@ -92,7 +94,7 @@ extern "C"
 #define SB_BLE_EXTPOWER_LEN   	         1
 #define SB_BLE_MOISTUREMAP_LEN           10
 #define SB_BLE_SYSTEMTIME_LEN            4
-#define SB_BLE_READINGS_LEN            	 66
+#define SB_BLE_READINGS_LEN            	 44
 #define SB_BLE_READINGSIZE_LEN           2
 #define SB_BLE_READINGCOUNT_LEN          4
 #define SB_BLE_READINGREFTIMESTAMP_LEN   4
@@ -118,7 +120,7 @@ typedef enum {
 
 	SB_NUM_CHARACTERISTICS
 } SB_CHARACTERISTIC;
-  
+
 /*********************************************************************
  * MACROS
  */
@@ -238,7 +240,9 @@ extern bStatus_t SB_Profile_GetParameter( SB_CHARACTERISTIC param, void *value, 
  *
  * @return  NULL if invalid range, or the pointer to characteristic memory
  */
-uint8* SB_Profile_GetCharacteristicWritePTR( SB_CHARACTERISTIC param, uint8 len, uint8_t offset );
+extern uint8* SB_Profile_GetCharacteristicWritePTR( SB_CHARACTERISTIC param, uint8 len, uint8_t offset );
+
+extern bStatus_t SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC param );
 
 /*********************************************************************
 *********************************************************************/

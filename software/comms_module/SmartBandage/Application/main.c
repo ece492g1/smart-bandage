@@ -138,3 +138,12 @@ int main()
 
     return 0;
 }
+//
+//#pragma optimize=none
+//void exceptionHandler(struct exceptionFrame *e, unsigned int execLr) {
+//	static unsigned int failPC = 0;
+//	static unsigned int lr = 0;
+//	failPC = e->_pc; // This is the Program Counter when the exception happened
+//	lr = execLR; // The exception LR
+//	while (1);
+//}

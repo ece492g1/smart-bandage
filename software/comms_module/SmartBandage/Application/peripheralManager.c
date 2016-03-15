@@ -583,7 +583,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		// Disable peripherals
 //		SB_setPeripheralsEnable(false);
 
-		Task_sleep(100000);
+		Task_sleep(500000);
 	}
 }
 
