@@ -95,7 +95,7 @@ extern uint8_t Mcp9808Addresses[];
 /*****************************************************************
  * Flash parameters
  ****************************************************************/
-#define SB_REINIT_FLASH_ON_START false
+#define SB_REINIT_FLASH_ON_START true
 
 /*****************************************************************
  * External MUX configurations

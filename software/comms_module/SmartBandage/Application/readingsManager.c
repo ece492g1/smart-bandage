@@ -74,8 +74,7 @@ SB_Error SB_readingsManagerInit() {
  * @brief   Called when new readings are available. May update bluetooth characteristics.
  */
 SB_Error SB_newReadingsAvailable() {
-	static uint8_t valueIndex = 0;
-	uint8_t i = 0, j = 0;
+	uint8_t i = 0, j = 0, status;
 	uint32_t refTimestamp = 0;
 	SB_Error result;
 	SB_PeripheralReadings* basePtr;
@@ -87,6 +86,14 @@ SB_Error SB_newReadingsAvailable() {
 
 	// If there are readings currently available don't do anything
 	if (RM.bleReadingsPopulated) {
+
+		if (SB_Profile_NotificationStateChanged( SB_CHARACTERISTIC_READINGS )) {
+			System_printf("Sending readings update...\n");
+			if (0 != (status = SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC_READINGS ))) {
+				System_printf("Failed to mark characteristic updated %d\n", status);
+			}
+		}
+
 		return NoError;
 	}
 
@@ -112,7 +119,7 @@ SB_Error SB_newReadingsAvailable() {
 			return result;
 		}
 
-		if (thisRef == refTimestamp) {
+		if (thisRef == refTimestamp || 0 == i) {
 			// Leave them as is
 		} else if (thisRef < refTimestamp) {
 			uint16_t diff = thisRef - refTimestamp;
@@ -127,16 +134,15 @@ SB_Error SB_newReadingsAvailable() {
 		} else {
 			// thisRef > refTimestamp
 			uint16_t diff = refTimestamp - thisRef;
-			basePtr[i].timeDiff += diff;
+			for (j = i; j < READINGS_MANAGER_THRESHOLD; ++j) {
+				basePtr[j].timeDiff += diff;
+			}
 		}
 
 		// `0` is an invalid value for a timediff - an error of 1 second is fine.
 		if (basePtr[i].timeDiff == 0) {
 			basePtr[i].timeDiff = 1;
 		}
-
-		// TODO: Remove this
-		basePtr[i].timeDiff = valueIndex++;
 
 		refTimestamp = thisRef;
 	}
@@ -148,7 +154,6 @@ SB_Error SB_newReadingsAvailable() {
 
 	// TODO: Send change notification
 	RM.bleReadingsPopulated = true;
-	uint8_t status;
 	System_printf("Sending readings update...\n");
 	if (0 != (status = SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC_READINGS ))) {
 		System_printf("Failed to mark characteristic updated %d\n", status);
@@ -166,16 +171,16 @@ SB_Error SB_currentReadingsRead() {
 	SB_PeripheralReadings* basePtr;
 
 	RM.bleReadingsPopulated = false;
-//
-//	if (SB_flashReadingCount() >= READINGS_MANAGER_THRESHOLD) {
-//		// If there are more readings available, place the next once in the characteristic buffer
-//		return SB_newReadingsAvailable();
-//	}
-//
-//	// Update the reading count
-//	if (SUCCESS != SB_Profile_SetParameter( SB_CHARACTERISTIC_READINGCOUNT, sizeof(uint32_t), SB_flashReadingCountRef())) {
-//		return BLECharacteristicWriteError;
-//	}
+
+	if (SB_flashReadingCount() >= READINGS_MANAGER_THRESHOLD) {
+		// If there are more readings available, place the next once in the characteristic buffer
+		return SB_newReadingsAvailable();
+	}
+
+	// Update the reading count
+	else if (SUCCESS != SB_Profile_SetParameter( SB_CHARACTERISTIC_READINGCOUNT, sizeof(uint32_t), SB_flashReadingCountRef())) {
+		return BLECharacteristicWriteError;
+	}
 
 	// Clear the readings buffer
 	basePtr = (SB_PeripheralReadings*)
@@ -184,7 +189,7 @@ SB_Error SB_currentReadingsRead() {
 			SB_BLE_READINGS_LEN,
 			0 );
 
-	if (NULL != basePtr) {
+	if (NULL == basePtr) {
 		return BLECharacteristicWriteError;
 	}
 

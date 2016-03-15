@@ -321,6 +321,8 @@ SB_Error initAlwaysOnPeripherals() {
 }
 
 SB_Error readSensorData() {
+	// TODO: Remove readingNo.
+	static uint8_t readingNo = 0;
 	SB_PeripheralReadings readings;
 	SB_i2cTransaction taTransaction;
 	I2C_Transaction taBaseTransaction;
@@ -470,6 +472,7 @@ SB_Error readSensorData() {
 	PMANAGER_TASK_YIELD_HIGHERPRI();
 
 	// Write the data to flash storage
+	readings.timeDiff = readingNo++;
 	result = SB_flashWriteReadings(&readings);
 	if (NoError != result) {
 		return result;

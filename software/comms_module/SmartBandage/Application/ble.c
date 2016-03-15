@@ -491,6 +491,17 @@ static uint8_t SimpleBLEPeripheral_processGATTMsg(gattMsgEvent_t *pMsg)
   {
     // MTU size updated
     System_printf("MTU Size:%d\n", pMsg->msg.mtuEvt.MTU);
+  } else if (pMsg->method == ATT_HANDLE_VALUE_NOTI) {
+	  System_printf("GATT handle value notification\n");
+  } else if (pMsg->method == ATT_HANDLE_VALUE_IND) {
+	  System_printf("GATT handle value indication\n");
+  } else if (pMsg->method == ATT_HANDLE_VALUE_CFM) {
+	  SB_Error error;
+	  if (NoError != (error = SB_currentReadingsRead())) {
+		  System_printf("Error handling GATT value confirmation: %d\n", error);
+	  }
+  } else {
+	  System_printf("Unknown GATT MSG: %d\n", pMsg->method);
   }
 
   // Free message payload. Needed only for ATT Protocol messages
@@ -595,11 +606,6 @@ static void SimpleBLEPeripheral_processAppMsg(sbpEvt_t *pMsg)
     case SBP_CHAR_CHANGE_EVT:
       SimpleBLEPeripheral_processCharValueChangeEvt(pMsg->hdr.state);
       break;
-
-    case ATT_MTU_UPDATED_EVENT:
-    	System_printf("MTU size updated\n");
-    	asm("BRKP");
-    	break;
 
     default:
       // Do nothing.

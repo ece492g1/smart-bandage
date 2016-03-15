@@ -88,6 +88,7 @@ CONST uint8 simpleProfileServUUID[ATT_BT_UUID_SIZE] =
  */
 
 static simpleProfileCBs_t *simpleProfile_AppCBs = NULL;
+static bool _readingsNotificationStateChanged = false;
 
 /*********************************************************************
  * Profile Attributes - variables
@@ -208,7 +209,7 @@ static SB_PROFILE_CHARACTERISTIC characteristics[SB_NUM_CHARACTERISTICS] = {
 	{
 		.uuid   	 = SB_BLE_READINGS_UUID,
 		.uuidptr	 = { LO_UINT16(SB_BLE_READINGS_UUID), HI_UINT16(SB_BLE_READINGS_UUID) },
-		.props  	 = GATT_PROP_READ | GATT_PROP_NOTIFY,
+		.props  	 = GATT_PROP_READ | GATT_PROP_INDICATE,//| GATT_PROP_NOTIFY | GATT_PROP_INDICATE,
 		.perms		 = GATT_PERMIT_READ,
 		.value  	 = charValReadings,
 		.length 	 = SB_BLE_READINGS_LEN,
@@ -336,7 +337,7 @@ bStatus_t SB_Profile_AddService( uint32 services )
 		simpleProfileAttrTbl[i++].pValue 	  = characteristics[c].value;
 
 		// Characteristic configuration (notify only)
-		if (characteristics[c].props & GATT_PROP_NOTIFY) {
+		if (characteristics[c].props & GATT_PROP_NOTIFY || characteristics[c].props & GATT_PROP_INDICATE) {
 			simpleProfileAttrTbl[i  ].type.len    = ATT_BT_UUID_SIZE;
 			simpleProfileAttrTbl[i  ].type.uuid   = clientCharCfgUUID;
 			simpleProfileAttrTbl[i  ].permissions = GATT_PERMIT_READ | GATT_PERMIT_WRITE;
@@ -516,12 +517,17 @@ bStatus_t SB_Profile_GetParameter( SB_CHARACTERISTIC param, void *value, int max
 bStatus_t SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC param ) {
 	bStatus_t status;
 
-	if (param >= SB_NUM_CHARACTERISTICS || !(characteristics[param].props & GATT_PROP_NOTIFY)) {
+	if (param >= SB_NUM_CHARACTERISTICS || !(characteristics[param].props & GATT_PROP_NOTIFY || characteristics[param].props & GATT_PROP_INDICATE)) {
 		return INVALIDPARAMETER;
 	}
 
 	if (param != SB_CHARACTERISTIC_READINGS)  {
 		return INVALIDPARAMETER;
+	}
+
+	uint8_t entity = ICall_getEntityId();
+	if (entity == ICALL_INVALID_ENTITY_ID) {
+		return INVALID_TASK;
 	}
 
 	status = GATTServApp_ProcessCharCfg(
@@ -530,10 +536,21 @@ bStatus_t SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC param ) {
 		false,
 		simpleProfileAttrTbl,
 		GATT_NUM_ATTRS( simpleProfileAttrTbl ),
-		INVALID_TASK_ID,
+		entity,
 		simpleProfile_ReadAttrCB );
 
 	return status;
+}
+
+bool SB_Profile_NotificationStateChanged(SB_CHARACTERISTIC param ) {
+	if (param == SB_CHARACTERISTIC_READINGS) {
+		bool value = _readingsNotificationStateChanged;
+		_readingsNotificationStateChanged = false;
+
+		return value;
+	}
+
+	return false;
 }
 
 /*********************************************************************
@@ -666,7 +683,12 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 
 		case GATT_CLIENT_CHAR_CFG_UUID:
 			status = GATTServApp_ProcessCCCWriteReq( connHandle, pAttr, pValue, len,
-													 offset, GATT_CLIENT_CFG_NOTIFY );
+													 offset, GATT_CLIENT_CFG_INDICATE );
+
+//			if (pAttr->type.uuid == characteristics[SB_CHARACTERISTIC_READINGS].uuidptr) {
+				_readingsNotificationStateChanged = true;
+//			}
+
 			break;
 
 		default:

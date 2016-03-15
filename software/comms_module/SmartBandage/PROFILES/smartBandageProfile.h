@@ -94,7 +94,7 @@ extern "C"
 #define SB_BLE_EXTPOWER_LEN   	         1
 #define SB_BLE_MOISTUREMAP_LEN           10
 #define SB_BLE_SYSTEMTIME_LEN            4
-#define SB_BLE_READINGS_LEN            	 44
+#define SB_BLE_READINGS_LEN            	 66
 #define SB_BLE_READINGSIZE_LEN           2
 #define SB_BLE_READINGCOUNT_LEN          4
 #define SB_BLE_READINGREFTIMESTAMP_LEN   4
@@ -243,6 +243,8 @@ extern bStatus_t SB_Profile_GetParameter( SB_CHARACTERISTIC param, void *value, 
 extern uint8* SB_Profile_GetCharacteristicWritePTR( SB_CHARACTERISTIC param, uint8 len, uint8_t offset );
 
 extern bStatus_t SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC param );
+
+extern bool SB_Profile_NotificationStateChanged(SB_CHARACTERISTIC param );
 
 /*********************************************************************
 *********************************************************************/
