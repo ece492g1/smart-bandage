@@ -21,7 +21,7 @@
 #include "i2c.h"
 #include "peripheralManager.h"
 #include "Board.h"
-#include "ble.h"
+//#include "ble.h"
 #include "flash.h"
 
 /* Header files required to enable instruction fetch cache */
@@ -122,11 +122,11 @@ int main()
 //#endif
 
 	/* Configure BLE */
-	SB_bleInit();
-#ifdef SB_DEBUG
-	System_printf("SB BLE Initialized.\n");
-	System_flush();
-#endif
+//	SB_bleInit();
+//#ifdef SB_DEBUG
+//	System_printf("SB BLE Initialized.\n");
+//	System_flush();
+//#endif
 
 	/* enable interrupts and start SYS/BIOS */
 #ifdef SB_DEBUG

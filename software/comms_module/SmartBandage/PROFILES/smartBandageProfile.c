@@ -112,7 +112,7 @@ static uint8 charValReadingCount[SB_BLE_READINGCOUNT_LEN];
 static uint8 charValReadingRefTimestamp[SB_BLE_READINGREFTIMESTAMP_LEN];
 static uint8 charValReadingDataOffsets[SB_BLE_READINGDATAOFFSETS_LEN];
 
-static gattCharCfg_t *readCountCharConfig;
+static gattCharCfg_t *readingsCharConfig;
 
 // Characteristic structs
 static SB_PROFILE_CHARACTERISTIC characteristics[SB_NUM_CHARACTERISTICS] = {
@@ -208,7 +208,7 @@ static SB_PROFILE_CHARACTERISTIC characteristics[SB_NUM_CHARACTERISTICS] = {
 	{
 		.uuid   	 = SB_BLE_READINGS_UUID,
 		.uuidptr	 = { LO_UINT16(SB_BLE_READINGS_UUID), HI_UINT16(SB_BLE_READINGS_UUID) },
-		.props  	 = GATT_PROP_READ,
+		.props  	 = GATT_PROP_READ | GATT_PROP_NOTIFY,
 		.perms		 = GATT_PERMIT_READ,
 		.value  	 = charValReadings,
 		.length 	 = SB_BLE_READINGS_LEN,
@@ -230,7 +230,7 @@ static SB_PROFILE_CHARACTERISTIC characteristics[SB_NUM_CHARACTERISTICS] = {
 	{
 		.uuid   	 = SB_BLE_READINGCOUNT_UUID,
 		.uuidptr	 = { LO_UINT16(SB_BLE_READINGCOUNT_UUID), HI_UINT16(SB_BLE_READINGCOUNT_UUID) },
-		.props  	 = GATT_PROP_READ  | GATT_PROP_WRITE_NO_RSP | GATT_PROP_NOTIFY,
+		.props  	 = GATT_PROP_READ  | GATT_PROP_WRITE_NO_RSP,
 		.perms		 = GATT_PERMIT_READ | GATT_PERMIT_WRITE,
 		.value  	 = charValReadingCount,
 		.length 	 = SB_BLE_READINGCOUNT_LEN,
@@ -341,7 +341,7 @@ bStatus_t SB_Profile_AddService( uint32 services )
 			simpleProfileAttrTbl[i  ].type.uuid   = clientCharCfgUUID;
 			simpleProfileAttrTbl[i  ].permissions = GATT_PERMIT_READ | GATT_PERMIT_WRITE;
 			simpleProfileAttrTbl[i  ].handle 	  = NULL;
-			simpleProfileAttrTbl[i++].pValue 	  = (uint8_t*) &readCountCharConfig;
+			simpleProfileAttrTbl[i++].pValue 	  = (uint8_t*) &readingsCharConfig;
 		}
 
 		// Characteristic description
@@ -352,13 +352,13 @@ bStatus_t SB_Profile_AddService( uint32 services )
 		simpleProfileAttrTbl[i++].pValue 	  = (uint8*)characteristics[c].description;
 	}
 
-	readCountCharConfig = (gattCharCfg_t *) ICall_malloc( sizeof(gattCharCfg_t) * linkDBNumConns );
+	readingsCharConfig = (gattCharCfg_t *) ICall_malloc( sizeof(gattCharCfg_t) * linkDBNumConns );
 
-	if (NULL == readCountCharConfig) {
+	if (NULL == readingsCharConfig) {
 		return INVALID_MEM_SIZE;
 	}
 
-	GATTServApp_InitCharCfg( INVALID_CONNHANDLE, readCountCharConfig );
+	GATTServApp_InitCharCfg( INVALID_CONNHANDLE, readingsCharConfig );
 
 	if ( services & SB_BLE_SERVICE )
 	{
@@ -520,12 +520,12 @@ bStatus_t SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC param ) {
 		return INVALIDPARAMETER;
 	}
 
-	if (param != SB_CHARACTERISTIC_READINGCOUNT)  {
+	if (param != SB_CHARACTERISTIC_READINGS)  {
 		return INVALIDPARAMETER;
 	}
 
 	status = GATTServApp_ProcessCharCfg(
-		readCountCharConfig,
+		readingsCharConfig,
 		characteristics[param].value,
 		false,
 		simpleProfileAttrTbl,

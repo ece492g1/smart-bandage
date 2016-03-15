@@ -66,8 +66,8 @@ static Queue_Handle hOadQ;
 #endif //FEATURE_OAD
 
 // Task configuration
-Task_Struct sbpTask;
-Char sbpTaskStack[SBP_TASK_STACK_SIZE];
+//Task_Struct sbpTask;
+//Char sbpTaskStack[SBP_TASK_STACK_SIZE];
 
 // Profile state and parameters
 //static gaprole_States_t gapProfileState = GAPROLE_INIT;
@@ -141,8 +141,7 @@ static uint8_t rspTxRetry = 0;
  * LOCAL FUNCTIONS
  */
 
-static void SimpleBLEPeripheral_init( void );
-static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1);
+//static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1);
 
 static uint8_t SimpleBLEPeripheral_processStackMsg(ICall_Hdr *pMsg);
 static uint8_t SimpleBLEPeripheral_processGATTMsg(gattMsgEvent_t *pMsg);
@@ -209,18 +208,18 @@ static oadTargetCBs_t simpleBLEPeripheral_oadCBs =
  *
  * @return  None.
  */
-void SimpleBLEPeripheral_createTask(void)
-{
-  Task_Params taskParams;
-
-  // Configure task
-  Task_Params_init(&taskParams);
-  taskParams.stack = sbpTaskStack;
-  taskParams.stackSize = SBP_TASK_STACK_SIZE;
-  taskParams.priority = SBP_TASK_PRIORITY;
-
-  Task_construct(&sbpTask, SimpleBLEPeripheral_taskFxn, &taskParams, NULL);
-}
+//void SimpleBLEPeripheral_createTask(void)
+//{
+//  Task_Params taskParams;
+//
+//  // Configure task
+//  Task_Params_init(&taskParams);
+//  taskParams.stack = sbpTaskStack;
+//  taskParams.stackSize = SBP_TASK_STACK_SIZE;
+//  taskParams.priority = SBP_TASK_PRIORITY;
+//
+//  Task_construct(&sbpTask, SimpleBLEPeripheral_taskFxn, &taskParams, NULL);
+//}
 
 /*********************************************************************
  * @fn      SimpleBLEPeripheral_init
@@ -234,7 +233,7 @@ void SimpleBLEPeripheral_createTask(void)
  *
  * @return  None.
  */
-static void SimpleBLEPeripheral_init(void)
+void SimpleBLEPeripheral_init(void)
 {
 	// ******************************************************************
 	// N0 STACK API CALLS CAN OCCUR BEFORE THIS CALL TO ICall_registerApp
@@ -332,102 +331,81 @@ static void SimpleBLEPeripheral_init(void)
 	GATT_RegisterForMsgs(selfEntity);
 }
 
-/*********************************************************************
- * @fn      SimpleBLEPeripheral_taskFxn
- *
- * @brief   Application task entry point for the Simple BLE Peripheral.
- *
- * @param   a0, a1 - not used.
- *
- * @return  None.
- */
-static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
-{
-  // Initialize application
-  SimpleBLEPeripheral_init();
+///*********************************************************************
+// * @fn      SimpleBLEPeripheral_taskFxn
+// *
+// * @brief   Application task entry point for the Simple BLE Peripheral.
+// *
+// * @param   a0, a1 - not used.
+// *
+// * @return  None.
+// */
+//void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
+//{
+//  // Initialize application
+//  SimpleBLEPeripheral_init();
+//
+//  // Application main loop
+//  for (;;)
+//  {
+//    // Waits for a signal to the semaphore associated with the calling thread.
+//    // Note that the semaphore associated with a thread is signaled when a
+//    // message is queued to the message receive queue of the thread or when
+//    // ICall_signal() function is called onto the semaphore.
+//
+//  }
+//}
 
-  // Application main loop
-  for (;;)
-  {
-    // Waits for a signal to the semaphore associated with the calling thread.
-    // Note that the semaphore associated with a thread is signaled when a
-    // message is queued to the message receive queue of the thread or when
-    // ICall_signal() function is called onto the semaphore.
-    ICall_Errno errno = ICall_wait(ICALL_TIMEOUT_FOREVER);
+void SB_processBLEMessages() {
 
-    if (errno == ICALL_ERRNO_SUCCESS)
+    ICall_EntityID dest;
+    ICall_ServiceEnum src;
+    ICall_HciExtEvt *pMsg = NULL;
+
+    if (ICall_fetchServiceMsg(&src, &dest,
+                              (void **)&pMsg) == ICALL_ERRNO_SUCCESS)
     {
-      ICall_EntityID dest;
-      ICall_ServiceEnum src;
-      ICall_HciExtEvt *pMsg = NULL;
+      uint8 safeToDealloc = TRUE;
 
-      if (ICall_fetchServiceMsg(&src, &dest,
-                                (void **)&pMsg) == ICALL_ERRNO_SUCCESS)
+      if ((src == ICALL_SERVICE_CLASS_BLE) && (dest == selfEntity))
       {
-        uint8 safeToDealloc = TRUE;
+        ICall_Event *pEvt = (ICall_Event *)pMsg;
 
-        if ((src == ICALL_SERVICE_CLASS_BLE) && (dest == selfEntity))
+        // Check for BLE stack events first
+        if (pEvt->signature == 0xffff)
         {
-          ICall_Event *pEvt = (ICall_Event *)pMsg;
-
-          // Check for BLE stack events first
-          if (pEvt->signature == 0xffff)
+          if (pEvt->event_flag & SBP_CONN_EVT_END_EVT)
           {
-            if (pEvt->event_flag & SBP_CONN_EVT_END_EVT)
-            {
-              // Try to retransmit pending ATT Response (if any)
-              SimpleBLEPeripheral_sendAttRsp();
-            }
-          }
-          else
-          {
-            // Process inter-task message
-            safeToDealloc = SimpleBLEPeripheral_processStackMsg((ICall_Hdr *)pMsg);
+            // Try to retransmit pending ATT Response (if any)
+            SimpleBLEPeripheral_sendAttRsp();
           }
         }
-
-        if (pMsg && safeToDealloc)
+        else
         {
-          ICall_freeMsg(pMsg);
+          // Process inter-task message
+          safeToDealloc = SimpleBLEPeripheral_processStackMsg((ICall_Hdr *)pMsg);
         }
       }
 
-      // If RTOS queue is not empty, process app message.
-      while (!Queue_empty(appMsgQueue))
+      if (pMsg && safeToDealloc)
       {
-        sbpEvt_t *pMsg = (sbpEvt_t *)Util_dequeueMsg(appMsgQueue);
-        if (pMsg)
-        {
-          // Process message.
-          SimpleBLEPeripheral_processAppMsg(pMsg);
-
-          // Free the space from the message.
-          ICall_free(pMsg);
-        }
+        ICall_freeMsg(pMsg);
       }
     }
 
-#ifdef FEATURE_OAD
-    while (!Queue_empty(hOadQ))
+    // If RTOS queue is not empty, process app message.
+    while (!Queue_empty(appMsgQueue))
     {
-      oadTargetWrite_t *oadWriteEvt = Queue_dequeue(hOadQ);
-
-      // Identify new image.
-      if (oadWriteEvt->event == OAD_WRITE_IDENTIFY_REQ)
+      sbpEvt_t *pMsg = (sbpEvt_t *)Util_dequeueMsg(appMsgQueue);
+      if (pMsg)
       {
-        OAD_imgIdentifyWrite(oadWriteEvt->connHandle, oadWriteEvt->pData);
-      }
-      // Write a next block request.
-      else if (oadWriteEvt->event == OAD_WRITE_BLOCK_REQ)
-      {
-        OAD_imgBlockWrite(oadWriteEvt->connHandle, oadWriteEvt->pData);
-      }
+        // Process message.
+        SimpleBLEPeripheral_processAppMsg(pMsg);
 
-      // Free buffer.
-      ICall_free(oadWriteEvt);
+        // Free the space from the message.
+        ICall_free(pMsg);
+      }
     }
-#endif //FEATURE_OAD
-  }
 }
 
 /*********************************************************************
@@ -617,6 +595,11 @@ static void SimpleBLEPeripheral_processAppMsg(sbpEvt_t *pMsg)
     case SBP_CHAR_CHANGE_EVT:
       SimpleBLEPeripheral_processCharValueChangeEvt(pMsg->hdr.state);
       break;
+
+    case ATT_MTU_UPDATED_EVENT:
+    	System_printf("MTU size updated\n");
+    	asm("BRKP");
+    	break;
 
     default:
       // Do nothing.
@@ -905,7 +888,7 @@ static void SimpleBLEPeripheral_enqueueMsg(uint8_t event, uint8_t state)
 
 /*********************************************************************
 *********************************************************************/
-
-void SB_bleInit() {
-	SimpleBLEPeripheral_createTask();
-}
+//
+//void SB_bleInit() {
+//	SimpleBLEPeripheral_createTask();
+//}

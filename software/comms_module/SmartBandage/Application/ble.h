@@ -82,6 +82,8 @@
 #define SBP_CONN_EVT_END_EVT                  0x0008
 
 
-void SB_bleInit();
+//extern void SB_bleInit();
+extern void SB_processBLEMessages();
+extern void SimpleBLEPeripheral_init(void);
 
 #endif /* APPLICATION_BLE_H_ */

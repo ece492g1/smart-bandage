@@ -13,6 +13,7 @@
 #include "flash.h"
 #include "i2c.h"
 #include "util.h"
+#include "ble.h"
 #include "Devices/mcp9808.h"
 #include "Devices/hdc1050.h"
 #include "Devices/tca9554a.h"
@@ -485,8 +486,15 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	SB_Error result;
 
 #ifdef SB_DEBUG
-		System_printf("Peripheral manager task started...\n");
-		System_flush();
+	System_printf("Peripheral manager task started...\n");
+	System_flush();
+#endif
+
+	SimpleBLEPeripheral_init();
+
+#ifdef SB_DEBUG
+	System_printf("BLE Initialized.\n");
+	System_flush();
 #endif
 
 	SB_Profile_Set16bParameter( SB_CHARACTERISTIC_READINGSIZE, sizeof(SB_PeripheralReadings), 0 );
@@ -582,8 +590,16 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 
 		// Disable peripherals
 //		SB_setPeripheralsEnable(false);
+		uint32_t startTime;
+		for (startTime = Clock_getTicks(); (Clock_getTicks() - startTime) < 500000;) {
+			ICall_Errno errno = ICall_wait((500000 - (Clock_getTicks() - startTime))/NTICKS_PER_MILLSECOND);
 
-		Task_sleep(500000);
+			if (errno == ICALL_ERRNO_SUCCESS)
+			{
+				SB_processBLEMessages();
+			}
+		}
+//		Task_sleep(500000);
 	}
 }
 
