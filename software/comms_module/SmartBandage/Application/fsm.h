@@ -61,10 +61,10 @@ typedef struct {
 	SB_Error lastError;
 } SB_SystemState;
 
-SB_State SB_switchState(SB_State); //?
+SB_State SB_switchState(SB_State);
 SB_Event SB_getNewEvent(void);
 SB_State SB_handleEvent(SB_Event);
 SB_State SB_currentState();
-SB_Error SB_registerStateTransitionCallback(void function(void), SB_State_Transition peripheral);
+SB_Error SB_registerStateTransitionCallback(void function(void), SB_State_Transition transition);
 
 #endif
