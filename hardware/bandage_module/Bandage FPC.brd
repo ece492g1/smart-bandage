@@ -36,8 +36,8 @@
 <layer number="26" name="bNames" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="27" name="tValues" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="28" name="bValues" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="29" name="tStop" color="7" fill="3" visible="no" active="yes"/>
-<layer number="30" name="bStop" color="7" fill="6" visible="no" active="yes"/>
+<layer number="29" name="tStop" color="7" fill="3" visible="yes" active="yes"/>
+<layer number="30" name="bStop" color="7" fill="6" visible="yes" active="yes"/>
 <layer number="31" name="tCream" color="7" fill="4" visible="no" active="yes"/>
 <layer number="32" name="bCream" color="7" fill="5" visible="no" active="yes"/>
 <layer number="33" name="tFinish" color="6" fill="3" visible="no" active="yes"/>
@@ -190,6 +190,10 @@
 </polygon>
 <text x="7.55" y="8.48" size="1.4224" layer="21" font="vector">THIS SIDE OUT</text>
 <rectangle x1="83.4" y1="5.32" x2="89.4" y2="8.16" layer="30"/>
+<rectangle x1="89.96" y1="8.19" x2="92.9" y2="9.95" layer="1"/>
+<rectangle x1="89.97" y1="10.1" x2="90.81" y2="11.26" layer="1"/>
+<rectangle x1="89.97" y1="6.92" x2="90.81" y2="8.08" layer="1"/>
+<rectangle x1="88.56" y1="8.5" x2="90.06" y2="9.75" layer="1"/>
 </plain>
 <libraries>
 <library name="LilyPad-Wearables">
