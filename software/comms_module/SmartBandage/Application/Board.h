@@ -17,8 +17,10 @@
  ****************************************************************/
 //#define LAUNCHPAD // Only define if using Launchpad for testing. Can be defined as compiler argument instead.
 #define SB_DEBUG
+#define SB_FLASH_SANITY_CHECKS
 #define POWER_SAVING
 #define IOEXPANDER_PRESENT
+#define Board_BATT_110MAH
 
 /*****************************************************************
  * General Configuration
@@ -29,16 +31,16 @@
 
 #define DEFAULT_TASK_STACK_SIZE 512
 
-#define I2C_TASK_STACK_SIZE  256
-#define PMGR_TASK_STACK_SIZE 644
-#define SBP_TASK_STACK_SIZE  DEFAULT_TASK_STACK_SIZE
+#define I2C_TASK_STACK_SIZE   256
+#define PMGR_TASK_STACK_SIZE  768
+#define ICALL_TASK_STACK_SIZE 800
 
 typedef enum {
 	IDLE_TASK_PRIORITY = 0,
 	PMGR_TASK_PRIORITY,
 	I2C_TASK_PRIORITY,
-	SBP_TASK_PRIORITY,
 	GAPROLE_TASK_PRIORITY,
+	ICALL_TASK_PRIORITY,
 } TASK_PRIORITIES;
 
 /*****************************************************************
@@ -62,6 +64,11 @@ typedef enum {
 #define SB_NUM_MCP9808_SENSORS 3
 extern uint8_t Mcp9808Addresses[];
 
+#define SB_NUM_TEMPERATURE  1+SB_NUM_MCP9808_SENSORS
+#define SB_NUM_HUMIDITY		1
+#define SB_NUM_MOISTURE		5
+#define SB_READING_T		uint16
+
 #ifdef LAUNCHPAD
 #undef Board_SCL
 #undef Board_SDA
@@ -78,6 +85,17 @@ extern uint8_t Mcp9808Addresses[];
 
 #define PIN_HIGH 1
 #define PIN_LOW  0
+
+/*****************************************************************
+ * Time parameters
+ ****************************************************************/
+#define SB_TIMESTAMP_T uint32
+#define SB_TIMEDIFF_T  uint16
+
+/*****************************************************************
+ * Flash parameters
+ ****************************************************************/
+#define SB_REINIT_FLASH_ON_START true
 
 /*****************************************************************
  * External MUX configurations
@@ -100,6 +118,16 @@ extern uint8_t Mcp9808Addresses[];
 #define Board_PWRMUX_ENABLE_N 					Board_MP_EN_SW
 #define Board_PWRMUX_PERIPHERAL_VCC				((MUX_OUTPUT)Y1)
 #define Board_PWRMUX_1V3						((MUX_OUTPUT)Y0)
+
+/*****************************************************************
+ * Gas Gauge Configuration
+ ****************************************************************/
+#define GASGAUGE_SENSE_RESISTOR 		 10
+
+#ifdef Board_BATT_110MAH
+#define GASGAUGE_BATT_INTERNAL_IMPEDANCE 250
+#define GASGAUGE_BATT_CAPACITY 			 110
+#endif
 
 /*****************************************************************
  * I2C Configuration
@@ -164,6 +192,10 @@ typedef enum {
 	OperationTimeout,
 	OutOfMemory,
 	SemaphorePendTimeout,
+	SanityCheckFailed,
+	WritePermissionDenied,
+	BLECharacteristicWriteError,
+	NoDataAvailable,
 } SB_Error;
 
 /*****************************************************************

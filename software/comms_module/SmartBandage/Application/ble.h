@@ -28,11 +28,11 @@
 #ifndef FEATURE_OAD
 // Minimum connection interval (units of 1.25ms, 80=100ms) if automatic
 // parameter update request is enabled
-#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     80
+#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     100
 
 // Maximum connection interval (units of 1.25ms, 800=1000ms) if automatic
 // parameter update request is enabled
-#define DEFAULT_DESIRED_MAX_CONN_INTERVAL     800
+#define DEFAULT_DESIRED_MAX_CONN_INTERVAL     1000
 #else
 // Minimum connection interval (units of 1.25ms, 8=10ms) if automatic
 // parameter update request is enabled
@@ -56,9 +56,6 @@
 
 // Connection Pause Peripheral time value (in seconds)
 #define DEFAULT_CONN_PAUSE_PERIPHERAL         6
-
-// How often to perform periodic event (in msec)
-#define SBP_PERIODIC_EVT_PERIOD               5000
 
 #define DEFAULT_INITIAL_ADVERTISING			  TRUE
 
@@ -85,6 +82,8 @@
 #define SBP_CONN_EVT_END_EVT                  0x0008
 
 
-void SB_bleInit();
+//extern void SB_bleInit();
+extern void SB_processBLEMessages();
+extern void SimpleBLEPeripheral_init(void);
 
 #endif /* APPLICATION_BLE_H_ */

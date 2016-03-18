@@ -70,12 +70,20 @@ extern "C"
 #define SB_BLE_MOISTUREMAP_UUID	            (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_MOISTUREMAP)
 #define SB_BLE_SYSTEMTIME_UUID	            (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_SYSTEMTIME)
 
+#define SB_BLE_READINGS_UUID	            (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_READINGS)
+#define SB_BLE_READINGSIZE_UUID	            (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_READINGSIZE)
+#define SB_BLE_READINGCOUNT_UUID	        (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_READINGCOUNT)
+#define SB_BLE_READINGREFTIMESTAMP_UUID     (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_READINGREFTIMESTAMP)
+#define SB_BLE_READINGDATAOFFSETS_UUID      (SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_READINGDATAOFFSETS)
+
 // For each characteristic the server has three entries, plus on for the service
+#define SERVAPP_NUM_NOTIFY_PROPS 			1
 #define SERVAPP_NUM_PROP_PER_CHARACTERISTIC 3
-#define SERVAPP_NUM_ATTR_SUPPORTED         (SB_NUM_CHARACTERISTICS*SERVAPP_NUM_PROP_PER_CHARACTERISTIC + 1)
+#define SERVAPP_NUM_ATTR_SUPPORTED         (SB_NUM_CHARACTERISTICS*SERVAPP_NUM_PROP_PER_CHARACTERISTIC + 1 + SERVAPP_NUM_NOTIFY_PROPS)
 
 // Simple Keys Profile Services bit fields
 #define SB_BLE_SERVICE               0x00000001
+#define SB_MAX_NUM_CONNS			 2
 
 // Length of Characteristics in bytes
 #define SB_BLE_TEMPERATURE_LEN           8
@@ -86,23 +94,33 @@ extern "C"
 #define SB_BLE_EXTPOWER_LEN   	         1
 #define SB_BLE_MOISTUREMAP_LEN           10
 #define SB_BLE_SYSTEMTIME_LEN            4
+#define SB_BLE_READINGS_LEN            	 66
+#define SB_BLE_READINGSIZE_LEN           2
+#define SB_BLE_READINGCOUNT_LEN          4
+#define SB_BLE_READINGREFTIMESTAMP_LEN   4
+#define SB_BLE_READINGDATAOFFSETS_LEN    4
 
 /*********************************************************************
  * TYPEDEFS
  */
 typedef enum {
-	SB_CHARACTERISTIC_TEMPERATURE = 0,
-	SB_CHARACTERISTIC_HUMIDITY = 1,
-	SB_CHARACTERISTIC_BANDAGEID = 2,
-	SB_CHARACTERISTIC_BANDAGESTATE = 3,
-	SB_CHARACTERISTIC_BATTCHARGE = 4,
-	SB_CHARACTERISTIC_EXTPOWER = 5,
-	SB_CHARACTERISTIC_MOISTUREMAP = 6,
-	SB_CHARACTERISTIC_SYSTEMTIME = 7,
+	SB_CHARACTERISTIC_TEMPERATURE,
+	SB_CHARACTERISTIC_HUMIDITY,
+	SB_CHARACTERISTIC_BANDAGEID ,
+	SB_CHARACTERISTIC_BANDAGESTATE,
+	SB_CHARACTERISTIC_BATTCHARGE,
+	SB_CHARACTERISTIC_EXTPOWER,
+	SB_CHARACTERISTIC_MOISTUREMAP,
+	SB_CHARACTERISTIC_SYSTEMTIME,
+	SB_CHARACTERISTIC_READINGS,
+	SB_CHARACTERISTIC_READINGSIZE,
+	SB_CHARACTERISTIC_READINGCOUNT,
+	SB_CHARACTERISTIC_READINGREFTIMESTAMP,
+	SB_CHARACTERISTIC_READINGDATAOFFSETS,
 
-	SB_NUM_CHARACTERISTICS = 8
+	SB_NUM_CHARACTERISTICS
 } SB_CHARACTERISTIC;
-  
+
 /*********************************************************************
  * MACROS
  */
@@ -165,9 +183,37 @@ extern bStatus_t SB_Profile_RegisterAppCBs( simpleProfileCBs_t *appCallbacks );
  *          data type (example: data type of uint16 will be cast to 
  *          uint16 pointer).
  */
-extern bStatus_t SB_Profile_SetParameter( SB_CHARACTERISTIC param, uint8 len, void *value );
+inline extern bStatus_t SB_Profile_SetParameter( SB_CHARACTERISTIC param, uint8_t len, const void *value );
 
-extern bStatus_t SB_Profile_Set16bParameter( SB_CHARACTERISTIC param, uint16 value, uint8 valueIndex );
+/*********************************************************************
+ * @fn      SB_Profile_Set16bParameter
+ *
+ * @brief   Set a 16bit parameter within an array of 16bit parameters.
+ *
+ * @param   param - Profile parameter ID
+ * @param   value - 16bit value to write
+ * @param   valueIndex - Index of the 16bit parameter within the array to write to.
+ *
+ * @return  bStatus_t
+ */
+inline extern bStatus_t SB_Profile_Set16bParameter( SB_CHARACTERISTIC param, uint16 value, uint8 valueIndex );
+
+/*********************************************************************
+ * @fn      SB_Profile_SetParameterPartial
+ *
+ * @brief   Partially set a parameter.
+ *
+ * @param   param - Profile parameter ID
+ * @param   len - length of data to write
+ * @param   offset - The offset (from the start of data) where writing should start
+ * @param   value - pointer to data to write.  This is dependent on
+ *          the parameter ID and WILL be cast to the appropriate
+ *          data type (example: data type of uint16 will be cast to
+ *          uint16 pointer).
+ *
+ * @return  bStatus_t
+ */
+extern bStatus_t SB_Profile_SetParameterPartial( SB_CHARACTERISTIC param, uint8 len, uint8_t offset, const void *value );
 
 /*
  * SimpleProfile_GetParameter - Get a Simple GATT Profile parameter.
@@ -180,6 +226,25 @@ extern bStatus_t SB_Profile_Set16bParameter( SB_CHARACTERISTIC param, uint16 val
  */
 extern bStatus_t SB_Profile_GetParameter( SB_CHARACTERISTIC param, void *value, int maxlength );
 
+/*********************************************************************
+ * @fn      SB_Profile_SetParameterPartial
+ *
+ * @brief   Get a pointer to the characteristic buffer at the specified offset.
+ * 			The pointer returned is valid only for `len` bytes.
+ * 			This should only be used for sufficiently large values where data should
+ * 			be written directly to the buffer.
+ *
+ * @param   param - Profile parameter ID
+ * @param   len - length of data to write
+ * @param   offset - The offset (from the start of data) where writing should start
+ *
+ * @return  NULL if invalid range, or the pointer to characteristic memory
+ */
+extern uint8* SB_Profile_GetCharacteristicWritePTR( SB_CHARACTERISTIC param, uint8 len, uint8_t offset );
+
+extern bStatus_t SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC param );
+
+extern bool SB_Profile_NotificationStateChanged(SB_CHARACTERISTIC param );
 
 /*********************************************************************
 *********************************************************************/

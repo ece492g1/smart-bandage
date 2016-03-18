@@ -16,7 +16,7 @@
 #include "gatt.h"
 #include "gapgattserver.h"
 #include "gattservapp.h"
-#include "devinfoservice.h"
+//#include "devinfoservice.h"
 #include "../PROFILES/smartBandageProfile.h"
 
 #include "peripheral.h"
@@ -27,6 +27,8 @@
 
 #include "util.h"
 #include "ble.h"
+
+#include "readingsManager.h"
 
 /*********************************************************************
  * TYPEDEFS
@@ -53,9 +55,6 @@ static ICall_EntityID selfEntity;
 // Semaphore globally used to post events to the application thread
 static ICall_Semaphore sem;
 
-// Clock instances for internal periodic events.
-static Clock_Struct periodicClock;
-
 // Queue object used for app messages
 static Queue_Struct appMsg;
 static Queue_Handle appMsgQueue;
@@ -67,8 +66,8 @@ static Queue_Handle hOadQ;
 #endif //FEATURE_OAD
 
 // Task configuration
-Task_Struct sbpTask;
-Char sbpTaskStack[SBP_TASK_STACK_SIZE];
+//Task_Struct sbpTask;
+//Char sbpTaskStack[SBP_TASK_STACK_SIZE];
 
 // Profile state and parameters
 //static gaprole_States_t gapProfileState = GAPROLE_INIT;
@@ -142,8 +141,7 @@ static uint8_t rspTxRetry = 0;
  * LOCAL FUNCTIONS
  */
 
-static void SimpleBLEPeripheral_init( void );
-static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1);
+//static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1);
 
 static uint8_t SimpleBLEPeripheral_processStackMsg(ICall_Hdr *pMsg);
 static uint8_t SimpleBLEPeripheral_processGATTMsg(gattMsgEvent_t *pMsg);
@@ -202,28 +200,6 @@ static oadTargetCBs_t simpleBLEPeripheral_oadCBs =
  */
 
 /*********************************************************************
- * @fn      SimpleBLEPeripheral_createTask
- *
- * @brief   Task creation function for the Simple BLE Peripheral.
- *
- * @param   None.
- *
- * @return  None.
- */
-void SimpleBLEPeripheral_createTask(void)
-{
-  Task_Params taskParams;
-
-  // Configure task
-  Task_Params_init(&taskParams);
-  taskParams.stack = sbpTaskStack;
-  taskParams.stackSize = SBP_TASK_STACK_SIZE;
-  taskParams.priority = SBP_TASK_PRIORITY;
-
-  Task_construct(&sbpTask, SimpleBLEPeripheral_taskFxn, &taskParams, NULL);
-}
-
-/*********************************************************************
  * @fn      SimpleBLEPeripheral_init
  *
  * @brief   Called during initialization and contains application
@@ -235,7 +211,7 @@ void SimpleBLEPeripheral_createTask(void)
  *
  * @return  None.
  */
-static void SimpleBLEPeripheral_init(void)
+void SimpleBLEPeripheral_init(void)
 {
 	// ******************************************************************
 	// N0 STACK API CALLS CAN OCCUR BEFORE THIS CALL TO ICall_registerApp
@@ -309,22 +285,11 @@ static void SimpleBLEPeripheral_init(void)
 	// Initialize GATT attributes
 	GGS_AddService(GATT_ALL_SERVICES);           // GAP
 	GATTServApp_AddService(GATT_ALL_SERVICES);   // GATT attributes
-	DevInfo_AddService();                        // Device Information Service
+//	DevInfo_AddService();                        // Device Information Service
 
 #ifndef FEATURE_OAD
 	SB_Profile_AddService(GATT_ALL_SERVICES); // Simple GATT Profile
 #endif //!FEATURE_OAD
-
-#ifdef FEATURE_OAD
-	VOID OAD_addService();                 // OAD Profile
-	OAD_register((oadTargetCBs_t *)&simpleBLEPeripheral_oadCBs);
-	hOadQ = Util_constructQueue(&oadQ);
-#endif
-
-#ifdef IMAGE_INVALIDATE
-	Reset_addService();
-#endif //IMAGE_INVALIDATE
-
 
 #ifndef FEATURE_OAD
 	// Register callback with SimpleGATTprofile
@@ -344,102 +309,56 @@ static void SimpleBLEPeripheral_init(void)
 	GATT_RegisterForMsgs(selfEntity);
 }
 
-/*********************************************************************
- * @fn      SimpleBLEPeripheral_taskFxn
- *
- * @brief   Application task entry point for the Simple BLE Peripheral.
- *
- * @param   a0, a1 - not used.
- *
- * @return  None.
- */
-static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
-{
-  // Initialize application
-  SimpleBLEPeripheral_init();
+void SB_processBLEMessages() {
 
-  // Application main loop
-  for (;;)
-  {
-    // Waits for a signal to the semaphore associated with the calling thread.
-    // Note that the semaphore associated with a thread is signaled when a
-    // message is queued to the message receive queue of the thread or when
-    // ICall_signal() function is called onto the semaphore.
-    ICall_Errno errno = ICall_wait(ICALL_TIMEOUT_FOREVER);
+    ICall_EntityID dest;
+    ICall_ServiceEnum src;
+    ICall_HciExtEvt *pMsg = NULL;
 
-    if (errno == ICALL_ERRNO_SUCCESS)
+    if (ICall_fetchServiceMsg(&src, &dest,
+                              (void **)&pMsg) == ICALL_ERRNO_SUCCESS)
     {
-      ICall_EntityID dest;
-      ICall_ServiceEnum src;
-      ICall_HciExtEvt *pMsg = NULL;
+      uint8 safeToDealloc = TRUE;
 
-      if (ICall_fetchServiceMsg(&src, &dest,
-                                (void **)&pMsg) == ICALL_ERRNO_SUCCESS)
+      if ((src == ICALL_SERVICE_CLASS_BLE) && (dest == selfEntity))
       {
-        uint8 safeToDealloc = TRUE;
+        ICall_Event *pEvt = (ICall_Event *)pMsg;
 
-        if ((src == ICALL_SERVICE_CLASS_BLE) && (dest == selfEntity))
+        // Check for BLE stack events first
+        if (pEvt->signature == 0xffff)
         {
-          ICall_Event *pEvt = (ICall_Event *)pMsg;
-
-          // Check for BLE stack events first
-          if (pEvt->signature == 0xffff)
+          if (pEvt->event_flag & SBP_CONN_EVT_END_EVT)
           {
-            if (pEvt->event_flag & SBP_CONN_EVT_END_EVT)
-            {
-              // Try to retransmit pending ATT Response (if any)
-              SimpleBLEPeripheral_sendAttRsp();
-            }
-          }
-          else
-          {
-            // Process inter-task message
-            safeToDealloc = SimpleBLEPeripheral_processStackMsg((ICall_Hdr *)pMsg);
+            // Try to retransmit pending ATT Response (if any)
+            SimpleBLEPeripheral_sendAttRsp();
           }
         }
-
-        if (pMsg && safeToDealloc)
+        else
         {
-          ICall_freeMsg(pMsg);
+          // Process inter-task message
+          safeToDealloc = SimpleBLEPeripheral_processStackMsg((ICall_Hdr *)pMsg);
         }
       }
 
-      // If RTOS queue is not empty, process app message.
-      while (!Queue_empty(appMsgQueue))
+      if (pMsg && safeToDealloc)
       {
-        sbpEvt_t *pMsg = (sbpEvt_t *)Util_dequeueMsg(appMsgQueue);
-        if (pMsg)
-        {
-          // Process message.
-          SimpleBLEPeripheral_processAppMsg(pMsg);
-
-          // Free the space from the message.
-          ICall_free(pMsg);
-        }
+        ICall_freeMsg(pMsg);
       }
     }
 
-#ifdef FEATURE_OAD
-    while (!Queue_empty(hOadQ))
+    // If RTOS queue is not empty, process app message.
+    while (!Queue_empty(appMsgQueue))
     {
-      oadTargetWrite_t *oadWriteEvt = Queue_dequeue(hOadQ);
-
-      // Identify new image.
-      if (oadWriteEvt->event == OAD_WRITE_IDENTIFY_REQ)
+      sbpEvt_t *pMsg = (sbpEvt_t *)Util_dequeueMsg(appMsgQueue);
+      if (pMsg)
       {
-        OAD_imgIdentifyWrite(oadWriteEvt->connHandle, oadWriteEvt->pData);
-      }
-      // Write a next block request.
-      else if (oadWriteEvt->event == OAD_WRITE_BLOCK_REQ)
-      {
-        OAD_imgBlockWrite(oadWriteEvt->connHandle, oadWriteEvt->pData);
-      }
+        // Process message.
+        SimpleBLEPeripheral_processAppMsg(pMsg);
 
-      // Free buffer.
-      ICall_free(oadWriteEvt);
+        // Free the space from the message.
+        ICall_free(pMsg);
+      }
     }
-#endif //FEATURE_OAD
-  }
 }
 
 /*********************************************************************
@@ -525,6 +444,17 @@ static uint8_t SimpleBLEPeripheral_processGATTMsg(gattMsgEvent_t *pMsg)
   {
     // MTU size updated
     System_printf("MTU Size:%d\n", pMsg->msg.mtuEvt.MTU);
+  } else if (pMsg->method == ATT_HANDLE_VALUE_NOTI) {
+	  System_printf("GATT handle value notification\n");
+  } else if (pMsg->method == ATT_HANDLE_VALUE_IND) {
+	  System_printf("GATT handle value indication\n");
+  } else if (pMsg->method == ATT_HANDLE_VALUE_CFM) {
+	  SB_Error error;
+	  if (NoError != (error = SB_currentReadingsRead())) {
+		  System_printf("Error handling GATT value confirmation: %d\n", error);
+	  }
+  } else {
+	  System_printf("Unknown GATT MSG: %d\n", pMsg->method);
   }
 
   // Free message payload. Needed only for ATT Protocol messages
@@ -670,25 +600,25 @@ static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState)
     case GAPROLE_STARTED:
       {
         uint8_t ownAddress[B_ADDR_LEN];
-        uint8_t systemId[DEVINFO_SYSTEM_ID_LEN];
+//        uint8_t systemId[DEVINFO_SYSTEM_ID_LEN];
 
         GAPRole_GetParameter(GAPROLE_BD_ADDR, ownAddress);
 
         // use 6 bytes of device address for 8 bytes of system ID value
-        systemId[0] = ownAddress[0];
-        systemId[1] = ownAddress[1];
-        systemId[2] = ownAddress[2];
+//        systemId[0] = ownAddress[0];
+//        systemId[1] = ownAddress[1];
+//        systemId[2] = ownAddress[2];
+//
+//        // set middle bytes to zero
+//        systemId[4] = 0x00;
+//        systemId[3] = 0x00;
+//
+//        // shift three bytes up
+//        systemId[7] = ownAddress[5];
+//        systemId[6] = ownAddress[4];
+//        systemId[5] = ownAddress[3];
 
-        // set middle bytes to zero
-        systemId[4] = 0x00;
-        systemId[3] = 0x00;
-
-        // shift three bytes up
-        systemId[7] = ownAddress[5];
-        systemId[6] = ownAddress[4];
-        systemId[5] = ownAddress[3];
-
-        DevInfo_SetParameter(DEVINFO_SYSTEM_ID, DEVINFO_SYSTEM_ID_LEN, systemId);
+//        DevInfo_SetParameter(DEVINFO_SYSTEM_ID, DEVINFO_SYSTEM_ID_LEN, systemId);
 
         // Display device address
         System_printf(Util_convertBdAddr2Str(ownAddress));
@@ -734,8 +664,6 @@ static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState)
 
         GAPRole_GetParameter(GAPROLE_CONN_BD_ADDR, peerAddress);
 
-        Util_startClock(&periodicClock);
-
         System_printf("BLE Connected\n");
         System_printf(Util_convertBdAddr2Str(peerAddress));
 
@@ -768,7 +696,6 @@ static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState)
       break;
 
     case GAPROLE_WAITING:
-      Util_stopClock(&periodicClock);
       SimpleBLEPeripheral_freeAttRsp(bleNotConnected);
 
       System_printf("BLE Disconnected\n");
@@ -838,6 +765,13 @@ static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
 
 			System_printf("System time set: %d\n", *(uint32_t*)newValue);
 			break;
+
+		case SB_CHARACTERISTIC_READINGCOUNT:
+			SB_Profile_GetParameter(SB_CHARACTERISTIC_SYSTEMTIME, &newValue, 2);
+
+			System_printf("Readings read.\n Reading count set: %d\n", *(uint16_t*)newValue);
+
+			SB_currentReadingsRead();
 
 		default:
 			// should not reach here!
@@ -913,7 +847,3 @@ static void SimpleBLEPeripheral_enqueueMsg(uint8_t event, uint8_t state)
 
 /*********************************************************************
 *********************************************************************/
-
-void SB_bleInit() {
-	SimpleBLEPeripheral_createTask();
-}

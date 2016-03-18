@@ -21,7 +21,8 @@
 #include "i2c.h"
 #include "peripheralManager.h"
 #include "Board.h"
-#include "ble.h"
+//#include "ble.h"
+#include "flash.h"
 
 /* Header files required to enable instruction fetch cache */
 #include <inc/hw_memmap.h>
@@ -63,6 +64,7 @@ int main()
 #ifdef SB_DEBUG
 	System_printf("ICall Remote Tasks Initialized.\n");
 	System_flush();
+
 #endif
 
     /* Kick off profile - Priority 3 */
@@ -101,13 +103,6 @@ int main()
 
 #ifdef SB_DEBUG
 	System_printf("Peripherals Initialized.\n");
-	System_flush();
-#endif
-
-	/* Configure BLE */
-	SB_bleInit();
-#ifdef SB_DEBUG
-	System_printf("SB BLE Initialized.\n");
 	System_flush();
 #endif
 
