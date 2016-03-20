@@ -14,6 +14,7 @@
 #include "i2c.h"
 #include "util.h"
 #include "ble.h"
+#include "fsm.h"
 #include "Devices/mcp9808.h"
 #include "Devices/hdc1050.h"
 #include "Devices/tca9554a.h"
@@ -28,6 +29,12 @@ SB_Error applyPWRMuxState(MUX_OUTPUT_ENABLE outputEnable, MUX_OUTPUT output);
 SB_Error applyFullMuxState(SB_MUXState muxState, uint32 timeout);
 SB_Error _applyFullMuxState(SB_MUXState muxState);
 void     SB_sysdisblClockHandler(UArg arg);
+
+void PreEnterSleepCallback(SB_State_Transition transition, SB_State state);
+void ExitSleepCallback(SB_State_Transition transition, SB_State state);
+void PreEnterTransmitCallback(SB_State_Transition transition, SB_State state);
+void PreExitTransmitCallback(SB_State_Transition transition, SB_State state);
+void PreEnterCheckCallback(SB_State_Transition transition, SB_State state);
 
 SB_Error readSensorData();
 
@@ -45,7 +52,6 @@ struct {
 #endif
 
 	STC3115_DEVICE_HANDLE gasGaugeDevice;
-//	STC3115_DEVICE gasGaugeDevice;
 	SB_PeripheralState gasGaugeDeviceState;
 
 	Task_Handle taskHandle;
@@ -57,6 +63,8 @@ struct {
 	PIN_State AnalogPins;
 	Semaphore_Handle muxSemaphore;
 	Clock_Struct sysdisblClock;
+
+	Semaphore_Handle stateSem;
 } PMGR;
 
 SB_Error applyTempSensorConfiguration(uint8_t deviceNo) {
@@ -514,10 +522,9 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 
 	if (NoError != (result = initAlwaysOnPeripherals())) {
 #ifdef SB_DEBUG
-		System_printf("Always on peripheral initialization failure: %d. Peripheral Manager stalled.\n", result);
+		System_printf("Always on peripheral initialization failure: %d.\n", result);
 		System_flush();
 #endif
-		Task_exit();
 	}
 
 	if (NoError != (result = initPeripherals())) {
@@ -536,7 +543,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		System_flush();
 #endif
 
-		while(1);
+		forever;
 	}
 
 #ifdef SB_DEBUG
@@ -551,7 +558,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		System_flush();
 #endif
 
-		while(1);
+		forever;
 	}
 
 #ifdef SB_DEBUG
@@ -563,58 +570,146 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	PIN_Handle statusPin = PIN_open(&sbpPins, pinConfigTable);
 #endif
 
-	while (1) {
+	SB_switchState(S_CHECK);
 
-		// Enable peripherals
-//		SB_setPeripheralsEnable(true);
-		PMANAGER_TASK_YIELD_HIGHERPRI();
-
-		// Initialize them
-		initPeripherals();
-		PMANAGER_TASK_YIELD_HIGHERPRI();
-
-		// Read sensor data
-		result = readSensorData();
-		PMANAGER_TASK_YIELD_HIGHERPRI();
-		if (NoError != result) {
-#ifdef SB_DEBUG
-			PMANAGER_TASK_YIELD_HIGHERPRI();
-			System_printf("PMGR: Saving readings failed: %d.\n", result);
-			PMANAGER_TASK_YIELD_HIGHERPRI();
-			System_flush();
-			PMANAGER_TASK_YIELD_HIGHERPRI();
-#endif
-		}
-
-#ifdef SB_DEBUG
-		Task_sleep(NTICKS_PER_MILLSECOND);
-		System_flush();
-#endif
-
-		// Disable peripherals
-//		SB_setPeripheralsEnable(false);
+	forever {
+		static uint8_t nChecks = 0;
 		uint32_t startTime;
-		for (startTime = Clock_getTicks(); (Clock_getTicks() - startTime) < 500000;) {
-			ICall_Errno errno = ICall_wait((500000 - (Clock_getTicks() - startTime))/NTICKS_PER_MILLSECOND);
 
-			if (errno == ICALL_ERRNO_SUCCESS)
-			{
-				SB_processBLEMessages();
+		// Wait for a state change to occur
+		Semaphore_pend(PMGR.stateSem, BIOS_WAIT_FOREVER);
+		System_printf("Loop started %d\n", SB_currentState());
+		System_flush();
+		Task_sleep(NTICKS_PER_SECOND/2);
+
+		switch (SB_currentState()) {
+		case S_CHECK:
+#ifdef PERIPHERAL_PWR_MGMT
+			// Enable peripherals
+			SB_setPeripheralsEnable(true);
+#endif
+
+			// Initialize them
+			initPeripherals();
+
+			// Read sensor data
+			result = readSensorData();
+			if (NoError != result) {
+#ifdef SB_DEBUG
+				System_printf("PMGR: Saving readings failed: %d.\n", result);
+#endif
 			}
+
+#ifdef SB_DEBUG
+			System_flush();
+#endif
+
+#ifdef PERIPHERAL_PWR_MGMT
+			// Disable peripherals
+			SB_setPeripheralsEnable(false);
+#endif
+
+			// Transition out of the check state
+			SB_switchState(S_SLEEP);
+			break; // S_CHECK
+
+		case S_TRANSMIT:
+			error = SB_enableBLE();
+			if (NoError != error) {
+				System_printf("Error enabling BLE for transmission: %d", error);
+			}
+
+			// Do a single quick reading now
+			result = readSensorData();
+			if (NoError != result) {
+			#ifdef SB_DEBUG
+				System_printf("PMGR: Saving readings failed: %d.\n", result);
+			#endif
+			}
+
+			// TODO: SB_TRANSMIT_MAX_STATE_TIME should be the min amount of time we spend waiting for a connection.
+			// Once connected, provided that the other device consumes a block of readings at least every SB_TRANSMIT_MIN_CONN_PERIOD
+			// we should stay connected until complete. We can be assured of a return to sleep as memory is finite and we
+			// aren't adding new readings in the transmit state.
+
+			// Spend the next SB_TRANSMIT_MAX_STATE_TIME talking over bluetooth
+			for (startTime = Clock_getTicks(); (Clock_getTicks() - startTime) < SB_TRANSMIT_MAX_STATE_TIME;) {
+				while (SB_flashReadingCount() >= READINGS_MANAGER_THRESHOLD) {
+					if (SB_sendNotificationIfSubscriptionChanged(false)) {
+
+					}
+
+					// This could end up taking up to SB_TRANSMIT_MIN_CONN_PERIOD more than SB_TRANSMIT_MAX_STATE_TIME. Do we care?
+					ICall_Errno errno = ICall_wait(SB_TRANSMIT_MIN_CONN_PERIOD/NTICKS_PER_MILLSECOND);
+
+					if (errno == ICALL_ERRNO_SUCCESS)
+					{
+						SB_processBLEMessages();
+					} else {
+						// Handle the error that a request wasn't received in a SB_TRANSMIT_MIN_CONN_PERIOD
+//						System_printf("No BLE message in the last %d seconds\n", SB_TRANSMIT_MIN_CONN_PERIOD/NTICKS_PER_SECOND);
+						break;
+					}
+				}
+
+				if (SB_flashReadingCount() < READINGS_MANAGER_THRESHOLD) {
+					break;
+				}
+			}
+
+			// TODO: We need to wait for this to finish disconnecting, and for the final notification to be received
+			error = SB_disableBLE();
+			if (NoError != error) {
+#ifdef SB_DEBUG
+				System_printf("Error disabling BLE for transmission: %d\n", error);
+#endif
+			}
+
+			while (SB_bleConnected()) {
+				// This could end up taking up to SB_TRANSMIT_MIN_CONN_PERIOD more than SB_TRANSMIT_MAX_STATE_TIME. Do we care?
+				ICall_Errno errno = ICall_wait(10*SB_TRANSMIT_MIN_CONN_PERIOD/NTICKS_PER_MILLSECOND);
+
+				if (errno == ICALL_ERRNO_SUCCESS)
+				{
+					SB_processBLEMessages();
+				} else {
+					// Handle the error that a request wasn't received in a SB_TRANSMIT_MIN_CONN_PERIOD
+//						System_printf("No BLE message in the last %d seconds\n", SB_TRANSMIT_MIN_CONN_PERIOD/NTICKS_PER_SECOND);
+					break;
+				}
+			}
+
+#ifdef SB_DEBUG
+			System_flush();
+#endif
+
+			// Transition out of the transmit state
+			SB_switchState(S_SLEEP);
+			break; // S_TRANSMIT
+
+		case S_SLEEP:
+			// Todo this may be best handled in the state manager?
+			if (++nChecks < 10) {
+				SB_switchState(S_CHECK);
+			} else {
+				SB_switchState(S_TRANSMIT);
+				nChecks = 0;
+			}
+			break; // S_SLEEP
+
+		default:
+			break;
 		}
 	}
 }
 
 SB_Error SB_peripheralInit() {
-	int i;
-
+	SB_Error result;
+	PMGR.stateSem = Semaphore_create(0, NULL, NULL);
 	PMGR.i2cDeviceSem = Semaphore_create(0, NULL, NULL);
 
-	for (i = 0; i < SB_NUM_MCP9808_SENSORS; ++i) {
-#ifdef SB_DEBUG
-		System_printf("PMGR: Initializing data structures for MCP9808 Device %d\n", i);
-		System_flush();
-#endif
+	if (NULL == PMGR.stateSem || NULL == PMGR.i2cDeviceSem) {
+		return OSResourceInitializationError;
 	}
 
 	// Initialize power pin
@@ -687,6 +782,17 @@ SB_Error SB_peripheralInit() {
 		System_flush();
 #endif
 		return OSResourceInitializationError;
+	}
+
+	// Initialize state callback functions
+	if (
+		NoError != (result = SB_registerStateTransitionCallback(PreEnterSleepCallback, 	 T_STATE_PRE_ENTER, S_SLEEP))
+		|| NoError != (result = SB_registerStateTransitionCallback(PreEnterTransmitCallback, T_STATE_PRE_ENTER, S_TRANSMIT))
+		|| NoError != (result = SB_registerStateTransitionCallback(PreEnterCheckCallback, 	 T_STATE_PRE_ENTER, S_CHECK))
+		|| NoError != (result = SB_registerStateTransitionCallback(ExitSleepCallback, 		 T_STATE_EXIT, 		S_SLEEP))
+		|| NoError != (result = SB_registerStateTransitionCallback(PreExitTransmitCallback,  T_STATE_PRE_EXIT,  S_TRANSMIT))) {
+		System_printf("Error initializing peripheral manager callbacks: %d\n", result);
+		return result;
 	}
 
 	// Initialize peripheral manager task
@@ -845,4 +951,41 @@ SB_Error SB_sysDisableShutdown() {
 	// TODO: This loop should actually check on occasion if jack power has become available by switching MUX to V_PREBUCK_DIV2 for a moment
 	// This function doesn't return - the system is about to die.
 	while (1);
+}
+
+void PreEnterSleepCallback(SB_State_Transition transition, SB_State state) {
+	System_printf("PreEnterSleepCallback\n");
+	// Disable peripherals
+	// Disable I2C module
+	// Start HW timer
+
+	// TODO: This should not be here.
+	Semaphore_post(PMGR.stateSem);
+}
+
+void ExitSleepCallback(SB_State_Transition transition, SB_State state) {
+	System_printf("ExitSleepCallback\n");
+	// Clear & disable HW timer
+	// Refresh SYSDISBL
+//	SB_sysDisableRefresh(100);
+	// Enable peripherals
+	// Enable I2C
+}
+
+void PreEnterTransmitCallback(SB_State_Transition transition, SB_State state) {
+	System_printf("PreEnterTransmitCallback\n");
+	// Enable bluetooth
+	// Ensure bluetooth advertising
+	Semaphore_post(PMGR.stateSem);
+}
+
+void PreExitTransmitCallback(SB_State_Transition transition, SB_State state) {
+	System_printf("PreExitTransmitCallback\n");
+	// Disconnect bluetooth
+	// Disable bluetooth
+}
+
+void PreEnterCheckCallback(SB_State_Transition transition, SB_State state) {
+	System_printf("PreEnterCheckCallback\n");
+	Semaphore_post(PMGR.stateSem);
 }

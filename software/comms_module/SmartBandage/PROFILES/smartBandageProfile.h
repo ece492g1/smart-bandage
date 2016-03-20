@@ -59,7 +59,7 @@ extern "C"
 
 // Service UUID
 #define SB_BLE_SERV_UUID               		0xF0F0
-    
+
 // Characteristic UUIDs
 #define SB_BLE_TEMPERATURE_UUID            	(SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_TEMPERATURE)
 #define SB_BLE_HUMIDITY_UUID            	(SB_BLE_SERV_UUID +1+ SB_CHARACTERISTIC_HUMIDITY)
@@ -245,6 +245,8 @@ extern uint8* SB_Profile_GetCharacteristicWritePTR( SB_CHARACTERISTIC param, uin
 extern bStatus_t SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC param );
 
 extern bool SB_Profile_NotificationStateChanged(SB_CHARACTERISTIC param );
+
+extern bStatus_t SB_Profile_ClearNotificationState();
 
 /*********************************************************************
 *********************************************************************/

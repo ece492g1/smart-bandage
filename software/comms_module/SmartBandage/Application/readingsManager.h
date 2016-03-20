@@ -10,6 +10,8 @@
 
 #include "Board.h"
 
+#define READINGS_MANAGER_THRESHOLD (SB_BLE_READINGS_LEN/sizeof(SB_PeripheralReadings))
+
 typedef struct {
 	SB_READING_T  temperatures[SB_NUM_TEMPERATURE];
 	SB_READING_T  humidities[SB_NUM_HUMIDITY];
@@ -37,5 +39,7 @@ SB_Error SB_newReadingsAvailable();
  * @brief   Called when the currently available readings have been read
  */
 SB_Error SB_currentReadingsRead();
+
+bool SB_sendNotificationIfSubscriptionChanged(bool forceTry);
 
 #endif /* APPLICATION_READINGSMANAGER_H_ */

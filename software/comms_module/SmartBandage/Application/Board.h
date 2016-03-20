@@ -21,6 +21,7 @@
 #define POWER_SAVING
 #define IOEXPANDER_PRESENT
 #define Board_BATT_110MAH
+//#define PERIPHERAL_PWR_MGMT // Define to enable power management of external peripherals
 
 /*****************************************************************
  * General Configuration
@@ -31,7 +32,7 @@
 
 #define DEFAULT_TASK_STACK_SIZE 512
 
-#define I2C_TASK_STACK_SIZE   256
+#define I2C_TASK_STACK_SIZE   512
 #define PMGR_TASK_STACK_SIZE  768
 #define ICALL_TASK_STACK_SIZE 800
 
@@ -199,9 +200,15 @@ typedef enum {
 } SB_Error;
 
 /*****************************************************************
+ * State Timing
+ ****************************************************************/
+#define SB_TRANSMIT_MIN_CONN_PERIOD NTICKS_PER_SECOND    // One second
+#define SB_TRANSMIT_MAX_STATE_TIME  NTICKS_PER_SECOND*60 // 60 seconds
+
+/*****************************************************************
  * Helpers
  ****************************************************************/
-
 #define _BV(bit_no) (1 << bit_no)
+#define forever while (1)
 
 #endif /* APPLICATION_CONFIG_H_ */

@@ -553,6 +553,35 @@ bool SB_Profile_NotificationStateChanged(SB_CHARACTERISTIC param ) {
 	return false;
 }
 
+bStatus_t SB_Profile_ClearNotificationState() {
+	uint8_t i, result;
+	gattAttribute_t * attr = NULL;
+
+	uint8_t entity = ICall_getEntityId();
+	if (entity == ICALL_INVALID_ENTITY_ID) {
+		return INVALID_TASK;
+	}
+
+	for (i = 0; i < SERVAPP_NUM_ATTR_SUPPORTED; ++i) {
+		if (simpleProfileAttrTbl[i].pValue == (uint8_t*)&readingsCharConfig) {
+			attr = &simpleProfileAttrTbl[i];
+			break;
+		}
+	}
+
+	if (NULL == attr) {
+		return NV_OPER_FAILED;
+	}
+
+	for (i = 0; i < linkDBNumConns; ++i) {
+		if (SUCCESS != (result = GATTServApp_ProcessCCCWriteReq( readingsCharConfig[i].connHandle, attr, 0, 2, 0, GATT_CLIENT_CFG_INDICATE ))) {
+			return result;
+		}
+	}
+
+	return SUCCESS;
+}
+
 /*********************************************************************
  * @fn          simpleProfile_ReadAttrCB
  *

@@ -12,8 +12,6 @@
 #include "../PROFILES/smartBandageProfile.h"
 #include <xdc/runtime/System.h>
 
-#define READINGS_MANAGER_THRESHOLD (SB_BLE_READINGS_LEN/sizeof(SB_PeripheralReadings))
-
 struct {
 	uint8_t bleReadingsPopulated: 1;
 } RM;
@@ -68,6 +66,21 @@ SB_Error SB_readingsManagerInit() {
 	return NoError;
 }
 
+bool SB_sendNotificationIfSubscriptionChanged(bool forceTry) {
+	if (forceTry || SB_Profile_NotificationStateChanged( SB_CHARACTERISTIC_READINGS )) {
+		uint8_t status;
+		if (0 != (status = SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC_READINGS ))) {
+			System_printf("Failed to mark characteristic updated %d\n", status);
+
+			return false;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 /*********************************************************************
  * @fn      SB_newReadingsAvailable
  *
@@ -86,13 +99,7 @@ SB_Error SB_newReadingsAvailable() {
 
 	// If there are readings currently available don't do anything
 	if (RM.bleReadingsPopulated) {
-
-		if (SB_Profile_NotificationStateChanged( SB_CHARACTERISTIC_READINGS )) {
-			if (0 != (status = SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC_READINGS ))) {
-				System_printf("Failed to mark characteristic updated %d\n", status);
-			}
-		}
-
+		SB_sendNotificationIfSubscriptionChanged(false);
 		return NoError;
 	}
 
@@ -169,6 +176,9 @@ SB_Error SB_currentReadingsRead() {
 	SB_PeripheralReadings* basePtr;
 
 	RM.bleReadingsPopulated = false;
+
+	System_printf("BLE Readings Read. %d readings remaining.\n", SB_flashReadingCount());
+	System_flush();
 
 	if (SB_flashReadingCount() >= READINGS_MANAGER_THRESHOLD) {
 		// If there are more readings available, place the next once in the characteristic buffer
