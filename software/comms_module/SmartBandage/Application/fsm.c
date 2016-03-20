@@ -27,13 +27,11 @@ SB_State SB_errorEvent(); //a more permanent error caught
 SB_State SB_dataChanged(void);
 SB_State SB_returnToSleep(void);
 void SB_setError(SB_Error);
+void SB_callCallback(SB_State_Transition transition, SB_State state);
 
-//EDITED HERE
-
-//void SB_registerStateTransitionCallback((void*), SB_State_Transition); // not sure if the (void *) is the correct way of prototyping for void(*function)(void)
-void SB_addCallback(SB_CallbackFunc* );
-transitionTable *callbackTable = NULL;
-UInt taskKey;
+struct {
+	SB_CallbackFunc *callbacks;
+} callbackTable;
 
 //LUT TABLE
 //TODO: If we continue to run out of heap, implement this in a switch statement as with 5 events and 6 states this is 120bytes of memory
@@ -53,18 +51,15 @@ SB_SystemState systemState = {
 	.lastState    = S_INIT,
 	.currentError = NoError,
 	.lastError    = NoError,
-	};
-
-//EDITED HERE
-//switch the states
+};
 
 /* ASSUMPTIONS:
  *  - the tasks will have been previously created, and in the function SB_switchState we are using the tasks, but not creating any new ones
- *
- *
- *
  */
 SB_State SB_switchState(SB_State newState) {
+	SB_State oldState = systemState.currentState;
+	SB_callCallback(T_STATE_PRE_EXIT, systemState.currentState);
+
 	switch (newState) {
 	case S_INIT:
 
@@ -77,14 +72,17 @@ SB_State SB_switchState(SB_State newState) {
 		// No "break" on purpose
 
 	case S_ERROR_TEMP:
-
+		SB_callCallback(T_STATE_PRE_ENTER, newState);
 		systemState.currentState = newState;
 		break;
 
 	default:
-
+		SB_callCallback(T_STATE_PRE_ENTER, S_ERROR_PERM);
 		systemState.currentState = S_ERROR_PERM;
 	}
+
+	SB_callCallback(T_STATE_EXIT, oldState);
+	SB_callCallback(T_STATE_ENTER, systemState.currentState);
 
 	return systemState.currentState;
 }
@@ -159,71 +157,57 @@ inline SB_State SB_currentState() {
 	return systemState.currentState;
 }
 
-
 // Called from within periheral functions to register that the peripheral will need to be revisited when the state changes
-void SB_registerStateTransitionCallback(void function(void), SB_State_Transition peripheral) {
-	//create the callback
-	SB_CallbackFunc *newCallback;
+SB_Error SB_registerStateTransitionCallback(SB_StateTransitionCallbackFunc function, SB_State_Transition transition, SB_State state) {
+	SB_CallbackFunc *newCallback, *current;
+
+	if (NULL == function) {
+		return InvalidParameter;
+	}
+
 	newCallback = (SB_CallbackFunc*)malloc( sizeof(SB_CallbackFunc));
-	newCallback->transition = peripheral;
+	if (NULL == newCallback) {
+		return OutOfMemory;
+	}
+
+	newCallback->state = state;
+	newCallback->transition = transition;
 	newCallback->function = function;
-	newCallback->next = 0; //start with the new callback not pointing to anything
-	//add the callback to the transition table
-	SB_addCallback(newCallback);
+	newCallback->next = NULL;
+
+	if (NULL == callbackTable.callbacks) {
+		callbackTable.callbacks = newCallback;
+		return NoError;
+	}
+
+	current = callbackTable.callbacks;
+
+	while (NULL != current->next) {
+		current = current->next;
+	}
+
+	current->next = newCallback;
+
+	return NoError;
 }
 
-/*
-void SB_registerEvent(SB_EventHandler eventHandler, SB_State state) {
-	//passes function pointer to be called in the future
-	(*eventHandler)();
-}
-*/
-
-
-// This will be put within the switchstate cases to make sure the peripherals are dealt with correctly
-// This will be put within the switchstate cases to make sure the peripherals are dealt with correctly
-void SB_callCallback( SB_State_Transition state) {
-	//check if the linked list in empty, if it is then don't do anything, if it isn't, then iterate through list and call functions
-    SB_CallbackFunc *current;
-	if(callbackTable == NULL) {
-        return;
-	}
-	current = callbackTable->callbacks ;
-	// disable context switching for other tasks in this section
-	taskKey = Task_disable();
-	while(current->next != NULL) {
-		if(state == current->transition){
-			current->function();
-			current = current->next;
-		} else {
-			current = current->next;
-		}
-	}
-	//current = current->next;
-	if(state == current->transition) {
-		current->function();
-	}
-	// restore context switching for other tasks at this point
-	Task_restore(taskKey);
-}
-
-
-// Function to add the callbacks to the list to be used later.
-void SB_addCallback( SB_CallbackFunc *callback ){
-	if(callbackTable == NULL) {
-        callbackTable = malloc(sizeof(transitionTable));
-        callbackTable->callbacks = callback;
+void SB_callCallback(SB_State_Transition transition, SB_State state) {
+	UInt taskKey;
+    SB_CallbackFunc *current = callbackTable.callbacks;
+	if (current == NULL) {
 		return;
 	}
 
-	SB_CallbackFunc *current = callbackTable->callbacks;
-
-	if ( current != 0 ) {
-		while ( current->next != 0)
-		{
-			current = current->next;
+	// disable context switching for other tasks in this section
+	taskKey = Task_disable();
+	do {
+		if (transition == current->transition && state == current->state && NULL != current->function) {
+			current->function(transition, state);
 		}
-	}
-	current->next = callback;
-}
 
+		current = current->next;
+	} while (current != NULL);
+
+	// restore context switching for other tasks at this point
+	Task_restore(taskKey);
+}

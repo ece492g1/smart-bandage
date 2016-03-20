@@ -4,7 +4,6 @@
 #include "hci_tl.h"
 #include "Board.h"
 
-
 //main states for the state machine for the mcu
 typedef enum {
 	S_SLEEP,
@@ -31,33 +30,24 @@ typedef enum {
 	SB_NUM_EVENTS
 } SB_Event;
 
-//EDITED HERE
 // the transition stages of the state machine for the mcu
 typedef enum {
-	enterSleep,
-	enterCheck,
-	enterTransmit,
-	enterTempError,
-	enterPermError,
-	enterInit //this is needed for the case where you are going from the temp error and trying to initialize again
-
+	T_STATE_ENTER,
+	T_STATE_PRE_ENTER,
+	T_STATE_EXIT,
+	T_STATE_PRE_EXIT,
 } SB_State_Transition;
 
-//EDITED HERE
+typedef void (*SB_StateTransitionCallbackFunc)(SB_State_Transition, SB_State);
+
 struct SB_CallbackFunc_struct;
 struct SB_CallbackFunc_struct {
 	struct SB_CallbackFunc_struct *next;
-	void(*function)(void);//(SB_State_Transition transition);
-	SB_State_Transition transition;
+	SB_StateTransitionCallbackFunc function;
+	SB_State_Transition transition : 2;
+	SB_State state : 6;
 };
 typedef struct SB_CallbackFunc_struct SB_CallbackFunc;
-
-//EDITED HERE
-#define NUM_TRANSITIONS 6
-
-typedef struct {
-	SB_CallbackFunc *callbacks;//[NUM_TRANSITIONS]; //?
-} transitionTable;
 
 typedef struct {
 	SB_State lastState;
@@ -67,12 +57,10 @@ typedef struct {
 	SB_Error lastError;
 } SB_SystemState;
 
-
-//function prototypes
-SB_State SB_switchState(SB_State); //?
+SB_State SB_switchState(SB_State);
 SB_Event SB_getNewEvent(void);
 SB_State SB_handleEvent(SB_Event);
 SB_State SB_currentState();
-
+SB_Error SB_registerStateTransitionCallback(SB_StateTransitionCallbackFunc function, SB_State_Transition transition, SB_State state);
 
 #endif

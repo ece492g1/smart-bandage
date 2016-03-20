@@ -57,7 +57,7 @@
 // Connection Pause Peripheral time value (in seconds)
 #define DEFAULT_CONN_PAUSE_PERIPHERAL         6
 
-#define DEFAULT_INITIAL_ADVERTISING			  TRUE
+#define DEFAULT_INITIAL_ADVERTISING			  FALSE
 
 // Default passkey "000000"
 #define DEFAULT_PASSKEY						  0
@@ -85,5 +85,8 @@
 //extern void SB_bleInit();
 extern void SB_processBLEMessages();
 extern void SimpleBLEPeripheral_init(void);
+extern SB_Error SB_enableBLE();
+extern SB_Error SB_disableBLE();
+extern bool SB_bleConnected();
 
 #endif /* APPLICATION_BLE_H_ */

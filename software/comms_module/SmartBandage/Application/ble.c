@@ -59,6 +59,8 @@ static ICall_Semaphore sem;
 static Queue_Struct appMsg;
 static Queue_Handle appMsgQueue;
 
+static volatile bool bleConnected = false;
+
 #if defined(FEATURE_OAD)
 // Event data from OAD profile.
 static Queue_Struct oadQ;
@@ -121,13 +123,8 @@ static uint8_t advertData[] =
   // in this peripheral
   0x03,   // length of this data
   GAP_ADTYPE_16BIT_MORE,      // some of the UUID's, but not all
-#ifdef FEATURE_OAD
-  LO_UINT16(OAD_SERVICE_UUID),
-  HI_UINT16(OAD_SERVICE_UUID)
-#else
   LO_UINT16(SB_BLE_SERV_UUID),
   HI_UINT16(SB_BLE_SERV_UUID)
-#endif //!FEATURE_OAD
 };
 
 // GAP GATT Attributes
@@ -158,11 +155,6 @@ static void SimpleBLEPeripheral_charValueChangeCB(uint8_t paramID);
 #endif //!FEATURE_OAD
 static void SimpleBLEPeripheral_enqueueMsg(uint8_t event, uint8_t state);
 
-#ifdef FEATURE_OAD
-void SimpleBLEPeripheral_processOadWriteCB(uint8_t event, uint16_t connHandle,
-                                           uint8_t *pData);
-#endif //FEATURE_OAD
-
 /*********************************************************************
  * PROFILE CALLBACKS
  */
@@ -181,19 +173,10 @@ static gapBondCBs_t SB_BondMgrCBs =
 };
 
 // Simple GATT Profile Callbacks
-#ifndef FEATURE_OAD
 static simpleProfileCBs_t SB_simpleProfileCBs =
 {
   SimpleBLEPeripheral_charValueChangeCB // Characteristic value change callback
 };
-#endif //!FEATURE_OAD
-
-#ifdef FEATURE_OAD
-static oadTargetCBs_t simpleBLEPeripheral_oadCBs =
-{
-  SimpleBLEPeripheral_processOadWriteCB // Write Callback.
-};
-#endif //FEATURE_OAD
 
 /*********************************************************************
  * PUBLIC FUNCTIONS
@@ -307,6 +290,28 @@ void SimpleBLEPeripheral_init(void)
 
 	// Register for GATT local events and ATT Responses pending for transmission
 	GATT_RegisterForMsgs(selfEntity);
+}
+
+SB_Error SB_enableBLE() {
+	uint8_t status = SUCCESS;
+	uint8_t advertEnable = true;
+
+	// Set the GAP Role Parameters
+	status |= GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t), &advertEnable);
+
+	return status == SUCCESS ? NoError : UnknownError;
+}
+
+SB_Error SB_disableBLE() {
+	uint8_t status = SUCCESS;
+	uint8_t advertEnable = false;
+
+	// Set the GAP Role Parameters
+	status |= GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t), &advertEnable);
+
+	status |= GAPRole_TerminateConnection();
+
+	return status == SUCCESS ? NoError : UnknownError;
 }
 
 void SB_processBLEMessages() {
@@ -552,8 +557,7 @@ static void SimpleBLEPeripheral_processAppMsg(sbpEvt_t *pMsg)
   switch (pMsg->hdr.event)
   {
     case SBP_STATE_CHANGE_EVT:
-      SimpleBLEPeripheral_processStateChangeEvt((gaprole_States_t)pMsg->
-                                                hdr.state);
+      SimpleBLEPeripheral_processStateChangeEvt((gaprole_States_t)pMsg->hdr.state);
       break;
 
     case SBP_CHAR_CHANGE_EVT:
@@ -591,34 +595,13 @@ static void SimpleBLEPeripheral_stateChangeCB(gaprole_States_t newState)
  */
 static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState)
 {
-#ifdef PLUS_BROADCASTER
-  static bool firstConnFlag = false;
-#endif // PLUS_BROADCASTER
-
+	uint8_t error;
   switch ( newState )
   {
     case GAPROLE_STARTED:
       {
         uint8_t ownAddress[B_ADDR_LEN];
-//        uint8_t systemId[DEVINFO_SYSTEM_ID_LEN];
-
         GAPRole_GetParameter(GAPROLE_BD_ADDR, ownAddress);
-
-        // use 6 bytes of device address for 8 bytes of system ID value
-//        systemId[0] = ownAddress[0];
-//        systemId[1] = ownAddress[1];
-//        systemId[2] = ownAddress[2];
-//
-//        // set middle bytes to zero
-//        systemId[4] = 0x00;
-//        systemId[3] = 0x00;
-//
-//        // shift three bytes up
-//        systemId[7] = ownAddress[5];
-//        systemId[6] = ownAddress[4];
-//        systemId[5] = ownAddress[3];
-
-//        DevInfo_SetParameter(DEVINFO_SYSTEM_ID, DEVINFO_SYSTEM_ID_LEN, systemId);
 
         // Display device address
         System_printf(Util_convertBdAddr2Str(ownAddress));
@@ -630,64 +613,14 @@ static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState)
     	System_printf("BLE Advertising\n");
       break;
 
-#ifdef PLUS_BROADCASTER
-    /* After a connection is dropped a device in PLUS_BROADCASTER will continue
-     * sending non-connectable advertisements and shall sending this change of
-     * state to the application.  These are then disabled here so that sending
-     * connectable advertisements can resume.
-     */
-    case GAPROLE_ADVERTISING_NONCONN:
-      {
-        uint8_t advertEnabled = FALSE;
-
-        // Disable non-connectable advertising.
-        GAPRole_SetParameter(GAPROLE_ADV_NONCONN_ENABLED, sizeof(uint8_t),
-                           &advertEnabled);
-
-        advertEnabled = TRUE;
-
-        // Enabled connectable advertising.
-        GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t),
-                             &advertEnabled);
-
-        // Reset flag for next connection.
-        firstConnFlag = false;
-
-        SimpleBLEPeripheral_freeAttRsp(bleNotConnected);
-      }
-      break;
-#endif //PLUS_BROADCASTER
-
     case GAPROLE_CONNECTED:
       {
+    	  bleConnected = true;
         uint8_t peerAddress[B_ADDR_LEN];
 
         GAPRole_GetParameter(GAPROLE_CONN_BD_ADDR, peerAddress);
 
-        System_printf("BLE Connected\n");
-        System_printf(Util_convertBdAddr2Str(peerAddress));
-
-        #ifdef PLUS_BROADCASTER
-          // Only turn advertising on for this state when we first connect
-          // otherwise, when we go from connected_advertising back to this state
-          // we will be turning advertising back on.
-          if (firstConnFlag == false)
-          {
-            uint8_t advertEnabled = FALSE; // Turn on Advertising
-
-            // Disable connectable advertising.
-            GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t),
-                                 &advertEnabled);
-
-            // Set to true for non-connectabel advertising.
-            advertEnabled = TRUE;
-
-            // Enable non-connectable advertising.
-            GAPRole_SetParameter(GAPROLE_ADV_NONCONN_ENABLED, sizeof(uint8_t),
-                                 &advertEnabled);
-            firstConnFlag = true;
-          }
-        #endif // PLUS_BROADCASTER
+        System_printf("BLE Connected %s\n", Util_convertBdAddr2Str(peerAddress));
       }
       break;
 
@@ -696,20 +629,23 @@ static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState)
       break;
 
     case GAPROLE_WAITING:
+    	bleConnected = false;
+    	if (0 != (error = SB_Profile_ClearNotificationState())) {
+			System_printf("Clearing gatt notification state failed! %d\n", error);
+		}
       SimpleBLEPeripheral_freeAttRsp(bleNotConnected);
 
       System_printf("BLE Disconnected\n");
       break;
 
     case GAPROLE_WAITING_AFTER_TIMEOUT:
+    	bleConnected = false;
+    	if (0 != (error = SB_Profile_ClearNotificationState())) {
+			System_printf("Clearing gatt notification state failed! %d\n", error);
+		}
       SimpleBLEPeripheral_freeAttRsp(bleNotConnected);
 
       System_printf("BLE Timed Out\n");
-
-      #ifdef PLUS_BROADCASTER
-        // Reset flag for next connection.
-        firstConnFlag = false;
-      #endif //#ifdef (PLUS_BROADCASTER)
       break;
 
     case GAPROLE_ERROR:
@@ -720,12 +656,12 @@ static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState)
     	System_printf("\n");
       break;
   }
-
-  // Update the state
-  //gapProfileState = newState;
 }
 
-#ifndef FEATURE_OAD
+bool SB_bleConnected() {
+	return bleConnected;
+}
+
 /*********************************************************************
  * @fn      SimpleBLEPeripheral_charValueChangeCB
  *
@@ -740,7 +676,6 @@ static void SimpleBLEPeripheral_charValueChangeCB(uint8_t paramID)
 {
   SimpleBLEPeripheral_enqueueMsg(SBP_CHAR_CHANGE_EVT, paramID);
 }
-#endif //!FEATURE_OAD
 
 /*********************************************************************
  * @fn      SimpleBLEPeripheral_processCharValueChangeEvt
@@ -754,7 +689,6 @@ static void SimpleBLEPeripheral_charValueChangeCB(uint8_t paramID)
  */
 static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
 {
-#ifndef FEATURE_OAD
 	uint8_t newValue[4];
 
 	switch(paramID)
@@ -772,53 +706,23 @@ static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
 			System_printf("Readings read.\n Reading count set: %d\n", *(uint16_t*)newValue);
 
 			SB_currentReadingsRead();
+			break;
+
+		case SB_CHARACTERISTIC_READINGS:
+			// Notification state of the readings parameter was changed
+			System_printf("Android notification subscription status changed\n");
+//			System_flush();
+
+			if (SB_bleConnected() && SB_Profile_ReadingsNotificationsEnabled()) {
+				SB_sendNotificationIfSubscriptionChanged(true);
+			}
+			break;
 
 		default:
 			// should not reach here!
 			break;
 	}
-#endif //!FEATURE_OAD
 }
-
-#if defined(FEATURE_OAD)
-/*********************************************************************
- * @fn      SimpleBLEPeripheral_processOadWriteCB
- *
- * @brief   Process a write request to the OAD profile.
- *
- * @param   event      - event type:
- *                       OAD_WRITE_IDENTIFY_REQ
- *                       OAD_WRITE_BLOCK_REQ
- * @param   connHandle - the connection Handle this request is from.
- * @param   pData      - pointer to data for processing and/or storing.
- *
- * @return  None.
- */
-void SimpleBLEPeripheral_processOadWriteCB(uint8_t event, uint16_t connHandle,
-                                           uint8_t *pData)
-{
-  oadTargetWrite_t *oadWriteEvt = ICall_malloc( sizeof(oadTargetWrite_t) + \
-                                             sizeof(uint8_t) * OAD_PACKET_SIZE);
-
-  if ( oadWriteEvt != NULL )
-  {
-    oadWriteEvt->event = event;
-    oadWriteEvt->connHandle = connHandle;
-
-    oadWriteEvt->pData = (uint8_t *)(&oadWriteEvt->pData + 1);
-    memcpy(oadWriteEvt->pData, pData, OAD_PACKET_SIZE);
-
-    Queue_enqueue(hOadQ, (Queue_Elem *)oadWriteEvt);
-
-    // Post the application's semaphore.
-    Semaphore_post(sem);
-  }
-  else
-  {
-    // Fail silently.
-  }
-}
-#endif //FEATURE_OAD
 
 /*********************************************************************
  * @fn      SimpleBLEPeripheral_enqueueMsg

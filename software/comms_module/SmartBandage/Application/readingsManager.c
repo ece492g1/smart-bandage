@@ -12,10 +12,9 @@
 #include "../PROFILES/smartBandageProfile.h"
 #include <xdc/runtime/System.h>
 
-#define READINGS_MANAGER_THRESHOLD (SB_BLE_READINGS_LEN/sizeof(SB_PeripheralReadings))
-
 struct {
 	uint8_t bleReadingsPopulated: 1;
+	uint8_t clearReadingsMode:    1;
 } RM;
 
 /*********************************************************************
@@ -26,6 +25,7 @@ struct {
 SB_Error SB_readingsManagerInit() {
 	SB_PeripheralReadings* basePtr;
 	RM.bleReadingsPopulated = false;
+	RM.clearReadingsMode = false;
 
 	if (SUCCESS != SB_Profile_Set16bParameter( SB_CHARACTERISTIC_READINGSIZE, sizeof(SB_PeripheralReadings), 0 )) {
 		System_printf("SB_CHARACTERISTIC_READINGSIZE\n");
@@ -68,13 +68,28 @@ SB_Error SB_readingsManagerInit() {
 	return NoError;
 }
 
+bool SB_sendNotificationIfSubscriptionChanged(bool forceTry) {
+	if (forceTry || SB_Profile_NotificationStateChanged( SB_CHARACTERISTIC_READINGS )) {
+		uint8_t status;
+		if (0 != (status = SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC_READINGS ))) {
+			System_printf("Failed to mark characteristic updated %d\n", status);
+
+			return false;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 /*********************************************************************
  * @fn      SB_newReadingsAvailable
  *
  * @brief   Called when new readings are available. May update bluetooth characteristics.
  */
 SB_Error SB_newReadingsAvailable() {
-	uint8_t i = 0, j = 0, status;
+	uint8_t i = 0, j = 0, status, numReadings;
 	uint32_t refTimestamp = 0;
 	SB_Error result;
 	SB_PeripheralReadings* basePtr;
@@ -86,17 +101,11 @@ SB_Error SB_newReadingsAvailable() {
 
 	// If there are readings currently available don't do anything
 	if (RM.bleReadingsPopulated) {
-
-		if (SB_Profile_NotificationStateChanged( SB_CHARACTERISTIC_READINGS )) {
-			if (0 != (status = SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC_READINGS ))) {
-				System_printf("Failed to mark characteristic updated %d\n", status);
-			}
-		}
-
+		SB_sendNotificationIfSubscriptionChanged(false);
 		return NoError;
 	}
 
-	if (SB_flashReadingCount() < READINGS_MANAGER_THRESHOLD) {
+	if (SB_flashReadingCount() < READINGS_MANAGER_THRESHOLD && !RM.clearReadingsMode || SB_flashReadingCount() == 0) {
 		return NoError;
 	}
 
@@ -110,7 +119,13 @@ SB_Error SB_newReadingsAvailable() {
 		return BLECharacteristicWriteError;
 	}
 
-	for (i = 0; i < READINGS_MANAGER_THRESHOLD; ++i) {
+	numReadings = READINGS_MANAGER_THRESHOLD;
+	if (SB_flashReadingCount() < READINGS_MANAGER_THRESHOLD) {
+		numReadings = SB_flashReadingCount();
+		memset(basePtr, 0, SB_BLE_READINGS_LEN);
+	}
+
+	for (i = 0; i < numReadings; ++i) {
 		uint32_t thisRef;
 
 		// Read from flash
@@ -133,7 +148,7 @@ SB_Error SB_newReadingsAvailable() {
 		} else {
 			// thisRef > refTimestamp
 			uint16_t diff = refTimestamp - thisRef;
-			for (j = i; j < READINGS_MANAGER_THRESHOLD; ++j) {
+			for (j = i; j < numReadings; ++j) {
 				basePtr[j].timeDiff += diff;
 			}
 		}
@@ -160,6 +175,10 @@ SB_Error SB_newReadingsAvailable() {
 	return NoError;
 }
 
+void SB_setClearReadingsMode(bool clearReadings) {
+	RM.clearReadingsMode = clearReadings & 1;
+}
+
 /*********************************************************************
  * @fn      SB_currentReadingsRead
  *
@@ -170,7 +189,10 @@ SB_Error SB_currentReadingsRead() {
 
 	RM.bleReadingsPopulated = false;
 
-	if (SB_flashReadingCount() >= READINGS_MANAGER_THRESHOLD) {
+	System_printf("BLE Readings Read. %d readings remaining.\n", SB_flashReadingCount());
+	System_flush();
+
+	if (SB_flashReadingCount() >= READINGS_MANAGER_THRESHOLD || RM.clearReadingsMode) {
 		// If there are more readings available, place the next once in the characteristic buffer
 		return SB_newReadingsAvailable();
 	}
