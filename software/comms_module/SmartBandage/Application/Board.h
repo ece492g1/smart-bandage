@@ -203,7 +203,7 @@ typedef enum {
  * State Timing
  ****************************************************************/
 #define SB_TRANSMIT_MIN_CONN_PERIOD NTICKS_PER_SECOND    // One second
-#define SB_TRANSMIT_MAX_STATE_TIME  NTICKS_PER_SECOND*60 // 60 seconds
+#define SB_TRANSMIT_MAX_STATE_TIME  NTICKS_PER_SECOND*10 // 10 seconds
 
 /*****************************************************************
  * Helpers

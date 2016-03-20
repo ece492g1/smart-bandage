@@ -706,6 +706,17 @@ static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
 			System_printf("Readings read.\n Reading count set: %d\n", *(uint16_t*)newValue);
 
 			SB_currentReadingsRead();
+			break;
+
+		case SB_CHARACTERISTIC_READINGS:
+			// Notification state of the readings parameter was changed
+			System_printf("Android notification subscription status changed\n");
+//			System_flush();
+
+			if (SB_bleConnected() && SB_Profile_ReadingsNotificationsEnabled()) {
+				SB_sendNotificationIfSubscriptionChanged(true);
+			}
+			break;
 
 		default:
 			// should not reach here!

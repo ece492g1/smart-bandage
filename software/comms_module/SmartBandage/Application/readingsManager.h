@@ -42,4 +42,6 @@ SB_Error SB_currentReadingsRead();
 
 bool SB_sendNotificationIfSubscriptionChanged(bool forceTry);
 
+void SB_setClearReadingsMode(bool clearReadings);
+
 #endif /* APPLICATION_READINGSMANAGER_H_ */

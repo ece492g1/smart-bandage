@@ -572,10 +572,10 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 
 	SB_switchState(S_CHECK);
 
+	bool bleLedStatus = false;
+	uint8_t nChecks = 0;
+	uint32_t startTime;
 	forever {
-		static uint8_t nChecks = 0;
-		uint32_t startTime;
-
 		// Wait for a state change to occur
 		Semaphore_pend(PMGR.stateSem, BIOS_WAIT_FOREVER);
 		System_printf("Loop started %d\n", SB_currentState());
@@ -619,6 +619,16 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 				System_printf("Error enabling BLE for transmission: %d", error);
 			}
 
+			// Turn on the BLE LED
+#ifndef LAUNCHPAD
+			bleLedStatus = true;
+			if (NoError != tca9554a_setPinStatus(&PMGR.ioexpanderDevice, &PMGR.i2cDeviceSem, IOEXP_I2CSTATUS_PIN_BLE, bleLedStatus)) {
+				System_printf("IOEXP Error");
+				System_flush();
+			}
+			PMANAGER_TASK_YIELD_HIGHERPRI();
+#endif
+
 			// Do a single quick reading now
 			result = readSensorData();
 			if (NoError != result) {
@@ -633,29 +643,32 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 			// aren't adding new readings in the transmit state.
 
 			// Spend the next SB_TRANSMIT_MAX_STATE_TIME talking over bluetooth
-			for (startTime = Clock_getTicks(); (Clock_getTicks() - startTime) < SB_TRANSMIT_MAX_STATE_TIME;) {
-				while (SB_flashReadingCount() >= READINGS_MANAGER_THRESHOLD) {
-					if (SB_sendNotificationIfSubscriptionChanged(false)) {
+			SB_setClearReadingsMode(true);
 
-					}
+			startTime = Clock_getTicks();
+			while ((Clock_getTicks() - startTime) < SB_TRANSMIT_MAX_STATE_TIME) {
+#ifndef LAUNCHPAD
+				bleLedStatus = !bleLedStatus;
+				tca9554a_setPinStatus(&PMGR.ioexpanderDevice, &PMGR.i2cDeviceSem, IOEXP_I2CSTATUS_PIN_BLE, bleLedStatus);
+#endif
+				//					if (SB_sendNotificationIfSubscriptionChanged(false)) {
+//
+//					}
 
-					// This could end up taking up to SB_TRANSMIT_MIN_CONN_PERIOD more than SB_TRANSMIT_MAX_STATE_TIME. Do we care?
-					ICall_Errno errno = ICall_wait(SB_TRANSMIT_MIN_CONN_PERIOD/NTICKS_PER_MILLSECOND);
+				// This could end up taking up to SB_TRANSMIT_MIN_CONN_PERIOD more than SB_TRANSMIT_MAX_STATE_TIME. Do we care?
+				ICall_Errno errno = ICall_wait(500);
 
-					if (errno == ICALL_ERRNO_SUCCESS)
-					{
-						SB_processBLEMessages();
-					} else {
-						// Handle the error that a request wasn't received in a SB_TRANSMIT_MIN_CONN_PERIOD
+				if (errno == ICALL_ERRNO_SUCCESS)
+				{
+					SB_processBLEMessages();
+				} else {
+					// Handle the error that a request wasn't received in a SB_TRANSMIT_MIN_CONN_PERIOD
 //						System_printf("No BLE message in the last %d seconds\n", SB_TRANSMIT_MIN_CONN_PERIOD/NTICKS_PER_SECOND);
-						break;
-					}
-				}
-
-				if (SB_flashReadingCount() < READINGS_MANAGER_THRESHOLD) {
-					break;
+//						break;
 				}
 			}
+
+			SB_setClearReadingsMode(false);
 
 			// TODO: We need to wait for this to finish disconnecting, and for the final notification to be received
 			error = SB_disableBLE();
@@ -665,14 +678,19 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 #endif
 			}
 
+			uint8_t timeouts = 0;
 			while (SB_bleConnected()) {
+#ifndef LAUNCHPAD
+				bleLedStatus = !bleLedStatus;
+				tca9554a_setPinStatus(&PMGR.ioexpanderDevice, &PMGR.i2cDeviceSem, IOEXP_I2CSTATUS_PIN_BLE, bleLedStatus);
+#endif
 				// This could end up taking up to SB_TRANSMIT_MIN_CONN_PERIOD more than SB_TRANSMIT_MAX_STATE_TIME. Do we care?
-				ICall_Errno errno = ICall_wait(10*SB_TRANSMIT_MIN_CONN_PERIOD/NTICKS_PER_MILLSECOND);
+				ICall_Errno errno = ICall_wait(500);
 
 				if (errno == ICALL_ERRNO_SUCCESS)
 				{
 					SB_processBLEMessages();
-				} else {
+				} else if (++timeouts > 20) {
 					// Handle the error that a request wasn't received in a SB_TRANSMIT_MIN_CONN_PERIOD
 //						System_printf("No BLE message in the last %d seconds\n", SB_TRANSMIT_MIN_CONN_PERIOD/NTICKS_PER_SECOND);
 					break;
@@ -681,6 +699,10 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 
 #ifdef SB_DEBUG
 			System_flush();
+#endif
+#ifndef LAUNCHPAD
+			bleLedStatus = false;
+			tca9554a_setPinStatus(&PMGR.ioexpanderDevice, &PMGR.i2cDeviceSem, IOEXP_I2CSTATUS_PIN_BLE, bleLedStatus);
 #endif
 
 			// Transition out of the transmit state

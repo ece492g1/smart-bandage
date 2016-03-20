@@ -248,6 +248,8 @@ extern bool SB_Profile_NotificationStateChanged(SB_CHARACTERISTIC param );
 
 extern bStatus_t SB_Profile_ClearNotificationState();
 
+extern bool SB_Profile_ReadingsNotificationsEnabled();
+
 /*********************************************************************
 *********************************************************************/
 
