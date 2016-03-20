@@ -574,6 +574,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 
 	bool bleLedStatus = false;
 	uint8_t nChecks = 0;
+	uint8_t timeouts = 0;
 	uint32_t startTime;
 	forever {
 		// Wait for a state change to occur
@@ -678,7 +679,6 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 #endif
 			}
 
-			uint8_t timeouts = 0;
 			while (SB_bleConnected()) {
 #ifndef LAUNCHPAD
 				bleLedStatus = !bleLedStatus;
@@ -690,12 +690,14 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 				if (errno == ICALL_ERRNO_SUCCESS)
 				{
 					SB_processBLEMessages();
-				} else if (++timeouts > 20) {
+				} else if (++timeouts > 10) {
 					// Handle the error that a request wasn't received in a SB_TRANSMIT_MIN_CONN_PERIOD
 //						System_printf("No BLE message in the last %d seconds\n", SB_TRANSMIT_MIN_CONN_PERIOD/NTICKS_PER_SECOND);
 					break;
 				}
 			}
+
+			timeouts = 0;
 
 #ifdef SB_DEBUG
 			System_flush();

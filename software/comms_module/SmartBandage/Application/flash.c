@@ -286,7 +286,16 @@ SB_Error SB_flashReadNext(uint8_t * reading, uint32_t * refTimestamp) {
 		header.startPage = (header.startPage + 1) % SB_FLASH_NUM_PAGES;
 	}
 
-	--header.entryCount;
+	if (--header.entryCount == 0) {
+		// There are now no entries stored. Clear flash memory and reset.
+		uint8_t i;
+		for (i = 0; i < SB_FLASH_NUM_PAGES; ++i) {
+			erasePage(i + SB_FLASH_PAGE_FIRST);
+		}
+
+		// After performing page erases this will reset the header to default values
+		return loadNextHeader(SB_FLASH_PAGE_FIRST, 0, &header, header.readingSizeBytes);
+	}
 
 	return NoError;
 }
