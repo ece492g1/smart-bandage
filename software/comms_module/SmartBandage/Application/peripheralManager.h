@@ -54,5 +54,6 @@ SB_Error SB_peripheralInit();
 SB_Error SB_setPeripheralsEnable(bool enable);
 SB_Error SB_sysDisableRefresh(uint32 semaphoreTimeout);
 SB_Error SB_sysDisableShutdown();
+SB_Error SB_selectMoistureSensorInput(SB_MoistureSensorLine line, SB_MoistureSensorVoltage voltage, uint32_t timeout);
 
 #endif /* APPLICATION_PERIPHERALMANAGER_H_ */
