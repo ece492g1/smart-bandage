@@ -28,13 +28,17 @@ SB_Error SB_readingsManagerInit() {
 	RM.clearReadingsMode = false;
 
 	if (SUCCESS != SB_Profile_Set16bParameter( SB_CHARACTERISTIC_READINGSIZE, sizeof(SB_PeripheralReadings), 0 )) {
-		System_printf("SB_CHARACTERISTIC_READINGSIZE\n");
 		return BLECharacteristicWriteError;
 	}
 
 	// Update the reading count
 	if (SUCCESS != SB_Profile_SetParameter( SB_CHARACTERISTIC_READINGCOUNT, sizeof(uint32_t), SB_flashReadingCountRef())) {
-		System_printf("SB_CHARACTERISTIC_READINGCOUNT\n");
+		return BLECharacteristicWriteError;
+	}
+
+	// Update the reading reference time
+	uint32_t refTime = SB_flashGetReferenceTime();
+	if (SUCCESS != SB_Profile_SetParameter( SB_CHARACTERISTIC_READINGREFTIMESTAMP, sizeof(uint32_t), &refTime)) {
 		return BLECharacteristicWriteError;
 	}
 
@@ -129,7 +133,7 @@ SB_Error SB_newReadingsAvailable() {
 		uint32_t thisRef;
 
 		// Read from flash
-		if (NoError != (result = SB_flashReadNext((uint8_t*) &basePtr[i], &thisRef))) {
+		if (NoError != (result = SB_flashReadNext(&basePtr[i], &thisRef))) {
 			return result;
 		}
 

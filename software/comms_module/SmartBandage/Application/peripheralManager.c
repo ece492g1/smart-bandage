@@ -15,6 +15,7 @@
 #include "util.h"
 #include "ble.h"
 #include "fsm.h"
+#include "clock.h"
 #include "bandage.h"
 #include "Devices/mcp9808.h"
 #include "Devices/hdc1050.h"
@@ -502,7 +503,7 @@ SB_Error readSensorData() {
 #endif
 
 	// Write the data to flash storage
-	readings.timeDiff = readingNo++;
+	readings.timeDiff = SB_clockGetTime() - SB_flashGetReferenceTime();
 	result = SB_flashWriteReadings(&readings);
 	if (NoError != result) {
 		return result;
@@ -522,6 +523,8 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	System_printf("Peripheral manager task started...\n");
 	System_flush();
 #endif
+
+	SB_clockInit();
 
 	SimpleBLEPeripheral_init();
 
@@ -612,7 +615,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		Semaphore_pend(PMGR.stateSem, BIOS_WAIT_FOREVER);
 		System_printf("Loop started %d\n", SB_currentState());
 		System_flush();
-		Task_sleep(NTICKS_PER_SECOND/2);
+		Task_sleep(NTICKS_PER_SECOND*5);
 
 		switch (SB_currentState()) {
 		case S_CHECK:

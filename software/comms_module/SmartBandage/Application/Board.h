@@ -28,7 +28,7 @@
  * General Configuration
  ****************************************************************/
 // System clock ticks at 10us period
-#define NTICKS_PER_SECOND 100000
+#define NTICKS_PER_SECOND 100000U
 #define NTICKS_PER_MILLSECOND NTICKS_PER_SECOND/1000
 
 #define DEFAULT_TASK_STACK_SIZE 512

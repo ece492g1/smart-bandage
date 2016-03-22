@@ -10,11 +10,13 @@
 
 #include "hci_tl.h"
 #include "Board.h"
+#include "readingsManager.h"
 
-#define SB_FLASH_COUNT_T   uint32_t
-#define SB_FLASH_PAGE_T    uint16_t
-#define SB_FLASH_OFFSET_T  uint16_t
-#define SB_FLASH_POINTER_T uint32_t
+#define SB_FLASH_COUNT_T   		uint32_t
+#define SB_FLASH_PAGE_T    		uint16_t
+#define SB_FLASH_OFFSET_T  		uint16_t
+#define SB_FLASH_POINTER_T 		uint32_t
+#define SB_FLASH_READING_TYPE	SB_PeripheralReadings
 
 /*********************************************************************
  * @fn      SB_flashInit
@@ -39,7 +41,7 @@ SB_Error SB_flashInit(uint8 readingSizeBytes, bool reinit);
  *
  * @return  NoError if properly written, otherwise the error
  */
-SB_Error SB_flashWriteReadings(void * readings);
+SB_Error SB_flashWriteReadings(SB_FLASH_READING_TYPE * readings);
 
 /*********************************************************************
  * @fn      SB_flashReadingCount
@@ -71,7 +73,7 @@ const SB_FLASH_COUNT_T* SB_flashReadingCountRef();
  *
  * @return  NoError if properly read, otherwise the error. If error `reading` will be NULL.
  */
-SB_Error SB_flashGetReading(SB_FLASH_COUNT_T index, uint8_t * reading, uint32_t * refTimestamp);
+SB_Error SB_flashGetReading(SB_FLASH_COUNT_T index, SB_FLASH_READING_TYPE * reading, uint32_t * refTimestamp);
 
 /*********************************************************************
  * @fn      SB_flashReadNext
@@ -83,7 +85,7 @@ SB_Error SB_flashGetReading(SB_FLASH_COUNT_T index, uint8_t * reading, uint32_t 
  *
  * @return  NoError if properly read, otherwise the error. If error `reading` will be NULL.
  */
-SB_Error SB_flashReadNext(uint8_t * reading, uint32_t * refTimestamp);
+SB_Error SB_flashReadNext(SB_FLASH_READING_TYPE * reading, uint32_t * refTimestamp);
 
 /*********************************************************************
  * @fn      SB_flashPrepShutdown
@@ -93,5 +95,9 @@ SB_Error SB_flashReadNext(uint8_t * reading, uint32_t * refTimestamp);
  * @return  NoError if properly read, otherwise the error
  */
 SB_Error SB_flashPrepShutdown();
+
+SB_Error SB_flashTimeSet();
+
+uint32_t SB_flashGetReferenceTime();
 
 #endif /* APPLICATION_FLASH_H_ */
