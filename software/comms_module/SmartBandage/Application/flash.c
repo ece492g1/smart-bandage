@@ -422,7 +422,7 @@ SB_Error writeAligned(uint8 * buf, uint8 count, SB_FLASH_PAGE_T page, SB_FLASH_O
 	SB_Error result;
 
 	while (writtenBytes < count) {
-		bool bankOverrun = false, pageOverrun = false;
+		bool pageOverrun = false;
 		// If applicable adjust the count so that we don't go over a memory bank boundary
 //		if (((address + thisCount) / SB_FLASH_PAGE_SIZE) / SB_FLASH_BANK_PAGE_COUNT > currentMemoryBank) {
 //			thisCount = SB_FLASH_BANK_SIZE * (currentMemoryBank + 1) - address;

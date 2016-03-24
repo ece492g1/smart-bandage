@@ -700,7 +700,7 @@ static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
 			SB_Profile_GetParameter(SB_CHARACTERISTIC_SYSTEMTIME, &newValue, 4);
 
 #ifdef SB_DEBUG
-			System_printf("System time set: %d\n", *(uint32_t*)newValue);
+			System_printf("System time set: %u\n", *(uint32_t*)newValue);
 #endif
 
 			SB_clockSetTime((uint32_t)newValue);

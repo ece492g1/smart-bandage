@@ -198,7 +198,6 @@ SB_Error applyIOExpanderConfiguration() {
 
 SB_Error initPeripherals() {
 	int i;
-	SB_Error result;
 
 #ifdef IOEXPANDER_PRESENT
 	// Initialize IO Expander
@@ -332,8 +331,6 @@ SB_Error initAlwaysOnPeripherals() {
 }
 
 SB_Error readSensorData() {
-	// TODO: Remove readingNo.
-	static uint8_t readingNo = 0;
 	SB_PeripheralReadings readings;
 	SB_i2cTransaction taTransaction;
 	I2C_Transaction taBaseTransaction;
@@ -615,7 +612,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		Semaphore_pend(PMGR.stateSem, BIOS_WAIT_FOREVER);
 		System_printf("Loop started %d\n", SB_currentState());
 		System_flush();
-		Task_sleep(NTICKS_PER_SECOND*5);
+//		Task_sleep(NTICKS_PER_SECOND*5);
 
 		switch (SB_currentState()) {
 		case S_CHECK:
