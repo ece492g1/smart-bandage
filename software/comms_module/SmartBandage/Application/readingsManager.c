@@ -36,12 +36,6 @@ SB_Error SB_readingsManagerInit() {
 		return BLECharacteristicWriteError;
 	}
 
-	// Update the reading reference time
-	uint32_t refTime = SB_flashGetReferenceTime();
-	if (SUCCESS != SB_Profile_SetParameter( SB_CHARACTERISTIC_READINGREFTIMESTAMP, sizeof(uint32_t), &refTime)) {
-		return BLECharacteristicWriteError;
-	}
-
 	// Clear the readings buffer
 	basePtr = (SB_PeripheralReadings*)
 		SB_Profile_GetCharacteristicWritePTR(
@@ -94,9 +88,9 @@ bool SB_sendNotificationIfSubscriptionChanged(bool forceTry) {
  */
 SB_Error SB_newReadingsAvailable() {
 	uint8_t i = 0, j = 0, status, numReadings;
-	uint32_t refTimestamp = 0;
+	uint32_t *refTimestampPtr;
 	SB_Error result;
-	SB_PeripheralReadings* basePtr;
+	SB_PeripheralReadings* readingsPtr;
 
 	// Update the reading count
 	if (SUCCESS != SB_Profile_SetParameter( SB_CHARACTERISTIC_READINGCOUNT, sizeof(uint32_t), SB_flashReadingCountRef())) {
@@ -113,62 +107,66 @@ SB_Error SB_newReadingsAvailable() {
 		return NoError;
 	}
 
-	basePtr = (SB_PeripheralReadings*)
+	refTimestampPtr = (uint32_t*)
 		SB_Profile_GetCharacteristicWritePTR(
 			SB_CHARACTERISTIC_READINGS,
 			SB_BLE_READINGS_LEN,
 			0 );
 
-	if (NULL == basePtr) {
+	if (NULL == refTimestampPtr) {
 		return BLECharacteristicWriteError;
 	}
+
+	*refTimestampPtr = SB_flashGetReferenceTime();
+	readingsPtr = (SB_PeripheralReadings*)(&refTimestampPtr[1]);
 
 	numReadings = READINGS_MANAGER_THRESHOLD;
 	if (SB_flashReadingCount() < READINGS_MANAGER_THRESHOLD) {
 		numReadings = SB_flashReadingCount();
-		memset(basePtr, 0, SB_BLE_READINGS_LEN);
+		memset(readingsPtr, 0, SB_BLE_READINGS_LEN - SB_BLE_READINGREFTIMESTAMP_LEN);
 	}
 
 	for (i = 0; i < numReadings; ++i) {
 		uint32_t thisRef;
 
 		// Read from flash
-		if (NoError != (result = SB_flashReadNext(&basePtr[i], &thisRef))) {
+		if (NoError != (result = SB_flashReadNext(&readingsPtr[i], &thisRef))) {
 			return result;
 		}
 
-		if (thisRef == refTimestamp || 0 == i) {
+		if (thisRef == *refTimestampPtr || 0 == i) {
 			// Leave them as is
-		} else if (thisRef < refTimestamp) {
-			uint16_t diff = thisRef - refTimestamp;
+		} else if (thisRef < *refTimestampPtr) {
+			uint16_t diff = thisRef - *refTimestampPtr;
 			// Set the refTimestamp to thisRef and adjust the other refs
 			for (j = 0; j <= i; ++j) {
-				if (basePtr[j].timeDiff <= diff) {
-					basePtr[j].timeDiff = 1;
+				if (readingsPtr[j].timeDiff <= diff) {
+					readingsPtr[j].timeDiff = 1;
 				} else {
-					basePtr[j].timeDiff -= diff;
+					readingsPtr[j].timeDiff -= diff;
 				}
 			}
 		} else {
 			// thisRef > refTimestamp
-			uint16_t diff = refTimestamp - thisRef;
+			uint16_t diff = *refTimestampPtr - thisRef;
 			for (j = i; j < numReadings; ++j) {
-				basePtr[j].timeDiff += diff;
+				readingsPtr[j].timeDiff += diff;
 			}
 		}
 
 		// `0` is an invalid value for a timediff - an error of 1 second is fine.
-		if (basePtr[i].timeDiff == 0) {
-			basePtr[i].timeDiff = 1;
+		if (readingsPtr[i].timeDiff == 0) {
+			readingsPtr[i].timeDiff = 1;
 		}
 
-		refTimestamp = thisRef;
+		*refTimestampPtr = thisRef;
 	}
 
 	// Update the reference time
-	if (SUCCESS != SB_Profile_SetParameterPartial( SB_CHARACTERISTIC_READINGREFTIMESTAMP, sizeof(uint32_t), 0, &refTimestamp)) {
-		return BLECharacteristicWriteError;
-	}
+//	if (SUCCESS != SB_Profile_SetParameterPartial( SB_CHARACTERISTIC_READINGREFTIMESTAMP, sizeof(uint32_t), 0, &refTimestamp)) {
+//		return BLECharacteristicWriteError;
+//	}
+	System_printf("Set ref timestamp: %u\n", *refTimestampPtr);
 
 	// TODO: Send change notification
 	RM.bleReadingsPopulated = true;

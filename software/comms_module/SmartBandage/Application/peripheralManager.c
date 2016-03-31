@@ -499,6 +499,9 @@ SB_Error readSensorData() {
 	PMANAGER_TASK_YIELD_HIGHERPRI();
 #endif
 
+	// Write the temporary moisture parameter
+	SB_Profile_SetParameter( SB_CHARACTERISTIC_MOISTUREMAP, sizeof(SB_READING_T) * SB_NUM_MOISTURE, readings.moistures );
+
 	// Write the data to flash storage
 	readings.timeDiff = SB_clockGetTime() - SB_flashGetReferenceTime();
 	result = SB_flashWriteReadings(&readings);

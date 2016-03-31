@@ -703,7 +703,7 @@ static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
 			System_printf("System time set: %u\n", *(uint32_t*)newValue);
 #endif
 
-			SB_clockSetTime((uint32_t)newValue);
+			SB_clockSetTime(*(uint32_t*)newValue);
 			SB_flashTimeSet();
 			break;
 

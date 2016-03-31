@@ -188,7 +188,7 @@ extern "C"
 // Maximum size in bytes of the BLE HCI PDU. Valid range: 27 to 255
 // The maximum ATT_MTU is MAX_PDU_SIZE - 4.
 #ifndef MAX_PDU_SIZE
-  #define MAX_PDU_SIZE                  74
+  #define MAX_PDU_SIZE                  78
 #endif
 
 // Maximum number of L2CAP Protocol/Service Multiplexers (PSM)
