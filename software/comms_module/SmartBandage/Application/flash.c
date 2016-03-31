@@ -11,6 +11,8 @@
 #include <driverlib/flash.h>
 #include <xdc/runtime/System.h>
 
+#include "clock.h"
+
 #include "flash.h"
 
 /*********************************************************************
@@ -42,8 +44,6 @@
 #define SB_FLASH_MARKER					 0x5150
 #define SB_FLASH_MARKER_SIZE			 uint16
 
-
-
 /*********************************************************************
  * TYPEDEFS
  */
@@ -72,6 +72,7 @@ SB_Error writeBuf(uint8 * buf, uint8 count, SB_FLASH_PAGE_T page, SB_FLASH_OFFSE
 SB_Error writeAligned(uint8 * buf, uint8 count, SB_FLASH_PAGE_T page, SB_FLASH_OFFSET_T offset);
 void SBFlashRead(uint8 pg, uint16 offset, uint8 *buf, uint16 cnt);
 //SB_Error SBFlashWrite(SB_FLASH_POINTER_T address, uint8 *buf, uint16 cnt);
+SB_Error SB_flashGetFirstReading(SB_FLASH_READING_TYPE *reading, uint32_t *refTimestamp);
 SB_Error SBFlashWrite(uint8 pg, uint16 offset, uint8 *buf, uint16 count);
 SB_Error erasePage(uint8 pg);
 static void enableFlashCache( uint8 state );
@@ -109,12 +110,48 @@ SB_Error loadNextHeader(SB_FLASH_PAGE_T pg, SB_FLASH_OFFSET_T offset, SB_FlashHe
 		target->nextHeaderPage = ~0;
 		target->nextHeaderOffset = ~0;
 
+		if (SB_clockIsSet()) {
+			target->timestamp = SB_clockGetTime();
+		} else {
+			target->timestamp = UINT32_MAX;
+		}
+
 		if (NoError != (result = erasePage(SB_FLASH_PAGE_FIRST))) {
 			return result;
 		}
 	}
 
 	return NoError;
+}
+
+SB_Error SB_flashTimeSet() {
+	if (header.timestamp != UINT32_MAX) {
+		// Time was already set
+		return NoError;
+	}
+
+	header.timestamp = SB_clockGetTime();
+
+	// Adjust the timestamp so that reading times are relevant to it.
+	SB_FLASH_READING_TYPE readingBuf;
+	SB_Error result = SB_flashGetFirstReading(&readingBuf, NULL);
+	if (result == NoDataAvailable) {
+		return NoError;
+	} else if (result != NoError) {
+		return result;
+	}
+
+	header.timestamp -= readingBuf.timeDiff;
+
+	return NoError;
+}
+
+inline uint32_t SB_flashGetReferenceTime() {
+	if (header.timestamp == UINT32_MAX) {
+		return 0;
+	}
+
+	return header.timestamp;
 }
 
 SB_Error SB_flashInit(uint8 readingSizeBytes, bool reinit) {
@@ -233,7 +270,7 @@ SB_Error SB_flashInit(uint8 readingSizeBytes, bool reinit) {
 //TODO: This function not yet working accross page boundaries
 // Should write a function to check if a write will cross a page boundary, and if yes
 // erase the next page.
-SB_Error SB_flashWriteReadings(void * readings) {
+SB_Error SB_flashWriteReadings(SB_FLASH_READING_TYPE * readings) {
 	SB_Error result;
 
 	if (NULL == readings) {
@@ -251,7 +288,7 @@ SB_Error SB_flashWriteReadings(void * readings) {
 	}
 
 	// Write the data
-	if (NoError != (result = writeBuf(readings, header.readingSizeBytes, page, offset))) {
+	if (NoError != (result = writeBuf((uint8_t*)readings, header.readingSizeBytes, page, offset))) {
 		return result;
 	}
 
@@ -269,16 +306,22 @@ const SB_FLASH_COUNT_T* SB_flashReadingCountRef() {
 	return &header.entryCount;
 }
 
-SB_Error SB_flashGetReading(SB_FLASH_COUNT_T index, uint8_t * reading, uint32_t * refTimestamp);
-
-SB_Error SB_flashReadNext(uint8_t * reading, uint32_t * refTimestamp) {
+SB_Error SB_flashGetFirstReading(SB_FLASH_READING_TYPE *reading, uint32_t *refTimestamp) {
 	if (header.entryCount == 0) {
-		refTimestamp = NULL;
 		return NoDataAvailable;
 	}
 
-	SBFlashRead(header.startPage, header.startOffset, reading, header.readingSizeBytes);
-	*refTimestamp = header.timestamp;
+	SBFlashRead(header.startPage, header.startOffset, (uint8_t*)reading, header.readingSizeBytes);
+
+	if (NULL != refTimestamp) {
+		*refTimestamp = header.timestamp;
+	}
+
+	return NoError;
+}
+
+SB_Error SB_flashReadNext(SB_FLASH_READING_TYPE * reading, uint32_t * refTimestamp) {
+	SB_flashGetFirstReading(reading, refTimestamp);
 
 	header.startOffset += header.readingSizeBytes;
 	if (header.startOffset >= SB_FLASH_PAGE_SIZE) {
@@ -286,7 +329,16 @@ SB_Error SB_flashReadNext(uint8_t * reading, uint32_t * refTimestamp) {
 		header.startPage = (header.startPage + 1) % SB_FLASH_NUM_PAGES;
 	}
 
-	--header.entryCount;
+	if (--header.entryCount == 0) {
+		// There are now no entries stored. Clear flash memory and reset.
+		uint8_t i;
+		for (i = 0; i < SB_FLASH_NUM_PAGES; ++i) {
+			erasePage(i + SB_FLASH_PAGE_FIRST);
+		}
+
+		// After performing page erases this will reset the header to default values
+		return loadNextHeader(SB_FLASH_PAGE_FIRST, 0, &header, header.readingSizeBytes);
+	}
 
 	return NoError;
 }
@@ -370,7 +422,7 @@ SB_Error writeAligned(uint8 * buf, uint8 count, SB_FLASH_PAGE_T page, SB_FLASH_O
 	SB_Error result;
 
 	while (writtenBytes < count) {
-		bool bankOverrun = false, pageOverrun = false;
+		bool pageOverrun = false;
 		// If applicable adjust the count so that we don't go over a memory bank boundary
 //		if (((address + thisCount) / SB_FLASH_PAGE_SIZE) / SB_FLASH_BANK_PAGE_COUNT > currentMemoryBank) {
 //			thisCount = SB_FLASH_BANK_SIZE * (currentMemoryBank + 1) - address;

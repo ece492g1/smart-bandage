@@ -15,6 +15,8 @@
 #include "util.h"
 #include "ble.h"
 #include "fsm.h"
+#include "clock.h"
+#include "bandage.h"
 #include "Devices/mcp9808.h"
 #include "Devices/hdc1050.h"
 #include "Devices/tca9554a.h"
@@ -26,8 +28,8 @@
 SB_Error applyTempSensorConfiguration(uint8_t deviceNo);
 SB_Error applyIOMuxState(MUX_OUTPUT_ENABLE outputEnable, MUX_OUTPUT output);
 SB_Error applyPWRMuxState(MUX_OUTPUT_ENABLE outputEnable, MUX_OUTPUT output);
-SB_Error applyFullMuxState(SB_MUXState muxState, uint32 timeout);
-SB_Error _applyFullMuxState(SB_MUXState muxState);
+SB_Error applyFullMuxState(SB_MUXState *muxState, uint32 timeout);
+SB_Error _applyFullMuxState(SB_MUXState *muxState);
 void     SB_sysdisblClockHandler(UArg arg);
 
 void PreEnterSleepCallback(SB_State_Transition transition, SB_State state);
@@ -65,6 +67,7 @@ struct {
 	Clock_Struct sysdisblClock;
 
 	Semaphore_Handle stateSem;
+	Semaphore_Handle adcSem;
 } PMGR;
 
 SB_Error applyTempSensorConfiguration(uint8_t deviceNo) {
@@ -208,7 +211,6 @@ SB_Error initPeripherals() {
 		System_printf("IO Expander config failed: %d...\n", PMGR.ioexpanderDeviceState.lastError);
 # endif
 		PMGR.ioexpanderDeviceState.currentState = PState_FailedConfig;
-		return PMGR.ioexpanderDeviceState.lastError;
 	}
 	PMANAGER_TASK_YIELD_HIGHERPRI();
 #endif
@@ -329,8 +331,6 @@ SB_Error initAlwaysOnPeripherals() {
 }
 
 SB_Error readSensorData() {
-	// TODO: Remove readingNo.
-	static uint8_t readingNo = 0;
 	SB_PeripheralReadings readings;
 	SB_i2cTransaction taTransaction;
 	I2C_Transaction taBaseTransaction;
@@ -338,6 +338,16 @@ SB_Error readSensorData() {
 	uint8_t rxBuf[2];
 	uint8_t i;
 	SB_Error result;
+
+#ifdef BANDAGE_IMPEDANCE_READINGS
+	// Trigger the start of bandage readings
+	if (NoError != (result = SB_beginReadBandageImpedances(BIOS_NO_WAIT, &readings.moistures))) {
+# ifdef SB_DEBUG
+		System_printf("Could not start bandage impedance reading: %d", result);
+		System_flush();
+# endif
+	}
+#endif
 
 	// The configuration transaction
 	taBaseTransaction.writeCount   = 1;
@@ -479,8 +489,21 @@ SB_Error readSensorData() {
 
 	PMANAGER_TASK_YIELD_HIGHERPRI();
 
+#ifdef BANDAGE_IMPEDANCE_READINGS
+	// Wait for ADC readings to be available
+	if (NoError != (result = waitForReadingsAvailable())) {
+# ifdef SB_DEBUG
+		System_printf("PMGR: Error waiting for ADC readings to be available: %d\n", result);
+# endif
+	}
+	PMANAGER_TASK_YIELD_HIGHERPRI();
+#endif
+
+	// Write the temporary moisture parameter
+	SB_Profile_SetParameter( SB_CHARACTERISTIC_MOISTUREMAP, sizeof(SB_READING_T) * SB_NUM_MOISTURE, readings.moistures );
+
 	// Write the data to flash storage
-	readings.timeDiff = readingNo++;
+	readings.timeDiff = SB_clockGetTime() - SB_flashGetReferenceTime();
 	result = SB_flashWriteReadings(&readings);
 	if (NoError != result) {
 		return result;
@@ -500,6 +523,8 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	System_printf("Peripheral manager task started...\n");
 	System_flush();
 #endif
+
+	SB_clockInit();
 
 	SimpleBLEPeripheral_init();
 
@@ -535,10 +560,19 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		Task_exit();
 	}
 
-	SB_Error error;
-	if (NoError != (error = SB_flashInit(sizeof(SB_PeripheralReadings), SB_REINIT_FLASH_ON_START))) {
+	if (NoError != (result = SB_bandageInit(PMGR.adcSem))) {
 #ifdef SB_DEBUG
-		System_printf("Error No: %d\n", error);
+		System_printf("Error No: %d\n", result);
+		System_printf("SB application initialization failed while initializing adc. This is a code error.\n");
+		System_flush();
+#endif
+
+		forever;
+	}
+
+	if (NoError != (result = SB_flashInit(sizeof(SB_PeripheralReadings), SB_REINIT_FLASH_ON_START))) {
+#ifdef SB_DEBUG
+		System_printf("Error No: %d\n", result);
 		System_printf("SB application initialization failed while initializing non-volatile flash storage. This is a code error.\n");
 		System_flush();
 #endif
@@ -551,9 +585,9 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	System_flush();
 #endif
 
-	if (NoError != (error = SB_readingsManagerInit())) {
+	if (NoError != (result = SB_readingsManagerInit())) {
 #ifdef SB_DEBUG
-		System_printf("Error No: %d\n", error);
+		System_printf("Error No: %d\n", result);
 		System_printf("SB application initialization failed while initializing readings manager. This is a code error.\n");
 		System_flush();
 #endif
@@ -574,13 +608,14 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 
 	bool bleLedStatus = false;
 	uint8_t nChecks = 0;
+	uint8_t timeouts = 0;
 	uint32_t startTime;
 	forever {
 		// Wait for a state change to occur
 		Semaphore_pend(PMGR.stateSem, BIOS_WAIT_FOREVER);
 		System_printf("Loop started %d\n", SB_currentState());
 		System_flush();
-		Task_sleep(NTICKS_PER_SECOND/2);
+//		Task_sleep(NTICKS_PER_SECOND*5);
 
 		switch (SB_currentState()) {
 		case S_CHECK:
@@ -614,9 +649,9 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 			break; // S_CHECK
 
 		case S_TRANSMIT:
-			error = SB_enableBLE();
-			if (NoError != error) {
-				System_printf("Error enabling BLE for transmission: %d", error);
+			result = SB_enableBLE();
+			if (NoError != result) {
+				System_printf("Error enabling BLE for transmission: %d", result);
 			}
 
 			// Turn on the BLE LED
@@ -671,14 +706,13 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 			SB_setClearReadingsMode(false);
 
 			// TODO: We need to wait for this to finish disconnecting, and for the final notification to be received
-			error = SB_disableBLE();
-			if (NoError != error) {
+			result = SB_disableBLE();
+			if (NoError != result) {
 #ifdef SB_DEBUG
-				System_printf("Error disabling BLE for transmission: %d\n", error);
+				System_printf("Error disabling BLE for transmission: %d\n", result);
 #endif
 			}
 
-			uint8_t timeouts = 0;
 			while (SB_bleConnected()) {
 #ifndef LAUNCHPAD
 				bleLedStatus = !bleLedStatus;
@@ -690,12 +724,14 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 				if (errno == ICALL_ERRNO_SUCCESS)
 				{
 					SB_processBLEMessages();
-				} else if (++timeouts > 20) {
+				} else if (++timeouts > 10) {
 					// Handle the error that a request wasn't received in a SB_TRANSMIT_MIN_CONN_PERIOD
 //						System_printf("No BLE message in the last %d seconds\n", SB_TRANSMIT_MIN_CONN_PERIOD/NTICKS_PER_SECOND);
 					break;
 				}
 			}
+
+			timeouts = 0;
 
 #ifdef SB_DEBUG
 			System_flush();
@@ -727,10 +763,13 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 
 SB_Error SB_peripheralInit() {
 	SB_Error result;
+	// Initialize MUX semaphore with 1 free resource (use as mutex)
+	PMGR.muxSemaphore = Semaphore_create(1, NULL, NULL);
 	PMGR.stateSem = Semaphore_create(0, NULL, NULL);
 	PMGR.i2cDeviceSem = Semaphore_create(0, NULL, NULL);
+	PMGR.adcSem = Semaphore_create(0, NULL, NULL);
 
-	if (NULL == PMGR.stateSem || NULL == PMGR.i2cDeviceSem) {
+	if (NULL == PMGR.muxSemaphore || NULL == PMGR.stateSem || NULL == PMGR.i2cDeviceSem || NULL == PMGR.adcSem) {
 		return OSResourceInitializationError;
 	}
 
@@ -771,12 +810,12 @@ SB_Error SB_peripheralInit() {
 	// Initialize analog input pins
 	PIN_Config analogPinsConfigTable[] =
 	{
-		Board_BANDAGE_A_0,
-		Board_CONN_STATE_RD,
-		Board_VSENSE_0,
-		Board_VSENSE_1,
-		Board_1V3,
-		PIN_TERMINATE,
+		Board_BANDAGE_A_0		| PIN_INPUT_DIS | PIN_GPIO_OUTPUT_DIS ,
+		Board_CONN_STATE_RD		| PIN_INPUT_DIS | PIN_GPIO_OUTPUT_DIS ,
+		Board_VSENSE_0			| PIN_INPUT_DIS | PIN_GPIO_OUTPUT_DIS ,
+		Board_VSENSE_1			| PIN_INPUT_DIS | PIN_GPIO_OUTPUT_DIS ,
+		Board_1V3				| PIN_INPUT_DIS | PIN_GPIO_OUTPUT_DIS ,
+		PIN_TERMINATE
 	};
 
 	if (!PIN_open(&PMGR.AnalogPins, analogPinsConfigTable)) {
@@ -786,9 +825,6 @@ SB_Error SB_peripheralInit() {
 #endif
 		return OSResourceInitializationError;
 	}
-
-	// Initialize MUX semaphore with 1 free resource (use as mutex)
-	PMGR.muxSemaphore = Semaphore_create(1, NULL, NULL);
 
 	// Initialize sysdisbl clock
 	if (NULL == Util_constructClock(
@@ -857,7 +893,7 @@ SB_Error SB_setPeripheralsEnable(bool enable) {
 /**
  * \brief Applies the mux states to the PWR and IO muxes after pending on the MUX semaphore.
  */
-SB_Error applyFullMuxState(SB_MUXState muxState, uint32 timeout) {
+SB_Error applyFullMuxState(SB_MUXState *muxState, uint32 timeout) {
 	if (!Semaphore_pend(PMGR.muxSemaphore, timeout)) {
 		return SemaphorePendTimeout;
 	}
@@ -873,23 +909,18 @@ SB_Error applyFullMuxState(SB_MUXState muxState, uint32 timeout) {
  * \brief Applies the mux states to the PWR and IO muxes without pending on the MUX semaphore.
  * \remark You must posess a lock on the PMGR.muxSemaphore
  */
-SB_Error _applyFullMuxState(SB_MUXState muxState) {
+SB_Error _applyFullMuxState(SB_MUXState *muxState) {
 	PIN_Status result =
 			PIN_setPortOutputValue(&PMGR.MUXPins,
 				// Set the MUX Select S* outputs
-				  (MUX_SELECT_VALUE(S0, muxState.iomuxOutput) << Board_IOMUX_S0)
-				| (MUX_SELECT_VALUE(S1, muxState.iomuxOutput) << Board_IOMUX_S1)
-				| (MUX_SELECT_VALUE(S2, muxState.iomuxOutput) << Board_IOMUX_S2)
+				  (MUX_SELECT_VALUE(S0, muxState->iomuxOutput) << Board_IOMUX_S0)
+				| (MUX_SELECT_VALUE(S1, muxState->iomuxOutput) << Board_IOMUX_S1)
+				| (MUX_SELECT_VALUE(S2, muxState->iomuxOutput) << Board_IOMUX_S2)
 
-				| (MUX_SELECT_VALUE(S0, muxState.pwrmuxOutput) << Board_PWRMUX_S)
+				| (MUX_SELECT_VALUE(S0, muxState->pwrmuxOutput) << Board_PWRMUX_S)
 
 				// Set the MUX enable output
-				| (muxState.pwrmuxOutputEnable << Board_PWRMUX_ENABLE_N));
-
-#ifdef SB_DEBUG
-	System_printf("MUX output states: %d\n", PIN_getPortOutputValue(&PMGR.MUXPins));
-	System_flush();
-#endif
+				| (muxState->pwrmuxOutputEnable << Board_PWRMUX_ENABLE_N));
 
 	if (result == PIN_SUCCESS) {
 		return NoError;
@@ -903,12 +934,57 @@ SB_Error _applyFullMuxState(SB_MUXState muxState) {
 	return UnknownError;
 }
 
+SB_Error SB_selectMoistureSensorInput(SB_MoistureSensorLine line, SB_MoistureSensorVoltage voltage, uint32_t timeout) {
+	SB_MUXState selectState  = {
+		.pwrmuxOutputEnable = MUX_ENABLE,
+	};
+
+	// Get the output for the desired line
+	switch (line) {
+	case BANDAGE_A_0:
+		selectState.iomuxOutput = Board_IOMUX_BANDAGE_A_0;
+		break;
+	case BANDAGE_A_1:
+		selectState.iomuxOutput = Board_IOMUX_BANDAGE_A_1;
+		break;
+	case BANDAGE_A_2:
+		selectState.iomuxOutput = Board_IOMUX_BANDAGE_A_2;
+		break;
+	case BANDAGE_A_3:
+		selectState.iomuxOutput = Board_IOMUX_BANDAGE_A_3;
+		break;
+	case BANDAGE_A_4:
+		selectState.iomuxOutput = Board_IOMUX_BANDAGE_A_4;
+		break;
+	default:
+		return InvalidParameter;
+	}
+
+	// Configure the correct voltage
+	switch(voltage) {
+	case MOISTURE_V_1V3:
+		selectState.pwrmuxOutput = Board_PWRMUX_1V3;
+		break;
+
+	case MOISTURE_V_PERIPHERAL_VCC:
+		selectState.pwrmuxOutput = Board_PWRMUX_PERIPHERAL_VCC;
+		break;
+
+	default:
+		return InvalidParameter;
+	}
+
+	return applyFullMuxState(&selectState, timeout);
+}
+
 /**
  * \brief Refreshes the SYSDISBL hardware
  * \remark Returns as soon as the output is assigned, but keeps the MUX semaphore.
  * 			No MUX operations can complete until after SYSDSBL_REFRESH_CLOCK_PERIOD has elapsed.
  */
 SB_Error SB_sysDisableRefresh(uint32 semaphoreTimeout) {
+	// TODO: Remove
+	return NoError;
 	SB_MUXState refreshState  = {
 		.iomuxOutput = Board_IOMUX_SYSDISBL_N,
 		.pwrmuxOutput = Board_PWRMUX_PERIPHERAL_VCC,
@@ -920,7 +996,7 @@ SB_Error SB_sysDisableRefresh(uint32 semaphoreTimeout) {
 		return UnknownError;
 	}
 
-	SB_Error result = _applyFullMuxState(refreshState);
+	SB_Error result = _applyFullMuxState(&refreshState);
 
 	if (result != NoError) {
 		Semaphore_post(PMGR.muxSemaphore);
@@ -955,7 +1031,7 @@ SB_Error SB_sysDisableShutdown() {
 		return UnknownError;
 	}
 
-	SB_Error result = _applyFullMuxState(shutdownState);
+	SB_Error result = _applyFullMuxState(&shutdownState);
 
 	if (result != NoError) {
 		Semaphore_post(PMGR.muxSemaphore);

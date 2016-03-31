@@ -110,7 +110,6 @@ static uint8 charValSystemTime[SB_BLE_SYSTEMTIME_LEN];
 static uint8 charValReadings[SB_BLE_READINGS_LEN];
 static uint8 charValReadingSize[SB_BLE_READINGSIZE_LEN];
 static uint8 charValReadingCount[SB_BLE_READINGCOUNT_LEN];
-static uint8 charValReadingRefTimestamp[SB_BLE_READINGREFTIMESTAMP_LEN];
 static uint8 charValReadingDataOffsets[SB_BLE_READINGDATAOFFSETS_LEN];
 
 static gattCharCfg_t *readingsCharConfig;
@@ -236,17 +235,6 @@ static SB_PROFILE_CHARACTERISTIC characteristics[SB_NUM_CHARACTERISTICS] = {
 		.value  	 = charValReadingCount,
 		.length 	 = SB_BLE_READINGCOUNT_LEN,
 		.description = "ReadingCount",
-	},
-
-	// ReadingsRefTime characteristic
-	{
-		.uuid   	 = SB_BLE_READINGREFTIMESTAMP_UUID,
-		.uuidptr	 = { LO_UINT16(SB_BLE_READINGREFTIMESTAMP_UUID), HI_UINT16(SB_BLE_READINGREFTIMESTAMP_UUID) },
-		.props  	 = GATT_PROP_READ,
-		.perms		 = GATT_PERMIT_READ,
-		.value  	 = charValReadingRefTimestamp,
-		.length 	 = SB_BLE_READINGREFTIMESTAMP_LEN,
-		.description = "ReadingsRefTime",
 	},
 
 	// ReadingDataOffsets characteristic
@@ -579,26 +567,14 @@ bool SB_Profile_NotificationStateChanged(SB_CHARACTERISTIC param ) {
 
 bStatus_t SB_Profile_ClearNotificationState() {
 	uint8_t i, result;
-	gattAttribute_t * attr = NULL;
 
 	uint8_t entity = ICall_getEntityId();
 	if (entity == ICALL_INVALID_ENTITY_ID) {
 		return INVALID_TASK;
 	}
 
-	for (i = 0; i < SERVAPP_NUM_ATTR_SUPPORTED; ++i) {
-		if (simpleProfileAttrTbl[i].pValue == (uint8_t*)&readingsCharConfig) {
-			attr = &simpleProfileAttrTbl[i];
-			break;
-		}
-	}
-
-	if (NULL == attr) {
-		return NV_OPER_FAILED;
-	}
-
 	for (i = 0; i < linkDBNumConns; ++i) {
-		if (SUCCESS != (result = GATTServApp_ProcessCCCWriteReq( readingsCharConfig[i].connHandle, attr, 0, 2, 0, GATT_CLIENT_CFG_INDICATE ))) {
+		if (SUCCESS != (GATTServApp_WriteCharCfg(readingsCharConfig[i].connHandle, readingsCharConfig, 0))) {
 			return result;
 		}
 	}

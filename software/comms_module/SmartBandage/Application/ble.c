@@ -27,6 +27,8 @@
 
 #include "util.h"
 #include "ble.h"
+#include "clock.h"
+#include "flash.h"
 
 #include "readingsManager.h"
 
@@ -697,21 +699,29 @@ static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
 			// TODO: Integrate this with the rest of the system, and the storage mechanism
 			SB_Profile_GetParameter(SB_CHARACTERISTIC_SYSTEMTIME, &newValue, 4);
 
-			System_printf("System time set: %d\n", *(uint32_t*)newValue);
+#ifdef SB_DEBUG
+			System_printf("System time set: %u\n", *(uint32_t*)newValue);
+#endif
+
+			SB_clockSetTime(*(uint32_t*)newValue);
+			SB_flashTimeSet();
 			break;
 
 		case SB_CHARACTERISTIC_READINGCOUNT:
 			SB_Profile_GetParameter(SB_CHARACTERISTIC_SYSTEMTIME, &newValue, 2);
 
+#ifdef SB_DEBUG
 			System_printf("Readings read.\n Reading count set: %d\n", *(uint16_t*)newValue);
+#endif
 
 			SB_currentReadingsRead();
 			break;
 
 		case SB_CHARACTERISTIC_READINGS:
 			// Notification state of the readings parameter was changed
+#ifdef SB_DEBUG
 			System_printf("Android notification subscription status changed\n");
-//			System_flush();
+#endif
 
 			if (SB_bleConnected() && SB_Profile_ReadingsNotificationsEnabled()) {
 				SB_sendNotificationIfSubscriptionChanged(true);

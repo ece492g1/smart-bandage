@@ -22,19 +22,21 @@
 #define IOEXPANDER_PRESENT
 #define Board_BATT_110MAH
 //#define PERIPHERAL_PWR_MGMT // Define to enable power management of external peripherals
+#define BANDAGE_IMPEDANCE_READINGS
 
 /*****************************************************************
  * General Configuration
  ****************************************************************/
 // System clock ticks at 10us period
-#define NTICKS_PER_SECOND 100000
+#define NTICKS_PER_SECOND 100000U
 #define NTICKS_PER_MILLSECOND NTICKS_PER_SECOND/1000
 
 #define DEFAULT_TASK_STACK_SIZE 512
 
-#define I2C_TASK_STACK_SIZE   512
-#define PMGR_TASK_STACK_SIZE  768
-#define ICALL_TASK_STACK_SIZE 800
+#define I2C_TASK_STACK_SIZE   	512
+#define GAPROLE_TASK_STACK_SIZE	600
+#define PMGR_TASK_STACK_SIZE  	768
+#define ICALL_TASK_STACK_SIZE 	800
 
 typedef enum {
 	IDLE_TASK_PRIORITY = 0,
@@ -120,6 +122,21 @@ extern uint8_t Mcp9808Addresses[];
 #define Board_PWRMUX_PERIPHERAL_VCC				((MUX_OUTPUT)Y1)
 #define Board_PWRMUX_1V3						((MUX_OUTPUT)Y0)
 
+typedef enum {
+	BANDAGE_A_0,
+	BANDAGE_A_1,
+	BANDAGE_A_2,
+	BANDAGE_A_3,
+	BANDAGE_A_4,
+
+	SB_NumMoistureSensorLine
+} SB_MoistureSensorLine;
+
+typedef enum {
+	MOISTURE_V_1V3,
+	MOISTURE_V_PERIPHERAL_VCC,
+} SB_MoistureSensorVoltage;
+
 /*****************************************************************
  * Gas Gauge Configuration
  ****************************************************************/
@@ -181,6 +198,18 @@ typedef enum CC2650_I2CName {
 extern PIN_Config BoardGpioInitTable[];
 
 /*****************************************************************
+ * Analog Configuration
+ ****************************************************************/
+#define SB_ADC_SAMPLE_TIME   AUXADC_SAMPLE_TIME_10P9_MS
+
+#define SB_AN_BDG_A_0 		 ADC_COMPB_IN_AUXIO4
+#define SB_AN_CONN_STATE_RD  ADC_COMPB_IN_AUXIO5
+#define SB_AN_PERIPHERAL_PWR ADC_COMPB_IN_AUXIO3
+#define SB_AN_VSENSE_1 		 ADC_COMPB_IN_AUXIO2
+#define SB_AN_VSENSE_0 		 ADC_COMPB_IN_AUXIO0
+#define SB_AN_VSENSE_1V3 	 ADC_COMPB_IN_AUXIO1
+
+/*****************************************************************
  * Application Errors
  ****************************************************************/
 typedef enum {
@@ -197,6 +226,7 @@ typedef enum {
 	WritePermissionDenied,
 	BLECharacteristicWriteError,
 	NoDataAvailable,
+	ResourceBusy,
 } SB_Error;
 
 /*****************************************************************

@@ -36,14 +36,14 @@ struct {
 //LUT TABLE
 //TODO: If we continue to run out of heap, implement this in a switch statement as with 5 events and 6 states this is 120bytes of memory
 //implemented a "do nothing" function for the events that are not relevent to a particular
-SB_State (*SB_stateTable [SB_NUM_STATES][SB_NUM_EVENTS]) (void) = {
-    {SB_checkTimerExpired, SB_bleTimerExpired, SB_returnToSleep, SB_noBandageDetected, SB_errorEvent }, //procedures for state sleep
-    {SB_checkTimerExpired, SB_bleTimerExpired, SB_dataChanged, SB_noBandageDetected, SB_errorEvent },//procedures for state check
-    {SB_returnToSleep, SB_bleTimerExpired, SB_returnToSleep, SB_noBandageDetected, SB_errorEvent}, //procedure for transmit
-    {SB_checkTimerExpired, SB_bleTimerExpired, SB_dataChanged, SB_noBandageDetected, SB_errorEvent}, //procedures for state error temp
-    {SB_returnToSleep, SB_bleTimerExpired, SB_returnToSleep, SB_returnToSleep, SB_errorEvent}, //procedures for state error perm
-    {SB_returnToSleep, SB_bleTimerExpired, SB_dataChanged, SB_noBandageDetected, SB_errorEvent} //procedures for initialize state
-};
+//SB_State (*SB_stateTable [SB_NUM_STATES][SB_NUM_EVENTS]) (void) = {
+//    {SB_checkTimerExpired, SB_bleTimerExpired, SB_returnToSleep, SB_noBandageDetected, SB_errorEvent }, //procedures for state sleep
+//    {SB_checkTimerExpired, SB_bleTimerExpired, SB_dataChanged, SB_noBandageDetected, SB_errorEvent },//procedures for state check
+//    {SB_returnToSleep, SB_bleTimerExpired, SB_returnToSleep, SB_noBandageDetected, SB_errorEvent}, //procedure for transmit
+//    {SB_checkTimerExpired, SB_bleTimerExpired, SB_dataChanged, SB_noBandageDetected, SB_errorEvent}, //procedures for state error temp
+//    {SB_returnToSleep, SB_bleTimerExpired, SB_returnToSleep, SB_returnToSleep, SB_errorEvent}, //procedures for state error perm
+//    {SB_returnToSleep, SB_bleTimerExpired, SB_dataChanged, SB_noBandageDetected, SB_errorEvent} //procedures for initialize state
+//};
 
 //local variables
 SB_SystemState systemState = {
@@ -133,20 +133,20 @@ SB_State SB_returnToSleep(void){
 	return SB_switchState(S_SLEEP);
 }
 
-SB_State SB_handleEvent(SB_Event event) {
-	// State or event invalid
-	if (systemState.currentState >= SB_NUM_STATES || event >= SB_NUM_EVENTS) {
-		SB_setError(InvalidParameter);
-		return SB_errorEvent();
-	}
-
-	// No action if the pointer is null
-	if (SB_stateTable[systemState.currentState][event] == NULL) {
-		return systemState.currentState;
-	}
-
-	return SB_stateTable[systemState.currentState][event]();
-}
+//SB_State SB_handleEvent(SB_Event event) {
+//	// State or event invalid
+//	if (systemState.currentState >= SB_NUM_STATES || event >= SB_NUM_EVENTS) {
+//		SB_setError(InvalidParameter);
+//		return SB_errorEvent();
+//	}
+//
+//	// No action if the pointer is null
+//	if (SB_stateTable[systemState.currentState][event] == NULL) {
+//		return systemState.currentState;
+//	}
+//
+//	return SB_stateTable[systemState.currentState][event]();
+//}
 
 inline void SB_setError(SB_Error error) {
 	systemState.lastError = systemState.currentError;
