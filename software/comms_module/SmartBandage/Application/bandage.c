@@ -223,7 +223,7 @@ SB_Error waitForReadingsAvailable() {
 
 void adcIsr(UArg a0) {
 	// Pop sample from FIFO to allow clearing ADC_IRQ event
-	(*bandage.readings)[bandage.currentReading] = (uint16_t)(AUXADCPopFifo()*43*16/4096/10);
+	(*bandage.readings)[bandage.currentReading] = (uint16_t)(AUXADCPopFifo()*43*16/(4096-1)/10);
 
 	// Clear ADC_IRQ flag
 	HWREGBITW(AUX_EVCTL_BASE + AUX_EVCTL_O_EVTOMCUFLAGSCLR, AUX_EVCTL_EVTOMCUFLAGSCLR_ADC_IRQ_BITN) = 1;

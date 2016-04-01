@@ -21,7 +21,7 @@
 #define POWER_SAVING
 #define IOEXPANDER_PRESENT
 #define Board_BATT_110MAH
-//#define PERIPHERAL_PWR_MGMT // Define to enable power management of external peripherals
+#define PERIPHERAL_PWR_MGMT // Define to enable power management of external peripherals
 #define BANDAGE_IMPEDANCE_READINGS
 
 /*****************************************************************
@@ -240,5 +240,15 @@ typedef enum {
  ****************************************************************/
 #define _BV(bit_no) (1 << bit_no)
 #define forever while (1)
+
+/*****************************************************************
+ * Settable Config Globals
+ ****************************************************************/
+struct GlobalDeviceConfigurationStruct {
+	uint16_t CheckSleepIntervalMS;
+	uint16_t BLECheckInterval;
+};
+
+extern struct GlobalDeviceConfigurationStruct SB_GlobalDeviceConfiguration;
 
 #endif /* APPLICATION_CONFIG_H_ */

@@ -11,6 +11,11 @@
 #include <driverlib/ioc.h>
 #include "Board.h"
 
+struct GlobalDeviceConfigurationStruct SB_GlobalDeviceConfiguration = {
+	.CheckSleepIntervalMS = 10000,
+	.BLECheckInterval = 10,
+};
+
 /*
  *  ============================= PIN configs===================================
 */

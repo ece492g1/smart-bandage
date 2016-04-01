@@ -497,6 +497,12 @@ SB_Error readSensorData() {
 # endif
 	}
 	PMANAGER_TASK_YIELD_HIGHERPRI();
+
+	// Convert moisture readings to percentages
+	for (i = 0; i < SB_NUM_MOISTURE; ++i) {
+		// Todo: If multiple voltage sensing is working divide by 1.3V.
+		readings.moistures[i] = 100*16 - (1000*(uint32_t)readings.moistures[i])/33;
+	}
 #endif
 
 	// Write the temporary moisture parameter
@@ -615,7 +621,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		Semaphore_pend(PMGR.stateSem, BIOS_WAIT_FOREVER);
 		System_printf("Loop started %d\n", SB_currentState());
 		System_flush();
-//		Task_sleep(NTICKS_PER_SECOND*5);
+		Task_sleep(NTICKS_PER_MILLSECOND * SB_GlobalDeviceConfiguration.CheckSleepIntervalMS);
 
 		switch (SB_currentState()) {
 		case S_CHECK:
@@ -747,7 +753,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 
 		case S_SLEEP:
 			// Todo this may be best handled in the state manager?
-			if (++nChecks < 10) {
+			if (++nChecks < SB_GlobalDeviceConfiguration.BLECheckInterval) {
 				SB_switchState(S_CHECK);
 			} else {
 				SB_switchState(S_TRANSMIT);
@@ -776,7 +782,7 @@ SB_Error SB_peripheralInit() {
 	// Initialize power pin
 	PIN_Config peripheralPowerConfigTable[] =
 	{
-		Board_PERIPHERAL_PWR,
+		Board_PERIPHERAL_PWR | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
 		PIN_TERMINATE,
 	};
 
@@ -877,7 +883,7 @@ SB_Error SB_peripheralInit() {
  * \brief Enables or disables power to external PCB peripherals
  */
 SB_Error SB_setPeripheralsEnable(bool enable) {
-	PIN_Status result = PIN_setOutputValue(&PMGR.PeripheralPower, Board_PERIPHERAL_PWR, enable == false);
+	PIN_Status result = PIN_setOutputValue(&PMGR.PeripheralPower, Board_PERIPHERAL_PWR, enable == true);
 	if (result == PIN_SUCCESS) {
 		return NoError;
 	}
