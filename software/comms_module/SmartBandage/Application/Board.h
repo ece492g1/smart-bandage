@@ -21,7 +21,7 @@
 #define POWER_SAVING
 #define IOEXPANDER_PRESENT
 #define Board_BATT_110MAH
-#define PERIPHERAL_PWR_MGMT // Define to enable power management of external peripherals
+//#define PERIPHERAL_PWR_MGMT // Define to enable power management of external peripherals
 #define BANDAGE_IMPEDANCE_READINGS
 
 /*****************************************************************

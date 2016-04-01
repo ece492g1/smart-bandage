@@ -883,7 +883,7 @@ SB_Error SB_peripheralInit() {
  * \brief Enables or disables power to external PCB peripherals
  */
 SB_Error SB_setPeripheralsEnable(bool enable) {
-	PIN_Status result = PIN_setOutputValue(&PMGR.PeripheralPower, Board_PERIPHERAL_PWR, enable == true);
+	PIN_Status result = PIN_setOutputValue(&PMGR.PeripheralPower, Board_PERIPHERAL_PWR, enable == false);
 	if (result == PIN_SUCCESS) {
 		return NoError;
 	}
