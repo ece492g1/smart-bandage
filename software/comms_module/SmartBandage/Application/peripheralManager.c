@@ -633,6 +633,10 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 			// Initialize them
 			initPeripherals();
 
+			if (SB_GlobalDeviceConfiguration.CheckReadDelayMS > 0) {
+				Task_sleep(NTICKS_PER_MILLSECOND * SB_GlobalDeviceConfiguration.CheckReadDelayMS);
+			}
+
 			// Read sensor data
 			result = readSensorData();
 			if (NoError != result) {
@@ -687,14 +691,11 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 			SB_setClearReadingsMode(true);
 
 			startTime = Clock_getTicks();
-			while ((Clock_getTicks() - startTime) < SB_TRANSMIT_MAX_STATE_TIME) {
+			while ((Clock_getTicks() - startTime) < (NTICKS_PER_SECOND * SB_GlobalDeviceConfiguration.MaxTransmitStateTimeS)) {
 #ifndef LAUNCHPAD
 				bleLedStatus = !bleLedStatus;
 				tca9554a_setPinStatus(&PMGR.ioexpanderDevice, &PMGR.i2cDeviceSem, IOEXP_I2CSTATUS_PIN_BLE, bleLedStatus);
 #endif
-				//					if (SB_sendNotificationIfSubscriptionChanged(false)) {
-//
-//					}
 
 				// This could end up taking up to SB_TRANSMIT_MIN_CONN_PERIOD more than SB_TRANSMIT_MAX_STATE_TIME. Do we care?
 				ICall_Errno errno = ICall_wait(500);

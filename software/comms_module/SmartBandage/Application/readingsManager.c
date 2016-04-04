@@ -12,9 +12,12 @@
 #include "../PROFILES/smartBandageProfile.h"
 #include <xdc/runtime/System.h>
 
+#include "clock.h"
+
 struct {
 	uint8_t bleReadingsPopulated: 1;
 	uint8_t clearReadingsMode:    1;
+	uint8_t numReadings: 		  6;
 } RM;
 
 /*********************************************************************
@@ -87,7 +90,7 @@ bool SB_sendNotificationIfSubscriptionChanged(bool forceTry) {
  * @brief   Called when new readings are available. May update bluetooth characteristics.
  */
 SB_Error SB_newReadingsAvailable() {
-	uint8_t i = 0, j = 0, status, numReadings;
+	uint8_t i = 0, j = 0, status;
 	uint32_t *refTimestampPtr;
 	SB_Error result;
 	SB_PeripheralReadings* readingsPtr;
@@ -120,13 +123,13 @@ SB_Error SB_newReadingsAvailable() {
 	*refTimestampPtr = SB_flashGetReferenceTime();
 	readingsPtr = (SB_PeripheralReadings*)(&refTimestampPtr[1]);
 
-	numReadings = READINGS_MANAGER_THRESHOLD;
+	RM.numReadings = READINGS_MANAGER_THRESHOLD;
 	if (SB_flashReadingCount() < READINGS_MANAGER_THRESHOLD) {
-		numReadings = SB_flashReadingCount();
+		RM.numReadings = SB_flashReadingCount();
 		memset(readingsPtr, 0, SB_BLE_READINGS_LEN - SB_BLE_READINGREFTIMESTAMP_LEN);
 	}
 
-	for (i = 0; i < numReadings; ++i) {
+	for (i = 0; i < RM.numReadings; ++i) {
 		uint32_t thisRef;
 
 		// Read from flash
@@ -149,7 +152,7 @@ SB_Error SB_newReadingsAvailable() {
 		} else {
 			// thisRef > refTimestamp
 			uint16_t diff = *refTimestampPtr - thisRef;
-			for (j = i; j < numReadings; ++j) {
+			for (j = i; j < RM.numReadings; ++j) {
 				readingsPtr[j].timeDiff += diff;
 			}
 		}
@@ -216,6 +219,39 @@ SB_Error SB_currentReadingsRead() {
 	}
 
 	memset(basePtr, 0, SB_BLE_READINGS_LEN);
+
+	return NoError;
+}
+
+SB_Error SB_updateReadingsRefTimestamp() {
+	// Don't do anything if the BLE stack already has data or if there aren't any readings populated.
+	if (!RM.bleReadingsPopulated || 0 == RM.numReadings) {
+		return NoError;
+	}
+
+	uint32_t *refTimestampPtr;
+
+	refTimestampPtr = (uint32_t*)
+		SB_Profile_GetCharacteristicWritePTR(
+			SB_CHARACTERISTIC_READINGS,
+			SB_BLE_READINGS_LEN,
+			0 );
+
+	if (NULL == refTimestampPtr) {
+		return BLECharacteristicWriteError;
+	}
+
+	if (0 == *refTimestampPtr || UINT32_MAX == *refTimestampPtr) {
+		if (0 == SB_flashReadingCount()) {
+			// If there aren't any readings left than the flash reference time does not consider
+			// the timediffs of the readings in the BLE buffer.
+			SB_PeripheralReadings* readingsPtr;
+			readingsPtr = (SB_PeripheralReadings*)(&refTimestampPtr[1]);
+			*refTimestampPtr = SB_clockGetTime() - readingsPtr[RM.numReadings - 1].timeDiff;
+		} else {
+			*refTimestampPtr = SB_flashGetReferenceTime();
+		}
+	}
 
 	return NoError;
 }

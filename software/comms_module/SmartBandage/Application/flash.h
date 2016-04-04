@@ -100,4 +100,6 @@ SB_Error SB_flashTimeSet();
 
 uint32_t SB_flashGetReferenceTime();
 
+bool SB_flashHasTime();
+
 #endif /* APPLICATION_FLASH_H_ */

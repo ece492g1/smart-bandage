@@ -11,9 +11,15 @@
 #include <driverlib/ioc.h>
 #include "Board.h"
 
+/*
+ *  ============================= Remotely Setup Configurations===================================
+ *  Settings in this variable can be configured over BLE
+*/
 struct GlobalDeviceConfigurationStruct SB_GlobalDeviceConfiguration = {
-	.CheckSleepIntervalMS = 10000,
+	.CheckSleepIntervalMS = 1000,
 	.BLECheckInterval = 10,
+	.CheckReadDelayMS = 0,
+	.MaxTransmitStateTimeS = 10,
 };
 
 /*

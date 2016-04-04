@@ -705,6 +705,7 @@ static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
 
 			SB_clockSetTime(*(uint32_t*)newValue);
 			SB_flashTimeSet();
+			SB_updateReadingsRefTimestamp();
 			break;
 
 		case SB_CHARACTERISTIC_READINGCOUNT:

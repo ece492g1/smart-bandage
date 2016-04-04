@@ -247,6 +247,8 @@ typedef enum {
 struct GlobalDeviceConfigurationStruct {
 	uint16_t CheckSleepIntervalMS;
 	uint16_t BLECheckInterval;
+	uint16_t CheckReadDelayMS;
+	uint16_t MaxTransmitStateTimeS;
 };
 
 extern struct GlobalDeviceConfigurationStruct SB_GlobalDeviceConfiguration;
