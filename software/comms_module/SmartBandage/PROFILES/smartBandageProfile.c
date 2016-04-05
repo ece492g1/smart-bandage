@@ -52,6 +52,7 @@
 #include "gapbondmgr.h"
 
 #include "smartBandageProfile.h"
+#include "../Application/Board.h"
 
 /*********************************************************************
  * MACROS
@@ -89,6 +90,7 @@ CONST uint8 simpleProfileServUUID[ATT_BT_UUID_SIZE] =
 
 static simpleProfileCBs_t *simpleProfile_AppCBs = NULL;
 static bool _readingsNotificationStateChanged = false;
+uint16_t * getExtraDataPtr(uint8_t dataNo);
 
 /*********************************************************************
  * Profile Attributes - variables
@@ -111,6 +113,8 @@ static uint8 charValReadings[SB_BLE_READINGS_LEN];
 static uint8 charValReadingSize[SB_BLE_READINGSIZE_LEN];
 static uint8 charValReadingCount[SB_BLE_READINGCOUNT_LEN];
 static uint8 charValReadingDataOffsets[SB_BLE_READINGDATAOFFSETS_LEN];
+
+static uint8 charValExtraPtr[SB_BLE_EXTRAPTR_LEN];
 
 static gattCharCfg_t *readingsCharConfig;
 
@@ -246,6 +250,28 @@ static SB_PROFILE_CHARACTERISTIC characteristics[SB_NUM_CHARACTERISTICS] = {
 		.value  	 = charValReadingDataOffsets,
 		.length 	 = SB_BLE_READINGDATAOFFSETS_LEN,
 		.description = "ReadingsDataOffsets",
+	},
+
+	// Extra Ptr characteristic
+	{
+		.uuid   	 = SB_BLE_EXTRAPTR_UUID,
+		.uuidptr	 = { LO_UINT16(SB_BLE_EXTRAPTR_UUID), HI_UINT16(SB_BLE_EXTRAPTR_UUID) },
+		.props  	 = GATT_PROP_READ | GATT_PROP_WRITE,
+		.perms		 = GATT_PERMIT_READ | GATT_PERMIT_WRITE,
+		.value  	 = charValExtraPtr,
+		.length 	 = SB_BLE_EXTRAPTR_LEN,
+		.description = "Extra Pointer",
+	},
+
+	// Extra Data characteristic
+	{
+		.uuid   	 = SB_BLE_EXTRADATA_UUID,
+		.uuidptr	 = { LO_UINT16(SB_BLE_EXTRADATA_UUID), HI_UINT16(SB_BLE_EXTRADATA_UUID) },
+		.props  	 = GATT_PROP_READ | GATT_PROP_WRITE,
+		.perms		 = GATT_PERMIT_READ | GATT_PERMIT_WRITE,
+		.value  	 = NULL,
+		.length 	 = SB_BLE_EXTRADATA_LEN,
+		.description = "Extra Data",
 	},
 };
 
@@ -636,7 +662,16 @@ static bStatus_t simpleProfile_ReadAttrCB(uint16_t connHandle,
 		}
 
 		// Copy the data to the output buffer
-		memcpy( pValue, pAttr->pValue + offset, *pLen );
+		if (c == SB_CHARACTERISTIC_EXTRADATA) {
+			uint16_t * value = getExtraDataPtr(*charValExtraPtr);
+			if (NULL == value) {
+				return ATT_ERR_UNSUPPORTED_REQ;
+			}
+
+			memcpy( pValue, value + offset, *pLen );
+		} else {
+			memcpy( pValue, pAttr->pValue + offset, *pLen );
+		}
 	} else {
 		// 128-bit UUID
 		*pLen = 0;
@@ -644,6 +679,22 @@ static bStatus_t simpleProfile_ReadAttrCB(uint16_t connHandle,
 	}
 
 	return ( status );
+}
+
+uint16_t * getExtraDataPtr(uint8_t dataNo) {
+	switch (dataNo) {
+	case 1:
+		return &SB_GlobalDeviceConfiguration.CheckSleepIntervalMS;
+	case 2:
+		return &SB_GlobalDeviceConfiguration.BLECheckInterval;
+	case 3:
+		return &SB_GlobalDeviceConfiguration.CheckReadDelayMS;
+	case 4:
+		return &SB_GlobalDeviceConfiguration.MaxTransmitStateTimeS;
+
+	default:
+		return NULL;
+	}
 }
 
 /*********************************************************************
@@ -708,6 +759,44 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 			// Notify the application that the write was performed
 			notifyApp = SB_CHARACTERISTIC_READINGCOUNT;
 
+			break;
+
+		case SB_BLE_EXTRAPTR_UUID:
+			// Ensure the length and offset don't cause us to overwrite
+			if  (offset >= characteristics[c].length || ((uint16)characteristics[c].length) - offset < len) {
+				status = ATT_ERR_INVALID_VALUE_SIZE;
+				break;
+			}
+
+			//Write the value
+			memcpy(pAttr->pValue + offset, pValue, len);
+
+			// Notify the application that system time changed
+			notifyApp = SB_CHARACTERISTIC_EXTRAPTR;
+			break;
+
+		case SB_BLE_EXTRADATA_UUID:
+			// Ensure the length and offset don't cause us to overwrite
+			if  (offset >= characteristics[c].length || ((uint16)characteristics[c].length) - offset < len) {
+				status = ATT_ERR_INVALID_VALUE_SIZE;
+				break;
+			}
+
+			{
+				// Check the value being written
+				uint16_t *value = getExtraDataPtr(*charValExtraPtr);
+
+				if (NULL == value) {
+					status = ATT_ERR_UNSUPPORTED_REQ;
+					break;
+				}
+
+				//Write the value
+				memcpy(value + offset, pValue, len);
+			}
+
+			// Notify the application that system time changed
+			notifyApp = SB_CHARACTERISTIC_EXTRADATA;
 			break;
 
 		case GATT_CLIENT_CHAR_CFG_UUID:
