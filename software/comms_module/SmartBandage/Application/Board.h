@@ -24,6 +24,10 @@
 //#define PERIPHERAL_PWR_MGMT // Define to enable power management of external peripherals
 #define BANDAGE_IMPEDANCE_READINGS
 
+//#define SET_BDG_ID
+#define BANDAGE14
+//#define BANDAGE88
+
 /*****************************************************************
  * General Configuration
  ****************************************************************/

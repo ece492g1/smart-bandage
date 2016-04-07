@@ -498,10 +498,13 @@ SB_Error readSensorData() {
 	}
 	PMANAGER_TASK_YIELD_HIGHERPRI();
 
+	System_printf("Moistures: \n");
 	// Convert moisture readings to percentages
 	for (i = 0; i < SB_NUM_MOISTURE; ++i) {
 		// Todo: If multiple voltage sensing is working divide by 1.3V.
-		readings.moistures[i] = 100*16 - (1000*(uint32_t)readings.moistures[i])/33;
+		System_printf("\tMoisture %d pre: %d\n", i, readings.moistures[i]);
+		readings.moistures[i] = (100L*16L*(208 - readings.moistures[i]))/208;
+		System_printf("\tMoisture %d pst: %d\n", i, readings.moistures[i]);
 	}
 #endif
 

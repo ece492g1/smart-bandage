@@ -205,6 +205,17 @@ void SimpleBLEPeripheral_init(void)
 	// so that the application can send and receive messages.
 	ICall_registerApp(&selfEntity, &sem);
 
+#ifdef SET_BDG_ID
+	uint8 bdAddress[B_ADDR_LEN] =
+# ifdef BANDAGE14
+		{ 0xF1, 0xF1, 0xF1, 0xF1, 0xF1, 0xF1 };
+# elif BANDAGE88
+		{ 0x24, 0x71, 0x89, 0x17, 0x6A, 0x11 };
+# endif
+
+	HCI_EXT_SetBDADDRCmd(bdAddress);
+#endif
+
 	// Set device's Sleep Clock Accuracy
 	//HCI_EXT_SetSCACmd(40);
 

@@ -683,13 +683,13 @@ static bStatus_t simpleProfile_ReadAttrCB(uint16_t connHandle,
 
 uint16_t * getExtraDataPtr(uint8_t dataNo) {
 	switch (dataNo) {
-	case 1:
+	case 0:
 		return &SB_GlobalDeviceConfiguration.CheckSleepIntervalMS;
-	case 2:
+	case 1:
 		return &SB_GlobalDeviceConfiguration.BLECheckInterval;
-	case 3:
+	case 2:
 		return &SB_GlobalDeviceConfiguration.CheckReadDelayMS;
-	case 4:
+	case 3:
 		return &SB_GlobalDeviceConfiguration.MaxTransmitStateTimeS;
 
 	default:
