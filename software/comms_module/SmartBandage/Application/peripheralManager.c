@@ -497,6 +497,15 @@ SB_Error readSensorData() {
 # endif
 	}
 	PMANAGER_TASK_YIELD_HIGHERPRI();
+
+	System_printf("Moistures: \n");
+	// Convert moisture readings to percentages
+	for (i = 0; i < SB_NUM_MOISTURE; ++i) {
+		// Todo: If multiple voltage sensing is working divide by 1.3V.
+		System_printf("\tMoisture %d pre: %d\n", i, readings.moistures[i]);
+		readings.moistures[i] = (100L*16L*(208 - readings.moistures[i]))/208;
+		System_printf("\tMoisture %d pst: %d\n", i, readings.moistures[i]);
+	}
 #endif
 
 	// Write the temporary moisture parameter
@@ -615,7 +624,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 		Semaphore_pend(PMGR.stateSem, BIOS_WAIT_FOREVER);
 		System_printf("Loop started %d\n", SB_currentState());
 		System_flush();
-//		Task_sleep(NTICKS_PER_SECOND*5);
+		Task_sleep(NTICKS_PER_MILLSECOND * SB_GlobalDeviceConfiguration.CheckSleepIntervalMS);
 
 		switch (SB_currentState()) {
 		case S_CHECK:
@@ -626,6 +635,10 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 
 			// Initialize them
 			initPeripherals();
+
+			if (SB_GlobalDeviceConfiguration.CheckReadDelayMS > 0) {
+				Task_sleep(NTICKS_PER_MILLSECOND * SB_GlobalDeviceConfiguration.CheckReadDelayMS);
+			}
 
 			// Read sensor data
 			result = readSensorData();
@@ -681,14 +694,11 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 			SB_setClearReadingsMode(true);
 
 			startTime = Clock_getTicks();
-			while ((Clock_getTicks() - startTime) < SB_TRANSMIT_MAX_STATE_TIME) {
+			while ((Clock_getTicks() - startTime) < (NTICKS_PER_SECOND * SB_GlobalDeviceConfiguration.MaxTransmitStateTimeS)) {
 #ifndef LAUNCHPAD
 				bleLedStatus = !bleLedStatus;
 				tca9554a_setPinStatus(&PMGR.ioexpanderDevice, &PMGR.i2cDeviceSem, IOEXP_I2CSTATUS_PIN_BLE, bleLedStatus);
 #endif
-				//					if (SB_sendNotificationIfSubscriptionChanged(false)) {
-//
-//					}
 
 				// This could end up taking up to SB_TRANSMIT_MIN_CONN_PERIOD more than SB_TRANSMIT_MAX_STATE_TIME. Do we care?
 				ICall_Errno errno = ICall_wait(500);
@@ -747,7 +757,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 
 		case S_SLEEP:
 			// Todo this may be best handled in the state manager?
-			if (++nChecks < 10) {
+			if (++nChecks < SB_GlobalDeviceConfiguration.BLECheckInterval) {
 				SB_switchState(S_CHECK);
 			} else {
 				SB_switchState(S_TRANSMIT);
@@ -776,7 +786,7 @@ SB_Error SB_peripheralInit() {
 	// Initialize power pin
 	PIN_Config peripheralPowerConfigTable[] =
 	{
-		Board_PERIPHERAL_PWR,
+		Board_PERIPHERAL_PWR | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
 		PIN_TERMINATE,
 	};
 

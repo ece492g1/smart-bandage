@@ -24,6 +24,10 @@
 //#define PERIPHERAL_PWR_MGMT // Define to enable power management of external peripherals
 #define BANDAGE_IMPEDANCE_READINGS
 
+//#define SET_BDG_ID
+#define BANDAGE14
+//#define BANDAGE88
+
 /*****************************************************************
  * General Configuration
  ****************************************************************/
@@ -240,5 +244,17 @@ typedef enum {
  ****************************************************************/
 #define _BV(bit_no) (1 << bit_no)
 #define forever while (1)
+
+/*****************************************************************
+ * Settable Config Globals
+ ****************************************************************/
+struct GlobalDeviceConfigurationStruct {
+	uint16_t CheckSleepIntervalMS;
+	uint16_t BLECheckInterval;
+	uint16_t CheckReadDelayMS;
+	uint16_t MaxTransmitStateTimeS;
+};
+
+extern struct GlobalDeviceConfigurationStruct SB_GlobalDeviceConfiguration;
 
 #endif /* APPLICATION_CONFIG_H_ */

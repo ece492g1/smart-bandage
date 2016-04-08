@@ -47,6 +47,8 @@
 /*********************************************************************
  * TYPEDEFS
  */
+// TODO: To fully support linked lists this header must have a headerNo field so that it is possible to get the
+// first item in the event that the currently loaded header is not the first header.
 typedef struct {
 	SB_FLASH_MARKER_SIZE marker;
 	SB_FLASH_COUNT_T     entryCount;
@@ -73,6 +75,7 @@ SB_Error writeAligned(uint8 * buf, uint8 count, SB_FLASH_PAGE_T page, SB_FLASH_O
 void SBFlashRead(uint8 pg, uint16 offset, uint8 *buf, uint16 cnt);
 //SB_Error SBFlashWrite(SB_FLASH_POINTER_T address, uint8 *buf, uint16 cnt);
 SB_Error SB_flashGetFirstReading(SB_FLASH_READING_TYPE *reading, uint32_t *refTimestamp);
+SB_Error SB_flashGetLastReading(SB_FLASH_READING_TYPE *reading, uint32_t *refTimestamp);
 SB_Error SBFlashWrite(uint8 pg, uint16 offset, uint8 *buf, uint16 count);
 SB_Error erasePage(uint8 pg);
 static void enableFlashCache( uint8 state );
@@ -124,20 +127,29 @@ SB_Error loadNextHeader(SB_FLASH_PAGE_T pg, SB_FLASH_OFFSET_T offset, SB_FlashHe
 	return NoError;
 }
 
+bool SB_flashHasTime() {
+	return header.timestamp != UINT32_MAX;
+}
+
 SB_Error SB_flashTimeSet() {
-	if (header.timestamp != UINT32_MAX) {
+	if (SB_flashHasTime()) {
 		// Time was already set
 		return NoError;
 	}
 
 	header.timestamp = SB_clockGetTime();
 
+	// No further processing if there are no entries
+	if (header.entryCount == 0) {
+		return NoError;
+	}
+
 	// Adjust the timestamp so that reading times are relevant to it.
 	SB_FLASH_READING_TYPE readingBuf;
-	SB_Error result = SB_flashGetFirstReading(&readingBuf, NULL);
-	if (result == NoDataAvailable) {
+	SB_Error result = SB_flashGetLastReading(&readingBuf, NULL);
+	if (NoDataAvailable == result) {
 		return NoError;
-	} else if (result != NoError) {
+	} else if (NoError != result) {
 		return result;
 	}
 
@@ -312,6 +324,28 @@ SB_Error SB_flashGetFirstReading(SB_FLASH_READING_TYPE *reading, uint32_t *refTi
 	}
 
 	SBFlashRead(header.startPage, header.startOffset, (uint8_t*)reading, header.readingSizeBytes);
+
+	if (NULL != refTimestamp) {
+		*refTimestamp = header.timestamp;
+	}
+
+	return NoError;
+}
+
+SB_Error SB_flashGetLastReading(SB_FLASH_READING_TYPE *reading, uint32_t *refTimestamp) {
+	if (header.entryCount == 0) {
+		return NoDataAvailable;
+	}
+
+	// TODO: This does not traverse the linked list
+	uint32_t diffBytes = (header.entryCount - 1) * header.readingSizeBytes + header.startOffset;
+	SB_FLASH_PAGE_T pg = header.startPage;
+	while (diffBytes >= SB_FLASH_PAGE_SIZE) {
+		++pg;
+		diffBytes -= SB_FLASH_PAGE_SIZE;
+	}
+
+	SBFlashRead(pg, diffBytes, (uint8_t*)reading, header.readingSizeBytes);
 
 	if (NULL != refTimestamp) {
 		*refTimestamp = header.timestamp;
@@ -498,6 +532,10 @@ SB_Error SBFlashWrite(uint8 pg, uint16 offset, uint8 *buf, uint16 count) {
 	uint32 addr = (offset) + ((pg % HAL_NV_PAGE_BEG )* HAL_FLASH_PAGE_SIZE);
 
 	if ((count % SB_FLASH_WORD_SIZE) != 0) {
+		return InvalidParameter;
+	}
+
+	if (pg > (SB_FLASH_PAGE_FIRST + SB_FLASH_NUM_PAGES)) {
 		return InvalidParameter;
 	}
 

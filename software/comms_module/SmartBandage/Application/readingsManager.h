@@ -44,4 +44,6 @@ bool SB_sendNotificationIfSubscriptionChanged(bool forceTry);
 
 void SB_setClearReadingsMode(bool clearReadings);
 
+SB_Error SB_updateReadingsRefTimestamp();
+
 #endif /* APPLICATION_READINGSMANAGER_H_ */

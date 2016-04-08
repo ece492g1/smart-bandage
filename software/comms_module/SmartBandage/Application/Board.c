@@ -12,6 +12,17 @@
 #include "Board.h"
 
 /*
+ *  ============================= Remotely Setup Configurations===================================
+ *  Settings in this variable can be configured over BLE
+*/
+struct GlobalDeviceConfigurationStruct SB_GlobalDeviceConfiguration = {
+	.CheckSleepIntervalMS = 1000,
+	.BLECheckInterval = 10,
+	.CheckReadDelayMS = 0,
+	.MaxTransmitStateTimeS = 10,
+};
+
+/*
  *  ============================= PIN configs===================================
 */
 PIN_Config BoardGpioInitTable[] = {

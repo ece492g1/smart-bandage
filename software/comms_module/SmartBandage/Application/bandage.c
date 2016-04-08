@@ -201,7 +201,7 @@ SB_Error _processNextReading(uint32_t timeout) {
 	AUXADCSelectInput(SB_AN_VSENSE_1);
 	if (NoError == (error = SB_selectMoistureSensorInput(bandage.currentReading, MOISTURE_V_1V3, timeout))) {
 		// Mux configured. Wait for input to stabilize and trigger a conversion
-		Task_sleep(NTICKS_PER_MILLSECOND);
+		Task_sleep(NTICKS_PER_MILLSECOND*10);
 		bandage.currentReadComplete = false;
 		AUXADCGenManualTrigger();
 		return NoError;
@@ -223,7 +223,8 @@ SB_Error waitForReadingsAvailable() {
 
 void adcIsr(UArg a0) {
 	// Pop sample from FIFO to allow clearing ADC_IRQ event
-	(*bandage.readings)[bandage.currentReading] = (uint16_t)(AUXADCPopFifo()*43*16/4096/10);
+	(*bandage.readings)[bandage.currentReading] = (uint16_t)(AUXADCPopFifo()*43L*16L/(4096L));
+//	(*bandage.readings)[bandage.currentReading] = (uint16_t)(AUXADCPopFifo());
 
 	// Clear ADC_IRQ flag
 	HWREGBITW(AUX_EVCTL_BASE + AUX_EVCTL_O_EVTOMCUFLAGSCLR, AUX_EVCTL_EVTOMCUFLAGSCLR_ADC_IRQ_BITN) = 1;
