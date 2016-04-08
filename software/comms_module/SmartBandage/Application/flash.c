@@ -92,6 +92,13 @@ const uint8 firstFlashByte = 0x51;
 
 SB_FlashHeader header;
 
+/*********************************************************************
+ * @fn      loadNextHeader
+ *
+ * @brief   Loads the next header in the linked list
+ *
+ * @return  NoError if the header was loaded
+ */
 SB_Error loadNextHeader(SB_FLASH_PAGE_T pg, SB_FLASH_OFFSET_T offset, SB_FlashHeader *target, uint8 readingSizeBytes) {
 	SB_Error result;
 	if (NULL == target) {
@@ -127,10 +134,24 @@ SB_Error loadNextHeader(SB_FLASH_PAGE_T pg, SB_FLASH_OFFSET_T offset, SB_FlashHe
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      SB_flashHasTime
+ *
+ * @brief   Checks if the flash module has a time set
+ *
+ * @return  True if the time is currently set
+ */
 bool SB_flashHasTime() {
 	return header.timestamp != UINT32_MAX;
 }
 
+/*********************************************************************
+ * @fn      SB_flashTimeSet
+ *
+ * @brief   Notifies the flash module that the system time has been updated.
+ *
+ * @return  NoError if the value is properly updated
+ */
 SB_Error SB_flashTimeSet() {
 	if (SB_flashHasTime()) {
 		// Time was already set
@@ -158,6 +179,13 @@ SB_Error SB_flashTimeSet() {
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      SB_flashGetReferenceTime
+ *
+ * @brief   Gets the current flash reference time.
+ *
+ * @return  The current flash timestamp
+ */
 inline uint32_t SB_flashGetReferenceTime() {
 	if (header.timestamp == UINT32_MAX) {
 		return 0;
@@ -166,6 +194,17 @@ inline uint32_t SB_flashGetReferenceTime() {
 	return header.timestamp;
 }
 
+/*********************************************************************
+ * @fn      SB_flashInit
+ *
+ * @brief   Initialize flash storage
+ *
+ * @param   readingSizeBytes - the size of a block of readings in bytes
+ *
+ * @param   reinit			 - true to force reinitialize and drop all items in flash mem.
+ *
+ * @return  NoError if properly initialized, otherwise the error that occured
+ */
 SB_Error SB_flashInit(uint8 readingSizeBytes, bool reinit) {
 	SB_Error result;
 #ifdef SB_DEBUG
@@ -279,9 +318,17 @@ SB_Error SB_flashInit(uint8 readingSizeBytes, bool reinit) {
 
 	return NoError;
 }
-//TODO: This function not yet working accross page boundaries
-// Should write a function to check if a write will cross a page boundary, and if yes
-// erase the next page.
+
+/*********************************************************************
+ * @fn      SB_flashWriteReadings
+ *
+ * @brief   Write a block of readings to flash storage
+ *
+ * @param   readings        - The readings to write to flash memory.
+ * 							  Must be the size of readingSizeBytes given in SB_flashInit()
+ *
+ * @return  NoError if properly written, otherwise the error
+ */
 SB_Error SB_flashWriteReadings(SB_FLASH_READING_TYPE * readings) {
 	SB_Error result;
 
@@ -299,7 +346,7 @@ SB_Error SB_flashWriteReadings(SB_FLASH_READING_TYPE * readings) {
 		}
 	}
 
-	// Write the data
+	// Write the data using the unaligned write function
 	if (NoError != (result = writeBuf((uint8_t*)readings, header.readingSizeBytes, page, offset))) {
 		return result;
 	}
@@ -310,14 +357,36 @@ SB_Error SB_flashWriteReadings(SB_FLASH_READING_TYPE * readings) {
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      SB_flashReadingCount
+ *
+ * @brief   Get the number of readings stored in memory
+ *
+ * @return  The reading count
+ */
 SB_FLASH_COUNT_T SB_flashReadingCount() {
 	return header.entryCount;
 }
 
+/*********************************************************************
+ * @fn      SB_flashWriteReadings
+ *
+ * @brief   Get the number of readings stored in memory as a pointer
+ *
+ * @return  NoError if properly written, otherwise the error
+ */
 const SB_FLASH_COUNT_T* SB_flashReadingCountRef() {
 	return &header.entryCount;
 }
 
+/*********************************************************************
+ * @fn      SB_flashGetFirstReading
+ *
+ * @brief   Reads the first reading in flash to the reading buffer.
+ * 			If refTimestamp is not null also reads the reference timestamp
+ *
+ * @return  NoError if read correctly
+ */
 SB_Error SB_flashGetFirstReading(SB_FLASH_READING_TYPE *reading, uint32_t *refTimestamp) {
 	if (header.entryCount == 0) {
 		return NoDataAvailable;
@@ -332,6 +401,14 @@ SB_Error SB_flashGetFirstReading(SB_FLASH_READING_TYPE *reading, uint32_t *refTi
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      SB_flashGetLastReading
+ *
+ * @brief   Reads the last reading in flash to the reading buffer.
+ * 			If refTimestamp is not null also reads the reference timestamp
+ *
+ * @return  NoError if read correctly
+ */
 SB_Error SB_flashGetLastReading(SB_FLASH_READING_TYPE *reading, uint32_t *refTimestamp) {
 	if (header.entryCount == 0) {
 		return NoDataAvailable;
@@ -354,6 +431,16 @@ SB_Error SB_flashGetLastReading(SB_FLASH_READING_TYPE *reading, uint32_t *refTim
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      SB_flashReadNext
+ *
+ * @brief   Gets the next flash reading from storage and removes the entry returned
+ *
+ * @param   readings        - Pointer to the memory location where the reading should be placed
+ * 							  Memory location must be at least readingSizeBytes as specified in SB_flashInit()
+ *
+ * @return  NoError if properly read, otherwise the error. If error `reading` will be NULL.
+ */
 SB_Error SB_flashReadNext(SB_FLASH_READING_TYPE * reading, uint32_t * refTimestamp) {
 	SB_flashGetFirstReading(reading, refTimestamp);
 
@@ -377,6 +464,13 @@ SB_Error SB_flashReadNext(SB_FLASH_READING_TYPE * reading, uint32_t * refTimesta
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      SB_flashPrepShutdown
+ *
+ * @brief   Synchronizes all data to the flash in preparation for a powerdown where SRAM is not preserved.
+ *
+ * @return  NoError if properly read, otherwise the error
+ */
 SB_Error SB_flashPrepShutdown();
 
 // Write the buffer after 4-byte aligning it
@@ -401,6 +495,8 @@ SB_Error writeBuf(uint8 * buf, uint8 count, SB_FLASH_PAGE_T page, SB_FLASH_OFFSE
 			return error;
 		}
 
+		// Increase the start parameters as the first (unaligned bytes) have been written.
+		// The remaining data is aligned
 		offset += i;
 		buf    += i;
 		count  -= i;
@@ -431,6 +527,8 @@ SB_Error writeBuf(uint8 * buf, uint8 count, SB_FLASH_PAGE_T page, SB_FLASH_OFFSE
 
 		SBFlashWrite(startPage, startOffset, alignmentBuf, SB_FLASH_WORD_SIZE);
 
+		// Reduce the write count by the number of bytes written.
+		// All bytes in the buffer should now be properly aligned
 		count  -= i;
 	}
 
@@ -457,11 +555,6 @@ SB_Error writeAligned(uint8 * buf, uint8 count, SB_FLASH_PAGE_T page, SB_FLASH_O
 
 	while (writtenBytes < count) {
 		bool pageOverrun = false;
-		// If applicable adjust the count so that we don't go over a memory bank boundary
-//		if (((address + thisCount) / SB_FLASH_PAGE_SIZE) / SB_FLASH_BANK_PAGE_COUNT > currentMemoryBank) {
-//			thisCount = SB_FLASH_BANK_SIZE * (currentMemoryBank + 1) - address;
-//			bankOverrun = true;
-//		}
 
 		// If applicable adjust the count so that we don't go over a page bank boundary
 		if (SB_FLASH_PAGE_SIZE * ((SB_FLASH_POINTER_T)page + 1) <= address) {
@@ -494,6 +587,11 @@ SB_Error writeAligned(uint8 * buf, uint8 count, SB_FLASH_PAGE_T page, SB_FLASH_O
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      SBFlashRead
+ *
+ * @brief   Reads `cnt` bytes into `buf` from the given page `pg` and offset.
+ */
 void SBFlashRead(uint8 pg, uint16 offset, uint8 *buf, uint16 cnt) {
 	halIntState_t cs;
 
@@ -513,6 +611,13 @@ void SBFlashRead(uint8 pg, uint16 offset, uint8 *buf, uint16 cnt) {
 	HAL_EXIT_CRITICAL_SECTION(cs);
 }
 
+/*********************************************************************
+ * @fn      getAddress
+ *
+ * @brief   Gets the memory address for the given flash page number and offset.
+ *
+ * @return  The memory address
+ */
 uint8* getAddress( uint8 pg, uint16 offset )
 {
 #ifndef FEATURE_OAD
@@ -526,15 +631,24 @@ uint8* getAddress( uint8 pg, uint16 offset )
 #endif //FEATURE_OAD
 }
 
+/*********************************************************************
+ * @fn      SBFlashWrite
+ *
+ * @brief   Writes `count` bytes from `buf` to the given page `pg` and offset.
+ *
+ * @return  NoError if success, else the error
+ */
 SB_Error SBFlashWrite(uint8 pg, uint16 offset, uint8 *buf, uint16 count) {
 	uint32 result = 0;
 	halIntState_t cs;
 	uint32 addr = (offset) + ((pg % HAL_NV_PAGE_BEG )* HAL_FLASH_PAGE_SIZE);
 
+	// The count should be an integer number of words
 	if ((count % SB_FLASH_WORD_SIZE) != 0) {
 		return InvalidParameter;
 	}
 
+	// Make sure we don't surpass the writeable region
 	if (pg > (SB_FLASH_PAGE_FIRST + SB_FLASH_NUM_PAGES)) {
 		return InvalidParameter;
 	}
@@ -552,6 +666,7 @@ SB_Error SBFlashWrite(uint8 pg, uint16 offset, uint8 *buf, uint16 count) {
 	// Exit Critical Section.
 	HAL_EXIT_CRITICAL_SECTION(cs);
 
+	// Check that the write succeeded
 	switch (result) {
 	case FAPI_STATUS_SUCCESS:
 		break;
@@ -565,6 +680,14 @@ SB_Error SBFlashWrite(uint8 pg, uint16 offset, uint8 *buf, uint16 count) {
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      enableFlashCache
+ *
+ * @brief   Enables the internal flash cache. Disable during write.
+ * 			`state` should be the result of disableFlashCache().
+ *
+ * @return  NoError if success, else the error
+ */
 static void enableFlashCache ( uint8 state )
 {
   if ( state != VIMS_MODE_DISABLED )
@@ -574,6 +697,13 @@ static void enableFlashCache ( uint8 state )
   }
 }
 
+/*********************************************************************
+ * @fn      disableFlashCache
+ *
+ * @brief   Disables the internal flash cache. Disable during write.
+ *
+ * @return  The current state of the flash cache
+ */
 static uint8 disableFlashCache ( void )
 {
   uint8 state = VIMSModeGet( VIMS_BASE );
@@ -592,6 +722,13 @@ static uint8 disableFlashCache ( void )
   return state;
 }
 
+/*********************************************************************
+ * @fn      erasePage
+ *
+ * @brief   Erases the entire 4kb contents of the given page.
+ *
+ * @return  NoError on success, otherwise an error
+ */
 SB_Error erasePage(uint8 pg) {
 	uint32 result = 0;
 	halIntState_t cs;
@@ -610,6 +747,7 @@ SB_Error erasePage(uint8 pg) {
 	// Exit Critical Section.
 	HAL_EXIT_CRITICAL_SECTION(cs);
 
+	// Check that the erase succeeded
 	switch (result) {
 	case FAPI_STATUS_SUCCESS:
 		break;

@@ -53,6 +53,11 @@ SB_Error processNextReading(uint32_t timeout);
 SB_Error _processNextReading(uint32_t timeout);
 void adcIsr(UArg a0);
 
+/*********************************************************************
+ * @fn      SB_bandageInit
+ *
+ * @brief   Initializes the bandage module with the given semaphore
+ */
 SB_Error SB_bandageInit(Semaphore_Handle readSem) {
 	bandage.currentReading = BANDAGE_A_0;
 	bandage.readInProgress = false;
@@ -85,6 +90,11 @@ SB_Error SB_bandageInit(Semaphore_Handle readSem) {
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      SB_beginReadBandageImpedances
+ *
+ * @brief   Begins reading all bandage readings by starting the async read process
+ */
 SB_Error SB_beginReadBandageImpedances(uint32_t timeout, uint16_t (*readingsBuf)[SB_NUM_MOISTURE]) {
 	if (NULL == bandage.adcSem) {
 		return OSResourceInitializationError;
@@ -130,6 +140,11 @@ SB_Error SB_beginReadBandageImpedances(uint32_t timeout, uint16_t (*readingsBuf)
 	return result;
 }
 
+/*********************************************************************
+ * @fn      _readingComplete
+ *
+ * @brief   Called when the reading cycle completes. Disables ADC and releases power constraints
+ */
 SB_Error _readingComplete() {
 	// Disable ADC
 	AUXADCDisable();
@@ -146,6 +161,11 @@ SB_Error _readingComplete() {
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      SB_processBandageReadings
+ *
+ * @brief   Processes any completed bandage readings
+ */
 SB_Error SB_processBandageReadings(uint32_t timeout) {
 	if (SB_NumMoistureSensorLine == bandage.currentReading || !bandage.readInProgress || !bandage.currentReadComplete) {
 		return NoError;
@@ -154,6 +174,11 @@ SB_Error SB_processBandageReadings(uint32_t timeout) {
 	return processNextReading(timeout);
 }
 
+/*********************************************************************
+ * @fn      processNextReading
+ *
+ * @brief   Processes the next reading after grabbing the semaphore
+ */
 SB_Error processNextReading(uint32_t timeout) {
 	SB_Error error;
 
@@ -172,6 +197,12 @@ SB_Error processNextReading(uint32_t timeout) {
 	return error;
 }
 
+/*********************************************************************
+ * @fn      _processNextReading
+ *
+ * @brief   Processes the next reading without grabbing the semaphore
+ * 			The calling function must already have the semaphore
+ */
 SB_Error _processNextReading(uint32_t timeout) {
 	SB_Error error;
 
@@ -210,7 +241,12 @@ SB_Error _processNextReading(uint32_t timeout) {
 	return error;
 }
 
-SB_Error waitForReadingsAvailable() {
+/*********************************************************************
+ * @fn      waitForReadingsAvailable
+ *
+ * @brief   Waits for final readings to be available
+ */
+SB_Error SB_waitForReadingsAvailable() {
 	SB_Error error;
 	while (!Semaphore_pend(bandage.notifySem, READINGS_AVAIL_WAIT_TIME_MS)) {
 		if (NoError != (error = processNextReading(READINGS_AVAIL_WAIT_TIME_MS))) {
@@ -221,6 +257,11 @@ SB_Error waitForReadingsAvailable() {
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      adcIsr
+ *
+ * @brief   ISR that fires when an ADC read completes
+ */
 void adcIsr(UArg a0) {
 	// Pop sample from FIFO to allow clearing ADC_IRQ event
 	(*bandage.readings)[bandage.currentReading] = (uint16_t)(AUXADCPopFifo()*43L*16L/(4096L));

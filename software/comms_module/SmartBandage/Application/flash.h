@@ -96,10 +96,31 @@ SB_Error SB_flashReadNext(SB_FLASH_READING_TYPE * reading, uint32_t * refTimesta
  */
 SB_Error SB_flashPrepShutdown();
 
+/*********************************************************************
+ * @fn      SB_flashTimeSet
+ *
+ * @brief   Notifies the flash module that the system time has been updated.
+ *
+ * @return  NoError if the value is properly updated
+ */
 SB_Error SB_flashTimeSet();
 
+/*********************************************************************
+ * @fn      SB_flashGetReferenceTime
+ *
+ * @brief   Gets the current flash reference time.
+ *
+ * @return  The current flash timestamp
+ */
 uint32_t SB_flashGetReferenceTime();
 
+/*********************************************************************
+ * @fn      SB_flashHasTime
+ *
+ * @brief   Checks if the flash module has a time set
+ *
+ * @return  True if the time is currently set
+ */
 bool SB_flashHasTime();
 
 #endif /* APPLICATION_FLASH_H_ */

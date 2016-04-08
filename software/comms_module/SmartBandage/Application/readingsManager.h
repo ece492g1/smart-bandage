@@ -40,10 +40,25 @@ SB_Error SB_newReadingsAvailable();
  */
 SB_Error SB_currentReadingsRead();
 
+/*********************************************************************
+ * @fn      SB_sendNotificationIfSubscriptionChanged
+ *
+ * @brief   Send property changed notification if changed
+ */
 bool SB_sendNotificationIfSubscriptionChanged(bool forceTry);
 
+/*********************************************************************
+ * @fn      SB_setClearReadingsMode
+ *
+ * @brief   Allows all readings to be read, even if the last read does not have 3 readings.
+ */
 void SB_setClearReadingsMode(bool clearReadings);
 
+/*********************************************************************
+ * @fn      SB_setClearReadingsMode
+ *
+ * @brief   The reference time has been updated. Upudate the value in the characteristic.
+ */
 SB_Error SB_updateReadingsRefTimestamp();
 
 #endif /* APPLICATION_READINGSMANAGER_H_ */
