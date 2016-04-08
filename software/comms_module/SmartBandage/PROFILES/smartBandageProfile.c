@@ -528,6 +528,14 @@ bStatus_t SB_Profile_GetParameter( SB_CHARACTERISTIC param, void *value, int max
 	return SUCCESS;
 }
 
+/*********************************************************************
+ * @fn      SB_Profile_MarkParameterUpdated
+ *
+ * @brief   Marks the parameter as having been updated/
+ *
+ * @param   param - Profile parameter ID
+ * @return  SUCCESS if notification properly sent or an error code
+ */
 bStatus_t SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC param ) {
 	bStatus_t status;
 
@@ -556,6 +564,14 @@ bStatus_t SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC param ) {
 	return status;
 }
 
+/*********************************************************************
+ * @fn      SB_Profile_NotificationStateChanged
+ *
+ * @brief   Gets whether the notification subscription has changed for the property
+ *
+ * @param   param - Profile parameter ID
+ * @return  SUCCESS if notification properly sent or an error code
+ */
 bool SB_Profile_ReadingsNotificationsEnabled() {
 	uint8_t i;
 	gattAttribute_t * attr = NULL;
@@ -580,6 +596,13 @@ bool SB_Profile_ReadingsNotificationsEnabled() {
 	return false;
 }
 
+/*********************************************************************
+ * @fn      SB_Profile_ClearNotificationState
+ *
+ * @brief   Clears the notification subscription
+ *
+ * @return  SUCCESS if notification properly sent or an error code
+ */
 bool SB_Profile_NotificationStateChanged(SB_CHARACTERISTIC param ) {
 	if (param == SB_CHARACTERISTIC_READINGS) {
 		bool value = _readingsNotificationStateChanged;
@@ -591,6 +614,13 @@ bool SB_Profile_NotificationStateChanged(SB_CHARACTERISTIC param ) {
 	return false;
 }
 
+/*********************************************************************
+ * @fn      SB_Profile_ReadingsNotificationsEnabled
+ *
+ * @brief   Returns true if reading notifications are enabled
+ *
+ * @return  True if readings notifications enabled
+ */
 bStatus_t SB_Profile_ClearNotificationState() {
 	uint8_t i, result;
 
@@ -681,6 +711,9 @@ static bStatus_t simpleProfile_ReadAttrCB(uint16_t connHandle,
 	return ( status );
 }
 
+/**
+ * Getes the extra data read/write pointer for the given value
+ */
 uint16_t * getExtraDataPtr(uint8_t dataNo) {
 	switch (dataNo) {
 	case 0:
@@ -803,7 +836,6 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 			status = GATTServApp_ProcessCCCWriteReq( connHandle, pAttr, pValue, len,
 													 offset, GATT_CLIENT_CFG_INDICATE );
 
-//			_readingsNotificationStateChanged = true;
 			notifyApp = SB_CHARACTERISTIC_READINGS;
 
 			break;

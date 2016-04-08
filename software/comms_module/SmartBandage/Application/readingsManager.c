@@ -14,6 +14,7 @@
 
 #include "clock.h"
 
+// Readings Manager struct
 struct {
 	uint8_t bleReadingsPopulated: 1;
 	uint8_t clearReadingsMode:    1;
@@ -69,6 +70,11 @@ SB_Error SB_readingsManagerInit() {
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      SB_sendNotificationIfSubscriptionChanged
+ *
+ * @brief   Send property changed notification if changed
+ */
 bool SB_sendNotificationIfSubscriptionChanged(bool forceTry) {
 	if (forceTry || SB_Profile_NotificationStateChanged( SB_CHARACTERISTIC_READINGS )) {
 		uint8_t status;
@@ -166,9 +172,6 @@ SB_Error SB_newReadingsAvailable() {
 	}
 
 	// Update the reference time
-//	if (SUCCESS != SB_Profile_SetParameterPartial( SB_CHARACTERISTIC_READINGREFTIMESTAMP, sizeof(uint32_t), 0, &refTimestamp)) {
-//		return BLECharacteristicWriteError;
-//	}
 	System_printf("Set ref timestamp: %u\n", *refTimestampPtr);
 
 	// TODO: Send change notification
@@ -180,6 +183,11 @@ SB_Error SB_newReadingsAvailable() {
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      SB_setClearReadingsMode
+ *
+ * @brief   Allows all readings to be read, even if the last read does not have 3 readings.
+ */
 void SB_setClearReadingsMode(bool clearReadings) {
 	RM.clearReadingsMode = clearReadings & 1;
 }
@@ -218,11 +226,17 @@ SB_Error SB_currentReadingsRead() {
 		return BLECharacteristicWriteError;
 	}
 
+	// Clear the characteristic
 	memset(basePtr, 0, SB_BLE_READINGS_LEN);
 
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      SB_setClearReadingsMode
+ *
+ * @brief   The reference time has been updated. Upudate the value in the characteristic.
+ */
 SB_Error SB_updateReadingsRefTimestamp() {
 	// Don't do anything if the BLE stack already has data or if there aren't any readings populated.
 	if (!RM.bleReadingsPopulated || 0 == RM.numReadings) {

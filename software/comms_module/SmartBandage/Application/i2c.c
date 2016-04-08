@@ -55,6 +55,11 @@ void SB_i2cTransferCompleteHandler(I2C_Handle handle, I2C_Transaction *transac, 
 void SB_i2cTransactionTimeoutHandler(UArg arg);
 #endif
 
+/*********************************************************************
+ * @fn      SB_i2cTask
+ *
+ * @brief   The main I2C tasks. Waits for a request and queues it
+ */
 static void SB_i2cTask(UArg a0, UArg a1) {
 #ifdef SB_DEBUG
 	System_printf("I2C Task started...\n");
@@ -138,6 +143,13 @@ static void SB_i2cTask(UArg a0, UArg a1) {
 	}
 }
 
+/*********************************************************************
+ * @fn      SB_i2cInit
+ *
+ * @brief   Initializes the I2C module
+ *
+ * @return  NoError if properly initialized, otherwise the error that occured
+ */
 SB_Error SB_i2cInit(I2C_BitRate bitRate) {
 	I2C_Params params;
 	params.bitRate = bitRate;
@@ -204,10 +216,13 @@ SB_Error SB_i2cInit(I2C_BitRate bitRate) {
 	return NoError;
 }
 
-void SB_i2cSleep() {
-
-}
-
+/*********************************************************************
+ * @fn      SB_i2cQueueTransaction
+ *
+ * @brief   Queues the given transaction within timeout
+ *
+ * @return  NoError if properly queued, otherwise the error that occured
+ */
 SB_Error SB_i2cQueueTransaction(SB_i2cTransaction* transaction, uint32_t timeout) {
 	SB_Error result = NoError;
 
@@ -239,6 +254,11 @@ SB_Error SB_i2cQueueTransaction(SB_i2cTransaction* transaction, uint32_t timeout
 	return result;
 }
 
+/*********************************************************************
+ * @fn      SB_i2cTransferCompleteHandler
+ *
+ * @brief   Function executed when an I2C transfer completes. Posts the callers' semaphore
+ */
 void SB_i2cTransferCompleteHandler(I2C_Handle handle, I2C_Transaction *transac, bool result) {
 	Semaphore_post(I2C_Core.i2cProcSem);
 

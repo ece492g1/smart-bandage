@@ -196,6 +196,13 @@ SB_Error applyIOExpanderConfiguration() {
 }
 #endif
 
+/*********************************************************************
+ * @fn      initPeripherals
+ *
+ * @brief   Initializes external peripherals. Called after peripheral power enabled
+ *
+ * @return  NoError if properly initialized, otherwise the error that occured
+ */
 SB_Error initPeripherals() {
 	int i;
 
@@ -212,7 +219,7 @@ SB_Error initPeripherals() {
 # endif
 		PMGR.ioexpanderDeviceState.currentState = PState_FailedConfig;
 	}
-	PMANAGER_TASK_YIELD_HIGHERPRI();
+
 #endif
 
 	// Initialize MCP9808 sensors
@@ -237,11 +244,11 @@ SB_Error initPeripherals() {
 				}
 			}
 
-			PMANAGER_TASK_YIELD_HIGHERPRI();
+
 		}
 	}
 
-	PMANAGER_TASK_YIELD_HIGHERPRI();
+
 
 	// Initialize Humidity Sensor
 	PMGR.hdc1050Device.address = HDC1050_I2C_ADDRESS;
@@ -255,7 +262,7 @@ SB_Error initPeripherals() {
 # endif
 		PMGR.hdc1050DeviceState.currentState = PState_FailedConfig;
 	}
-	PMANAGER_TASK_YIELD_HIGHERPRI();
+
 
 	// Start the conversion for the humidity sensor
 	PMGR.hdc1050DeviceState.lastError = hdc1050_startTempHumidityConversion(&PMGR.hdc1050Device, &PMGR.i2cDeviceSem);
@@ -273,11 +280,16 @@ SB_Error initPeripherals() {
 #endif
 		}
 	}
-	PMANAGER_TASK_YIELD_HIGHERPRI();
+
 
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      initAlwaysOnPeripherals
+ *
+ * @brief   Initializes external peripherals that are always on
+ */
 SB_Error initAlwaysOnPeripherals() {
 	// Initialize Gas Gauge
 //	PMGR.gasGaugeDeviceState.currentState = PState_Failed;
@@ -330,6 +342,12 @@ SB_Error initAlwaysOnPeripherals() {
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      readSensorData
+ *
+ * @brief   Retrieves readings from all external peripherals and moisture lines,
+ * 			stores them in a reading, saves to flash, and updates BLE characteristics
+ */
 SB_Error readSensorData() {
 	SB_PeripheralReadings readings;
 	SB_i2cTransaction taTransaction;
@@ -349,7 +367,7 @@ SB_Error readSensorData() {
 	}
 #endif
 
-	// The configuration transaction
+	// The configuration transaction for the temperature sensors
 	taBaseTransaction.writeCount   = 1;
 	taBaseTransaction.writeBuf     = txBuf;
 	taBaseTransaction.readCount    = 2;
@@ -368,7 +386,6 @@ SB_Error readSensorData() {
 					System_printf("IOEXP Error");
 					System_flush();
 				}
-				PMANAGER_TASK_YIELD_HIGHERPRI();
 #endif
 
 				txBuf[0] = MCP9808_REG_TA;
@@ -377,19 +394,17 @@ SB_Error readSensorData() {
 				// Queue the configuration and resolution transactions
 				SB_i2cQueueTransaction(&taTransaction, BIOS_WAIT_FOREVER);
 
-				PMANAGER_TASK_YIELD_HIGHERPRI();
-
 				// Wait for completion (twice)
 				Semaphore_pend(PMGR.i2cDeviceSem, BIOS_WAIT_FOREVER);
-				PMANAGER_TASK_YIELD_HIGHERPRI();
+
 #ifndef LAUNCHPAD
 				if (NoError != tca9554a_setPinStatus(&PMGR.ioexpanderDevice, &PMGR.i2cDeviceSem, IOEXP_I2CSTATUS_PIN_TEMP(i), false)) {
 					System_printf("IOEXP Error");
 					System_flush();
 				}
-				PMANAGER_TASK_YIELD_HIGHERPRI();
 #endif
 
+				// Handle success or failure of the I2C operation
 				if (taTransaction.completionResult == NoError) {
 					// The temperature sensor is big endian and this device is little endian
 					// Also need to apply the mask for the data from the sensor: 0x0FFF
@@ -399,9 +414,9 @@ SB_Error readSensorData() {
 #endif
 					readings.temperatures[i] = PMGR.mcp9808Devices[i].Temperature;
 
-					// TODO: Calls like this should likely be protected with a semaphore
 					SB_Profile_Set16bParameter( SB_CHARACTERISTIC_TEMPERATURE, PMGR.mcp9808Devices[i].Temperature, i );
 				} else {
+					// The I2C transaction failed. Manage sensor state
 					PMGR.mcp9808DeviceStates[i].currentState = PState_Intermittent;
 					if (++PMGR.mcp9808DeviceStates[i].numReadAttempts > PERIPHERAL_MAX_READ_ATTEMPTS) {
 						PMGR.mcp9808DeviceStates[i].currentState = PState_Failed;
@@ -415,12 +430,10 @@ SB_Error readSensorData() {
 					}
 				}
 
-				PMANAGER_TASK_YIELD_HIGHERPRI();
+
 			}
 		}
 	}
-
-	PMANAGER_TASK_YIELD_HIGHERPRI();
 
 	// Humidity Sensor has longest init time
 	{
@@ -436,19 +449,17 @@ SB_Error readSensorData() {
 				System_printf("IOEXP Error\n");
 				System_flush();
 			}
-			PMANAGER_TASK_YIELD_HIGHERPRI();
 #endif
 
 			// Start the conversion for the humidity sensor
 			PMGR.hdc1050DeviceState.lastError = hdc1050_readTempHumidity(&PMGR.hdc1050Device, &PMGR.i2cDeviceSem);
-			PMANAGER_TASK_YIELD_HIGHERPRI();
+
 			if (PMGR.hdc1050DeviceState.lastError == NoError) {
 #ifdef SB_DEBUG
 				System_printf("PMGR: Humidity read:  %d\n", PMGR.hdc1050Device.humidity/16);
 				System_printf("PMGR: HTemp read:  %d\n", PMGR.hdc1050Device.temperature/16);
 #endif
 
-				// TODO: Calls like this should likely be protected with a semaphore
 				SB_Profile_Set16bParameter( SB_CHARACTERISTIC_HUMIDITY, PMGR.hdc1050Device.humidity, 0 );
 				SB_Profile_Set16bParameter( SB_CHARACTERISTIC_TEMPERATURE, PMGR.hdc1050Device.temperature, SB_NUM_MCP9808_SENSORS );
 
@@ -466,7 +477,7 @@ SB_Error readSensorData() {
 #endif
 				}
 			}
-			PMANAGER_TASK_YIELD_HIGHERPRI();
+
 
 #ifndef LAUNCHPAD
 			if (NoError != tca9554a_setPinStatus(&PMGR.ioexpanderDevice, &PMGR.i2cDeviceSem, IOEXP_I2CSTATUS_PIN_HUMIDITY, false)) {
@@ -475,7 +486,7 @@ SB_Error readSensorData() {
 				System_flush();
 # endif
 			}
-			PMANAGER_TASK_YIELD_HIGHERPRI();
+
 #endif
 		}
 	}
@@ -487,24 +498,17 @@ SB_Error readSensorData() {
 #endif
 	SB_Profile_Set16bParameter( SB_CHARACTERISTIC_BATTCHARGE, stc3115_convertedVoltage(PMGR.gasGaugeDevice), 0 );
 
-	PMANAGER_TASK_YIELD_HIGHERPRI();
-
 #ifdef BANDAGE_IMPEDANCE_READINGS
 	// Wait for ADC readings to be available
-	if (NoError != (result = waitForReadingsAvailable())) {
+	if (NoError != (result = SB_waitForReadingsAvailable())) {
 # ifdef SB_DEBUG
 		System_printf("PMGR: Error waiting for ADC readings to be available: %d\n", result);
 # endif
 	}
-	PMANAGER_TASK_YIELD_HIGHERPRI();
 
-	System_printf("Moistures: \n");
 	// Convert moisture readings to percentages
 	for (i = 0; i < SB_NUM_MOISTURE; ++i) {
-		// Todo: If multiple voltage sensing is working divide by 1.3V.
-		System_printf("\tMoisture %d pre: %d\n", i, readings.moistures[i]);
 		readings.moistures[i] = (100L*16L*(208 - readings.moistures[i]))/208;
-		System_printf("\tMoisture %d pst: %d\n", i, readings.moistures[i]);
 	}
 #endif
 
@@ -518,13 +522,17 @@ SB_Error readSensorData() {
 		return result;
 	}
 
-	PMANAGER_TASK_YIELD_HIGHERPRI();
-
+	// Tell the readings manager new readings are available
 	SB_newReadingsAvailable();
 
 	return NoError;
 }
 
+/*********************************************************************
+ * @fn      SB_peripheralManagerTask
+ *
+ * @brief   The main task function for the peripheral manager.
+ */
 static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	SB_Error result;
 
@@ -542,6 +550,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	System_flush();
 #endif
 
+	// Initialize readings size parameter
 	SB_Profile_Set16bParameter( SB_CHARACTERISTIC_READINGSIZE, sizeof(SB_PeripheralReadings), 0 );
 
 	SB_setPeripheralsEnable(true);
@@ -674,7 +683,6 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 				System_printf("IOEXP Error");
 				System_flush();
 			}
-			PMANAGER_TASK_YIELD_HIGHERPRI();
 #endif
 
 			// Do a single quick reading now
@@ -708,14 +716,11 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 					SB_processBLEMessages();
 				} else {
 					// Handle the error that a request wasn't received in a SB_TRANSMIT_MIN_CONN_PERIOD
-//						System_printf("No BLE message in the last %d seconds\n", SB_TRANSMIT_MIN_CONN_PERIOD/NTICKS_PER_SECOND);
-//						break;
 				}
 			}
 
 			SB_setClearReadingsMode(false);
 
-			// TODO: We need to wait for this to finish disconnecting, and for the final notification to be received
 			result = SB_disableBLE();
 			if (NoError != result) {
 #ifdef SB_DEBUG
@@ -736,7 +741,6 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 					SB_processBLEMessages();
 				} else if (++timeouts > 10) {
 					// Handle the error that a request wasn't received in a SB_TRANSMIT_MIN_CONN_PERIOD
-//						System_printf("No BLE message in the last %d seconds\n", SB_TRANSMIT_MIN_CONN_PERIOD/NTICKS_PER_SECOND);
 					break;
 				}
 			}
@@ -771,6 +775,13 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 	}
 }
 
+/*********************************************************************
+ * @fn      SB_peripheralInit
+ *
+ * @brief   Initializes the peripheral manager
+ *
+ * @return  NoError if properly initialized, otherwise the error that occured
+ */
 SB_Error SB_peripheralInit() {
 	SB_Error result;
 	// Initialize MUX semaphore with 1 free resource (use as mutex)
@@ -883,8 +894,12 @@ SB_Error SB_peripheralInit() {
 	return NoError;
 }
 
-/**
- * \brief Enables or disables power to external PCB peripherals
+/*********************************************************************
+ * @fn      SB_setPeripheralsEnable
+ *
+ * @brief   Enables or disables peripherals
+ *
+ * @return  NoError if properly enabled/disabled, otherwise the error that occured
  */
 SB_Error SB_setPeripheralsEnable(bool enable) {
 	PIN_Status result = PIN_setOutputValue(&PMGR.PeripheralPower, Board_PERIPHERAL_PWR, enable == false);
@@ -944,6 +959,13 @@ SB_Error _applyFullMuxState(SB_MUXState *muxState) {
 	return UnknownError;
 }
 
+/*********************************************************************
+ * @fn      SB_selectMoistureSensorInput
+ *
+ * @brief   Selects the current moisture sensor input
+ *
+ * @return  NoError if properly selected, otherwise the error that occured
+ */
 SB_Error SB_selectMoistureSensorInput(SB_MoistureSensorLine line, SB_MoistureSensorVoltage voltage, uint32_t timeout) {
 	SB_MUXState selectState  = {
 		.pwrmuxOutputEnable = MUX_ENABLE,
@@ -987,14 +1009,14 @@ SB_Error SB_selectMoistureSensorInput(SB_MoistureSensorLine line, SB_MoistureSen
 	return applyFullMuxState(&selectState, timeout);
 }
 
-/**
- * \brief Refreshes the SYSDISBL hardware
- * \remark Returns as soon as the output is assigned, but keeps the MUX semaphore.
- * 			No MUX operations can complete until after SYSDSBL_REFRESH_CLOCK_PERIOD has elapsed.
+/*********************************************************************
+ * @fn      SB_sysDisableRefresh
+ *
+ * @brief   Refreshes the sys disable output waits at most semaphoreTimeout to access resources
+ *
+ * @return  NoError if properly refreshed, otherwise the error that occured
  */
 SB_Error SB_sysDisableRefresh(uint32 semaphoreTimeout) {
-	// TODO: Remove
-	return NoError;
 	SB_MUXState refreshState  = {
 		.iomuxOutput = Board_IOMUX_SYSDISBL_N,
 		.pwrmuxOutput = Board_PWRMUX_PERIPHERAL_VCC,
@@ -1022,8 +1044,12 @@ void SB_sysdisblClockHandler(UArg arg) {
 	Semaphore_post(PMGR.muxSemaphore);
 }
 
-/**
- * \brief Triggers the SYSDISBL shutdown. If shutdown is triggered this function does not return before the system loses power.
+/*********************************************************************
+ * @fn      SB_sysDisableShutdown
+ *
+ * @brief   Shuts down the MCU through the sys disable output. This function doesn't return.
+ *
+ * @return  Doesn't return if success, otherwise the error that occured
  */
 SB_Error SB_sysDisableShutdown() {
 	// TODO: Generate an error if jack power is present
@@ -1063,34 +1089,20 @@ SB_Error SB_sysDisableShutdown() {
 
 void PreEnterSleepCallback(SB_State_Transition transition, SB_State state) {
 	System_printf("PreEnterSleepCallback\n");
-	// Disable peripherals
-	// Disable I2C module
-	// Start HW timer
-
-	// TODO: This should not be here.
 	Semaphore_post(PMGR.stateSem);
 }
 
 void ExitSleepCallback(SB_State_Transition transition, SB_State state) {
 	System_printf("ExitSleepCallback\n");
-	// Clear & disable HW timer
-	// Refresh SYSDISBL
-//	SB_sysDisableRefresh(100);
-	// Enable peripherals
-	// Enable I2C
 }
 
 void PreEnterTransmitCallback(SB_State_Transition transition, SB_State state) {
 	System_printf("PreEnterTransmitCallback\n");
-	// Enable bluetooth
-	// Ensure bluetooth advertising
 	Semaphore_post(PMGR.stateSem);
 }
 
 void PreExitTransmitCallback(SB_State_Transition transition, SB_State state) {
 	System_printf("PreExitTransmitCallback\n");
-	// Disconnect bluetooth
-	// Disable bluetooth
 }
 
 void PreEnterCheckCallback(SB_State_Transition transition, SB_State state) {

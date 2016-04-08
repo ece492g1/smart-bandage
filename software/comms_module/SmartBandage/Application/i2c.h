@@ -20,8 +20,22 @@ typedef struct {
 	SB_Error completionResult;
 } SB_i2cTransaction;
 
+/*********************************************************************
+ * @fn      SB_i2cQueueTransaction
+ *
+ * @brief   Queues the given transaction within timeout
+ *
+ * @return  NoError if properly queued, otherwise the error that occured
+ */
 SB_Error SB_i2cQueueTransaction(SB_i2cTransaction* transaction, uint32_t timeout);
+
+/*********************************************************************
+ * @fn      SB_i2cInit
+ *
+ * @brief   Initializes the I2C module
+ *
+ * @return  NoError if properly initialized, otherwise the error that occured
+ */
 SB_Error SB_i2cInit(I2C_BitRate bitRate);
-void SB_i2cSleep();
 
 #endif /* APPLICATION_I2C_H_ */

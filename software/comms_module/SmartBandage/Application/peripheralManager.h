@@ -53,10 +53,49 @@ typedef struct {
 	MUX_OUTPUT iomuxOutput;
 } SB_MUXState;
 
+/*********************************************************************
+ * @fn      SB_peripheralInit
+ *
+ * @brief   Initializes the peripheral manager
+ *
+ * @return  NoError if properly initialized, otherwise the error that occured
+ */
 SB_Error SB_peripheralInit();
+
+/*********************************************************************
+ * @fn      SB_setPeripheralsEnable
+ *
+ * @brief   Enables or disables peripherals
+ *
+ * @return  NoError if properly enabled/disabled, otherwise the error that occured
+ */
 SB_Error SB_setPeripheralsEnable(bool enable);
+
+/*********************************************************************
+ * @fn      SB_sysDisableRefresh
+ *
+ * @brief   Refreshes the sys disable output waits at most semaphoreTimeout to access resources
+ *
+ * @return  NoError if properly refreshed, otherwise the error that occured
+ */
 SB_Error SB_sysDisableRefresh(uint32 semaphoreTimeout);
+
+/*********************************************************************
+ * @fn      SB_sysDisableShutdown
+ *
+ * @brief   Shuts down the MCU through the sys disable output. This function doesn't return.
+ *
+ * @return  Doesn't return if success, otherwise the error that occured
+ */
 SB_Error SB_sysDisableShutdown();
+
+/*********************************************************************
+ * @fn      SB_selectMoistureSensorInput
+ *
+ * @brief   Selects the current moisture sensor input
+ *
+ * @return  NoError if properly selected, otherwise the error that occured
+ */
 SB_Error SB_selectMoistureSensorInput(SB_MoistureSensorLine line, SB_MoistureSensorVoltage voltage, uint32_t timeout);
 
 #endif /* APPLICATION_PERIPHERALMANAGER_H_ */

@@ -247,12 +247,42 @@ extern bStatus_t SB_Profile_GetParameter( SB_CHARACTERISTIC param, void *value, 
  */
 extern uint8* SB_Profile_GetCharacteristicWritePTR( SB_CHARACTERISTIC param, uint8 len, uint8_t offset );
 
+/*********************************************************************
+ * @fn      SB_Profile_MarkParameterUpdated
+ *
+ * @brief   Marks the parameter as having been updated/
+ *
+ * @param   param - Profile parameter ID
+ * @return  SUCCESS if notification properly sent or an error code
+ */
 extern bStatus_t SB_Profile_MarkParameterUpdated( SB_CHARACTERISTIC param );
 
+/*********************************************************************
+ * @fn      SB_Profile_NotificationStateChanged
+ *
+ * @brief   Gets whether the notification subscription has changed for the property
+ *
+ * @param   param - Profile parameter ID
+ * @return  SUCCESS if notification properly sent or an error code
+ */
 extern bool SB_Profile_NotificationStateChanged(SB_CHARACTERISTIC param );
 
+/*********************************************************************
+ * @fn      SB_Profile_ClearNotificationState
+ *
+ * @brief   Clears the notification subscription
+ *
+ * @return  SUCCESS if notification properly sent or an error code
+ */
 extern bStatus_t SB_Profile_ClearNotificationState();
 
+/*********************************************************************
+ * @fn      SB_Profile_ReadingsNotificationsEnabled
+ *
+ * @brief   Returns true if reading notifications are enabled
+ *
+ * @return  True if readings notifications enabled
+ */
 extern bool SB_Profile_ReadingsNotificationsEnabled();
 
 /*********************************************************************
