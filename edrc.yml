@@ -1,0 +1,6 @@
+version: 1
+edrc:
+  drc:
+    - "hardware/comms_module/Communications Board.brd"
+  erc:
+    - "hardware/comms_module/Communications Board.sch"
