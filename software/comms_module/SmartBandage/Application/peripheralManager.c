@@ -619,7 +619,7 @@ static void SB_peripheralManagerTask(UArg a0, UArg a1) {
 #endif
 #ifdef LAUNCHPAD
 	PIN_State sbpPins;
-	PIN_Handle statusPin = PIN_open(&sbpPins, pinConfigTable);
+//	PIN_Handle statusPin = PIN_open(&sbpPins, pinConfigTable);
 #endif
 
 	SB_switchState(S_CHECK);
