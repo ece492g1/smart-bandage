@@ -2,6 +2,7 @@ version: 1
 
 edrc:
   drc:
-    - "hardware/comms_module/Communications Board.brd"
+    - file: "hardware/comms_module/Communications Board.brd"
+      dru: "oshpark-4layer"
   erc:
     - "hardware/comms_module/Communications Board.sch"
