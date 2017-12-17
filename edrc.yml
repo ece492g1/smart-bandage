@@ -1,5 +1,4 @@
 version: 1
-
 edrc:
   drc:
     - file: "hardware/comms_module/Communications Board - Top.brd"
