@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="6.6.0">
+<eagle version="8.4.1">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
+<setting keepoldvectorfont="yes"/>
 <setting verticaltext="up"/>
 </settings>
 <grid distance="0.01" unitdist="mm" unit="mm" style="lines" multiple="1" display="yes" altdistance="0.01" altunitdist="inch" altunit="mm"/>
@@ -66,7 +67,7 @@
 <layer number="57" name="tCAD" color="7" fill="1" visible="no" active="no"/>
 <layer number="59" name="tCarbon" color="7" fill="1" visible="no" active="no"/>
 <layer number="60" name="bCarbon" color="7" fill="1" visible="no" active="no"/>
-<layer number="90" name="Modules" color="5" fill="1" visible="yes" active="yes"/>
+<layer number="90" name="Modules" color="5" fill="1" visible="no" active="no"/>
 <layer number="91" name="Nets" color="2" fill="1" visible="no" active="no"/>
 <layer number="92" name="Busses" color="1" fill="1" visible="no" active="no"/>
 <layer number="93" name="Pins" color="2" fill="1" visible="no" active="no"/>
@@ -1024,39 +1025,35 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <class number="0" name="default" width="0" drill="0">
 </class>
 </classes>
-<designrules name="OSH Park 4 Layer *">
-<description language="en">
-
-
-
-&lt;b&gt;EAGLE Design Rules&lt;/b&gt;
+<designrules name="oshpark-4layer">
+<description language="en">&lt;b&gt;OSH Park Design Rules&lt;/b&gt;
 &lt;p&gt;
-The default Design Rules have been set to cover
-a wide range of applications. Your particular design
-may have different requirements, so please make the
-necessary adjustments and save your customized
-design rules under a new name.
-</description>
+Please make sure your boards conform to these design rules.
+&lt;/p&gt;
+&lt;p&gt;
+Note, that not all DRC settings must be set by the manufacturer. Several can be adjusted for the design, including those listed on our docs page here. 
+&lt;a href=&quot;http://docs.oshpark.com/design-tools/eagle/design-rules-files/&quot;&gt;Adjustable Settings&lt;/a&gt;
+&lt;/p&gt;</description>
 <param name="layerSetup" value="(1*2*15*16)"/>
-<param name="mtCopper" value="0.035559375mm 0.01778125mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.01778125mm 0.035559375mm"/>
-<param name="mtIsolate" value="0.17018125mm 47mil 0.2mm 0.15mm 0.2mm 0.15mm 0.2mm 0.15mm 0.2mm 0.15mm 0.2mm 0.15mm 0.2mm 0.15mm 0.17018125mm"/>
+<param name="mtCopper" value="0.035559375mm 0.01778125mm 0.0356mm 0.0356mm 0.0356mm 0.0356mm 0.0356mm 0.0356mm 0.0356mm 0.0356mm 0.0356mm 0.0356mm 0.0356mm 0.0356mm 0.01778125mm 0.035559375mm"/>
+<param name="mtIsolate" value="0.17018125mm 47mil 0.2007mm 0.1499mm 0.2007mm 0.1499mm 0.2007mm 0.1499mm 0.2007mm 0.1499mm 0.2007mm 0.1499mm 0.2007mm 0.1499mm 0.17018125mm"/>
 <param name="mdWireWire" value="5mil"/>
-<param name="mdWirePad" value="6mil"/>
-<param name="mdWireVia" value="6mil"/>
-<param name="mdPadPad" value="6mil"/>
-<param name="mdPadVia" value="6mil"/>
-<param name="mdViaVia" value="6mil"/>
-<param name="mdSmdPad" value="0mil"/>
-<param name="mdSmdVia" value="0mil"/>
-<param name="mdSmdSmd" value="0mil"/>
+<param name="mdWirePad" value="5mil"/>
+<param name="mdWireVia" value="5mil"/>
+<param name="mdPadPad" value="5mil"/>
+<param name="mdPadVia" value="5mil"/>
+<param name="mdViaVia" value="5mil"/>
+<param name="mdSmdPad" value="5mil"/>
+<param name="mdSmdVia" value="5mil"/>
+<param name="mdSmdSmd" value="5mil"/>
 <param name="mdViaViaSameLayer" value="8mil"/>
 <param name="mnLayersViaInSmd" value="2"/>
 <param name="mdCopperDimension" value="15mil"/>
-<param name="mdDrill" value="8mil"/>
+<param name="mdDrill" value="6mil"/>
 <param name="mdSmdStop" value="0mil"/>
 <param name="msWidth" value="5mil"/>
 <param name="msDrill" value="10mil"/>
-<param name="msMicroVia" value="9.99mm"/>
+<param name="msMicroVia" value="10mil"/>
 <param name="msBlindViaRatio" value="0.5"/>
 <param name="rvPadTop" value="0.25"/>
 <param name="rvPadInner" value="0.25"/>
@@ -1065,11 +1062,11 @@ design rules under a new name.
 <param name="rvViaInner" value="0.25"/>
 <param name="rvMicroViaOuter" value="0.25"/>
 <param name="rvMicroViaInner" value="0.25"/>
-<param name="rlMinPadTop" value="6mil"/>
+<param name="rlMinPadTop" value="4mil"/>
 <param name="rlMaxPadTop" value="20mil"/>
-<param name="rlMinPadInner" value="6mil"/>
+<param name="rlMinPadInner" value="4mil"/>
 <param name="rlMaxPadInner" value="20mil"/>
-<param name="rlMinPadBottom" value="6mil"/>
+<param name="rlMinPadBottom" value="4mil"/>
 <param name="rlMaxPadBottom" value="20mil"/>
 <param name="rlMinViaOuter" value="4mil"/>
 <param name="rlMaxViaOuter" value="20mil"/>
@@ -1086,28 +1083,31 @@ design rules under a new name.
 <param name="psElongationOffset" value="100"/>
 <param name="mvStopFrame" value="1"/>
 <param name="mvCreamFrame" value="0"/>
-<param name="mlMinStopFrame" value="4mil"/>
-<param name="mlMaxStopFrame" value="4mil"/>
+<param name="mlMinStopFrame" value="2.5mil"/>
+<param name="mlMaxStopFrame" value="2.5mil"/>
 <param name="mlMinCreamFrame" value="0mil"/>
 <param name="mlMaxCreamFrame" value="0mil"/>
-<param name="mlViaStopLimit" value="100mil"/>
+<param name="mlViaStopLimit" value="0mil"/>
 <param name="srRoundness" value="0"/>
 <param name="srMinRoundness" value="0mil"/>
 <param name="srMaxRoundness" value="0mil"/>
-<param name="slThermalIsolate" value="6mil"/>
+<param name="slThermalIsolate" value="10mil"/>
 <param name="slThermalsForVias" value="0"/>
 <param name="dpMaxLengthDifference" value="10mm"/>
 <param name="dpGapFactor" value="2.5"/>
-<param name="checkGrid" value="0"/>
-<param name="checkAngle" value="1"/>
+<param name="checkAngle" value="0"/>
 <param name="checkFont" value="1"/>
 <param name="checkRestrict" value="1"/>
+<param name="checkStop" value="0"/>
 <param name="useDiameter" value="13"/>
-<param name="maxErrors" value="999999"/>
+<param name="maxErrors" value="50"/>
 </designrules>
 <autorouter>
 <pass name="Default">
 <param name="RoutingGrid" value="50mil"/>
+<param name="AutoGrid" value="1"/>
+<param name="Efforts" value="0"/>
+<param name="TopRouterVariant" value="1"/>
 <param name="tpViaShape" value="round"/>
 <param name="PrefDir.1" value="|"/>
 <param name="PrefDir.2" value="0"/>
@@ -1225,16 +1225,16 @@ design rules under a new name.
 <attribute name="VALUE" x="32.57" y="3.235" size="1.27" layer="27"/>
 </element>
 <element name="U1" library="Capstone Library" package="RHB0032E" value="Value" x="27.55" y="14.75" smashed="yes" rot="R270">
-<attribute name="PIN_COUNT" value="33" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="ALTERNATEPARTNUMBER" value="CC2640F128RHBT" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="COMPTYPE" value="IC" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="MANUFACTURER" value="Texas Instruments" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="ROHS" value="Y" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="PARTNUMBER" value="CC2640F128RHBR" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="TYPE" value="TYPE" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="PACKAGEREFERENCE" value="RHB0032E" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="ALTERNATEPARTNUMBER" value="CC2640F128RHBT" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="MOUNTTYPE" value="SMT" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="PACKAGEREFERENCE" value="RHB0032E" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="PARTNUMBER" value="CC2640F128RHBR" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="PIN_COUNT" value="33" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="REFDES" value="RefDes" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="ROHS" value="Y" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="TYPE" value="TYPE" x="27.55" y="14.75" size="1.778" layer="27" rot="R270" display="off"/>
 </element>
 <element name="C11" library="SparkFun-Passives" package="0402-CAP" value="1.2pF" x="29.96" y="18.73" smashed="yes">
 <attribute name="NAME" x="28.661" y="17.6085" size="0.5" layer="25" ratio="11"/>
@@ -1316,16 +1316,16 @@ design rules under a new name.
 <attribute name="NAME" x="8.691" y="25.7951" size="0.5" layer="25" font="vector" ratio="11"/>
 </element>
 <element name="TCK" library="testpad" package="TP10R" value="TPTP10R" x="23.9" y="13.18" smashed="yes">
-<attribute name="TP_SIGNAL_NAME" value="" x="23.9" y="11.275" size="1" layer="37"/>
 <attribute name="NAME" x="23.3999" y="13.7299" size="0.5" layer="25" ratio="11"/>
+<attribute name="TP_SIGNAL_NAME" value="" x="23.9" y="11.275" size="1" layer="37"/>
 </element>
 <element name="TSM" library="testpad" package="TP10R" value="TPTP10R" x="23.14" y="14.97" smashed="yes">
-<attribute name="TP_SIGNAL_NAME" value="" x="23.14" y="13.065" size="1" layer="37"/>
 <attribute name="NAME" x="22.4801" y="14.9399" size="0.5" layer="25" ratio="11" rot="R90"/>
+<attribute name="TP_SIGNAL_NAME" value="" x="23.14" y="13.065" size="1" layer="37"/>
 </element>
 <element name="RST" library="testpad" package="TP10R" value="TPTP10R" x="31" y="24.78" smashed="yes">
-<attribute name="TP_SIGNAL_NAME" value="" x="31" y="22.875" size="1" layer="37"/>
 <attribute name="NAME" x="30.4999" y="25.3299" size="0.5" layer="25" ratio="11"/>
+<attribute name="TP_SIGNAL_NAME" value="" x="31" y="22.875" size="1" layer="37"/>
 </element>
 <element name="U$9" library="Capstone Library" package="MSOP8" value="MCP9808" x="10.52" y="22.1231" smashed="yes" rot="R90">
 <attribute name="NAME" x="11.26" y="24.2831" size="0.5" layer="25" ratio="11" rot="R180"/>
@@ -1334,21 +1334,21 @@ design rules under a new name.
 <attribute name="NAME" x="11.4" y="16.7931" size="0.5" layer="21" ratio="11" rot="R180"/>
 </element>
 <element name="TALRT" library="testpad" package="TP17R" value="TPTP17R" x="16.26" y="25.66" smashed="yes">
-<attribute name="TP_SIGNAL_NAME" value="" x="16.26" y="23.12" size="1" layer="37"/>
 <attribute name="NAME" x="17.8301" y="24.6701" size="0.5" layer="25" ratio="11" rot="R90"/>
+<attribute name="TP_SIGNAL_NAME" value="" x="16.26" y="23.12" size="1" layer="37"/>
 </element>
 <element name="U3" library="Capstone Library" package="PW16" value="TCA9554A_PW_16" x="13.82" y="11.9131" smashed="yes">
 <attribute name="DATASHEETURL" value="http://www.ti.com/lit/gpn/TCA9554A" x="13.82" y="11.9131" size="1.778" layer="27" display="off"/>
-<attribute name="PIN_COUNT" value="16" x="13.82" y="11.9131" size="1.778" layer="27" display="off"/>
-<attribute name="GENERIC_PART_NUMBER" value="TCA9554A" x="13.82" y="11.9131" size="1.778" layer="27" display="off"/>
 <attribute name="DESCRIPTION" value="Remote 8-Bit I2C and SMBus I/O Expander" x="13.82" y="11.9131" size="1.778" layer="27" display="off"/>
 <attribute name="FAMILY_NAME" value="I2C IO EXPANDER" x="13.82" y="11.9131" size="1.778" layer="27" display="off"/>
-<attribute name="MANUFACTURER" value="Texas Instruments" x="13.82" y="11.9131" size="1.778" layer="27" display="off"/>
+<attribute name="GENERIC_PART_NUMBER" value="TCA9554A" x="13.82" y="11.9131" size="1.778" layer="27" display="off"/>
 <attribute name="INDUSTRY_STD_PKG_TYPE" value="TSSOP" x="13.82" y="11.9131" size="1.778" layer="27" display="off"/>
-<attribute name="VENDOR" value="Texas Instruments" x="13.82" y="11.9131" size="1.778" layer="27" display="off"/>
+<attribute name="MANUFACTURER" value="Texas Instruments" x="13.82" y="11.9131" size="1.778" layer="27" display="off"/>
 <attribute name="MANUFACTURER_PART_NUMBER" value="tca9554a_pw_16" x="13.82" y="11.9131" size="1.778" layer="27" display="off"/>
-<attribute name="PACKAGE_DESIGNATOR" value="PW" x="13.82" y="11.9131" size="1.778" layer="27" display="off"/>
 <attribute name="NAME" x="12.2598" y="14.7181" size="0.5" layer="25" ratio="11" rot="SR0"/>
+<attribute name="PACKAGE_DESIGNATOR" value="PW" x="13.82" y="11.9131" size="1.778" layer="27" display="off"/>
+<attribute name="PIN_COUNT" value="16" x="13.82" y="11.9131" size="1.778" layer="27" display="off"/>
+<attribute name="VENDOR" value="Texas Instruments" x="13.82" y="11.9131" size="1.778" layer="27" display="off"/>
 </element>
 <element name="D3" library="SparkFun-LED" package="LED-1206" value="Green" x="17.33" y="5.88" smashed="yes" rot="R270">
 <attribute name="NAME" x="16.951" y="8.467" size="0.5" layer="25" ratio="11"/>
@@ -3019,125 +3019,155 @@ design rules under a new name.
 <approved hash="3,1,439a7662762943d1"/>
 <approved hash="3,1,559a6662662955d1"/>
 <approved hash="3,1,550266fa662755df"/>
+<approved hash="3,1,1c97926992691c97"/>
+<approved hash="3,1,4c75f28bf28b4c75"/>
+<approved hash="3,1,34fe9a009a0034fe"/>
+<approved hash="3,1,6974ce8ace9a6964"/>
 <approved hash="3,1,284426ba26ba2844"/>
 <approved hash="3,1,2facb152b15a2fa4"/>
 <approved hash="3,1,0aed7c137c130aed"/>
 <approved hash="3,1,2facb152b15a2fa4"/>
-<approved hash="3,1,1c97926992691c97"/>
 <approved hash="3,1,5897ee69ee695897"/>
 <approved hash="3,1,d4946a6a6a6ad494"/>
-<approved hash="3,1,6974ce8ace9a6964"/>
-<approved hash="3,1,4c75f28bf28b4c75"/>
 <approved hash="3,1,3e97906990693e97"/>
 <approved hash="3,1,99462fb82fa89956"/>
 <approved hash="3,1,b4707a8e7a8eb470"/>
-<approved hash="3,1,34fe9a009a0034fe"/>
-<approved hash="7,39,91910e8b5de822c4"/>
 <approved hash="7,39,349f9d624ebf8613"/>
+<approved hash="7,39,91910e8b5de822c4"/>
+<approved hash="5,1,60e9d08b115400a8"/>
+<approved hash="19,1,c06340034022c042"/>
+<approved hash="19,1,5870781066164676"/>
 <approved hash="4,1,f9794c0d8f93faf1"/>
 <approved hash="4,1,25385c4f9e463f29"/>
-<approved hash="4,2,7bfa74e851144107"/>
-<approved hash="4,2,a35d58219a94b9fe"/>
+<approved hash="5,1,23841c44ceff85ac"/>
+<approved hash="19,1,fe15ca1dcf45fb4d"/>
+<approved hash="19,1,6859d651d6d568dd"/>
+<approved hash="19,1,6078001802c662a6"/>
+<approved hash="19,1,70781018123e725e"/>
+<approved hash="19,1,587878187a3e5a5e"/>
+<approved hash="19,1,5860780006062666"/>
+<approved hash="19,1,587818181a3a5a5a"/>
+<approved hash="19,1,607000101eee7e8e"/>
+<approved hash="19,1,5870181006124672"/>
+<approved hash="19,1,707010100e166e76"/>
+<approved hash="19,1,6018007802c662a6"/>
+<approved hash="19,1,581878787a3e5a5e"/>
+<approved hash="19,1,581818781a3a5a5a"/>
+<approved hash="19,1,70181078123e725e"/>
+<approved hash="19,1,606000007efe1e9e"/>
+<approved hash="19,1,5860180066022662"/>
+<approved hash="19,1,706010006e060e66"/>
+<approved hash="19,1,f7dfffd7f0caf8c2"/>
+<approved hash="5,1,06c6b31235918b70"/>
+<approved hash="5,1,2477b515b71fa384"/>
+<approved hash="5,1,2cbb0584fa2b90ed"/>
+<approved hash="19,1,f038c030cc4bfc43"/>
+<approved hash="5,1,18835c48a451e0fa"/>
 <approved hash="4,2,7b21484b8a76610a"/>
-<approved hash="4,2,52b4dae6b2a1733d"/>
-<approved hash="4,2,d68845e9b2aef132"/>
-<approved hash="4,2,baf8edc59b577e81"/>
-<approved hash="4,2,1858b03677704ff7"/>
-<approved hash="4,2,1d61ff2b2d983bc1"/>
-<approved hash="4,2,7664d52691e9d743"/>
 <approved hash="4,2,cbb41ae7b6a04f01"/>
-<approved hash="4,2,79910d2ec2273088"/>
-<approved hash="4,2,263dd08a0f857f22"/>
+<approved hash="4,2,1f653db3480af8dc"/>
+<approved hash="4,2,2b9be161e3adb351"/>
+<approved hash="4,2,a35d58219a94b9fe"/>
+<approved hash="4,2,7b724c0d8fef7888"/>
+<approved hash="4,2,9fc285170342ca72"/>
+<approved hash="4,2,b4116f5629372995"/>
+<approved hash="4,2,19632d9ebfdf58c7"/>
+<approved hash="4,2,885666800d37bde1"/>
+<approved hash="4,2,d68845e9b2aef132"/>
+<approved hash="4,2,7bfa74e851144107"/>
+<approved hash="4,2,279adf6121ad4750"/>
+<approved hash="4,2,80a6465d5a91d86c"/>
+<approved hash="4,2,0f01e5f53ce23ffc"/>
+<approved hash="4,2,0dbdde6a3ff405c9"/>
+<approved hash="4,2,3821b0d8bac582a4"/>
+<approved hash="4,2,8394841ba1e010ff"/>
 <approved hash="4,2,b5587c0821021447"/>
 <approved hash="4,2,12d227cf6edba7d1"/>
-<approved hash="4,2,6c92ca6d52a944bf"/>
-<approved hash="4,2,781509f9c2e5351b"/>
-<approved hash="4,2,8394841ba1e010ff"/>
-<approved hash="4,2,3821b0d8bac582a4"/>
-<approved hash="4,2,80a6465d5a91d86c"/>
-<approved hash="4,2,279adf6121ad4750"/>
 <approved hash="4,2,6169ca2453ad4809"/>
 <approved hash="4,2,23c9b3914b926b23"/>
-<approved hash="4,2,0dbdde6a3ff405c9"/>
-<approved hash="4,2,0f01e5f53ce23ffc"/>
-<approved hash="4,2,2b9be161e3adb351"/>
+<approved hash="4,2,6c92ca6d52a944bf"/>
+<approved hash="4,2,781509f9c2e5351b"/>
+<approved hash="4,2,263dd08a0f857f22"/>
+<approved hash="4,2,79910d2ec2273088"/>
 <approved hash="4,2,2f59568fd10bc4dd"/>
-<approved hash="4,2,885666800d37bde1"/>
-<approved hash="4,2,2269d2570d587b76"/>
-<approved hash="4,2,79100e28c1213009"/>
+<approved hash="4,2,52b4dae6b2a1733d"/>
+<approved hash="4,2,1d61ff2b2d983bc1"/>
+<approved hash="4,2,7664d52691e9d743"/>
+<approved hash="4,2,fa51e450bcad4b46"/>
+<approved hash="4,2,76e651913182ff1f"/>
 <approved hash="4,2,b121798b2481103e"/>
 <approved hash="4,2,129527266e32a796"/>
-<approved hash="4,2,1f653db3480af8dc"/>
+<approved hash="4,2,1858b03677704ff7"/>
+<approved hash="4,2,baf8edc59b577e81"/>
 <approved hash="4,2,97e7cbc2d32c3fe0"/>
 <approved hash="4,2,59033c4c45319097"/>
-<approved hash="4,2,76e651913182ff1f"/>
-<approved hash="4,2,fa51e450bcad4b46"/>
-<approved hash="4,2,19632d9ebfdf58c7"/>
-<approved hash="4,2,9fc285170342ca72"/>
-<approved hash="4,2,7b724c0d8fef7888"/>
-<approved hash="4,2,b4116f5629372995"/>
-<approved hash="4,15,58f92f6b8597c207"/>
-<approved hash="4,15,52b4dae6b2a1733d"/>
-<approved hash="4,15,d68845e9b2aef132"/>
-<approved hash="4,15,1858b03677704ff7"/>
-<approved hash="4,15,baf8edc59b577e81"/>
-<approved hash="4,15,1d61ff2b2d983bc1"/>
-<approved hash="4,15,7664d52691e9d743"/>
+<approved hash="4,2,2269d2570d587b76"/>
+<approved hash="4,2,79100e28c1213009"/>
+<approved hash="4,15,7b21484b8a76610a"/>
 <approved hash="4,15,cbb41ae7b6a04f01"/>
+<approved hash="4,15,1f653db3480af8dc"/>
+<approved hash="4,15,7205b717e8598614"/>
+<approved hash="4,15,a35d58219a94b9fe"/>
+<approved hash="4,15,7b724c0d8fef7888"/>
+<approved hash="4,15,9fc285170342ca72"/>
+<approved hash="4,15,b4116f5629372995"/>
+<approved hash="4,15,19632d9ebfdf58c7"/>
+<approved hash="4,15,885666800d37bde1"/>
+<approved hash="4,15,d68845e9b2aef132"/>
+<approved hash="4,15,58f92f6b8597c207"/>
 <approved hash="4,15,279adf6121ad4750"/>
 <approved hash="4,15,d938102b5165ed29"/>
-<approved hash="4,15,6169ca2453ad4809"/>
-<approved hash="4,15,23c9b3914b926b23"/>
 <approved hash="4,15,0f01e5f53ce23ffc"/>
 <approved hash="4,15,0dbdde6a3ff405c9"/>
-<approved hash="4,15,7205b717e8598614"/>
-<approved hash="4,15,263dd08a0f857f22"/>
-<approved hash="4,15,79910d2ec2273088"/>
+<approved hash="4,15,ccfed8cd6647ece9"/>
+<approved hash="4,15,1e55ecdb5e25ca18"/>
 <approved hash="4,15,b5587c0821021447"/>
 <approved hash="4,15,12d227cf6edba7d1"/>
-<approved hash="4,15,781509f9c2e5351b"/>
+<approved hash="4,15,6169ca2453ad4809"/>
+<approved hash="4,15,23c9b3914b926b23"/>
 <approved hash="4,15,6c92ca6d52a944bf"/>
-<approved hash="4,15,1e55ecdb5e25ca18"/>
-<approved hash="4,15,ccfed8cd6647ece9"/>
+<approved hash="4,15,781509f9c2e5351b"/>
+<approved hash="4,15,263dd08a0f857f22"/>
+<approved hash="4,15,79910d2ec2273088"/>
 <approved hash="4,15,2f59568fd10bc4dd"/>
-<approved hash="4,15,885666800d37bde1"/>
+<approved hash="4,15,52b4dae6b2a1733d"/>
+<approved hash="4,15,1d61ff2b2d983bc1"/>
+<approved hash="4,15,7664d52691e9d743"/>
+<approved hash="4,15,fa4664473cad4b46"/>
+<approved hash="4,15,f6e6519131b67f2b"/>
+<approved hash="4,15,b121798b2481103e"/>
+<approved hash="4,15,129527266e32a796"/>
+<approved hash="4,15,1858b03677704ff7"/>
+<approved hash="4,15,baf8edc59b577e81"/>
+<approved hash="4,15,97f04bd5532c3fe0"/>
+<approved hash="4,15,d9033c4c450510a3"/>
 <approved hash="4,15,2269d2570d587b76"/>
 <approved hash="4,15,79100e28c1213009"/>
-<approved hash="4,15,129527266e32a796"/>
-<approved hash="4,15,b121798b2481103e"/>
-<approved hash="4,15,1f653db3480af8dc"/>
-<approved hash="4,15,d9033c4c450510a3"/>
-<approved hash="4,15,97f04bd5532c3fe0"/>
-<approved hash="4,15,f6e6519131b67f2b"/>
-<approved hash="4,15,fa4664473cad4b46"/>
-<approved hash="4,15,19632d9ebfdf58c7"/>
-<approved hash="4,15,9fc285170342ca72"/>
-<approved hash="4,15,7b21484b8a76610a"/>
-<approved hash="4,15,a35d58219a94b9fe"/>
-<approved hash="4,15,b4116f5629372995"/>
-<approved hash="4,15,7b724c0d8fef7888"/>
-<approved hash="4,16,d68845e9b2aef132"/>
-<approved hash="4,16,52b4dae6b2a1733d"/>
-<approved hash="4,16,baf8edc59b577e81"/>
-<approved hash="4,16,1858b03677704ff7"/>
-<approved hash="4,16,7664d52691e9d743"/>
-<approved hash="4,16,1d61ff2b2d983bc1"/>
+<approved hash="4,16,7b21484b8a76610a"/>
 <approved hash="4,16,cbb41ae7b6a04f01"/>
-<approved hash="4,16,d9033c4c450510a3"/>
-<approved hash="4,16,97f04bd5532c3fe0"/>
-<approved hash="4,16,f6e6519131b67f2b"/>
-<approved hash="4,16,fa4664473cad4b46"/>
-<approved hash="4,16,2f59568fd10bc4dd"/>
-<approved hash="4,16,885666800d37bde1"/>
-<approved hash="4,16,2269d2570d587b76"/>
-<approved hash="4,16,79100e28c1213009"/>
-<approved hash="4,16,b121798b2481103e"/>
-<approved hash="4,16,129527266e32a796"/>
 <approved hash="4,16,1f653db3480af8dc"/>
 <approved hash="4,16,a35d58219a94b9fe"/>
-<approved hash="4,16,7b21484b8a76610a"/>
 <approved hash="4,16,9fc285170342ca72"/>
 <approved hash="4,16,19632d9ebfdf58c7"/>
+<approved hash="4,16,885666800d37bde1"/>
+<approved hash="4,16,d68845e9b2aef132"/>
+<approved hash="4,16,2f59568fd10bc4dd"/>
+<approved hash="4,16,52b4dae6b2a1733d"/>
+<approved hash="4,16,1d61ff2b2d983bc1"/>
+<approved hash="4,16,fa4664473cad4b46"/>
+<approved hash="4,16,7664d52691e9d743"/>
+<approved hash="4,16,f6e6519131b67f2b"/>
+<approved hash="4,16,b121798b2481103e"/>
+<approved hash="4,16,129527266e32a796"/>
+<approved hash="4,16,1858b03677704ff7"/>
+<approved hash="4,16,97f04bd5532c3fe0"/>
+<approved hash="4,16,baf8edc59b577e81"/>
+<approved hash="4,16,d9033c4c450510a3"/>
+<approved hash="4,16,2269d2570d587b76"/>
+<approved hash="4,16,79100e28c1213009"/>
+<approved hash="5,16,eafc9bbab2e3c66e"/>
+<approved hash="5,16,f07b923e6800f79d"/>
+<approved hash="19,16,b2fc44f444c1b2c9"/>
 </errors>
 </board>
 </drawing>

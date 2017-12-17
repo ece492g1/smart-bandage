@@ -15,7 +15,7 @@
 /*****************************************************************
  * Config Adjust Variables
  ****************************************************************/
-//#define LAUNCHPAD // Only define if using Launchpad for testing. Can be defined as compiler argument instead.
+#define LAUNCHPAD // Only define if using Launchpad for testing. Can be defined as compiler argument instead.
 #define SB_DEBUG
 #define SB_FLASH_SANITY_CHECKS
 #define POWER_SAVING
